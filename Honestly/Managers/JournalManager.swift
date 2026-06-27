@@ -71,8 +71,12 @@ class JournalManager: ObservableObject {
         let now = Date()
         let wordCount = content.split { $0 == " " || $0 == "\n" }.count
 
-        let obj = NSEntityDescription.insertNewObject(forEntityName: "JournalEntry", into: context)
-        obj.setValue(UUID(), forKey: "id")
+        // One entry per day: reuse today's managed object if it already exists.
+        let obj = todayManagedObject() ?? {
+            let new = NSEntityDescription.insertNewObject(forEntityName: "JournalEntry", into: context)
+            new.setValue(UUID(), forKey: "id")
+            return new
+        }()
         obj.setValue(content, forKey: "content")
         obj.setValue(gratitude, forKey: "gratitude")
         obj.setValue(mood.rawValue, forKey: "mood")
@@ -96,6 +100,16 @@ class JournalManager: ObservableObject {
         guard !AppConstants.isJournalCompleted(in: defaults) else { return }
         defaults?.set(false, forKey: AppConstants.keyTodayCompleted)
         isCompletedToday = false
+    }
+
+    /// The managed object for today's entry, if one exists (enforces one-per-day).
+    private func todayManagedObject() -> NSManagedObject? {
+        let request = NSFetchRequest<NSManagedObject>(entityName: "JournalEntry")
+        let objs = (try? context.fetch(request)) ?? []
+        return objs.first { obj in
+            guard let d = obj.value(forKey: "createdAt") as? Date else { return false }
+            return Calendar.current.isDateInToday(d)
+        }
     }
 
     // MARK: - Calendar / lookup
@@ -150,10 +164,14 @@ class JournalManager: ObservableObject {
         reload()
     }
 
-    /// Insert backed-up entries that aren't already present (restore from iCloud).
+    /// Insert backed-up entries from iCloud. Dedupe by **day** (and id) so a day
+    /// that already has a local entry never gets a duplicate — e.g. restoring an
+    /// old backup after you deleted + re-journaled the same day keeps just one.
     func restore(from backup: [JournalEntry]) {
-        let existing = Set(entries.map { $0.id })
-        for e in backup where !existing.contains(e.id) {
+        let existingIDs = Set(entries.map { $0.id })
+        var seenDays = Set(entries.map { $0.dayKey })   // days already occupied
+        for e in backup where !existingIDs.contains(e.id) && !seenDays.contains(e.dayKey) {
+            seenDays.insert(e.dayKey)
             let obj = NSEntityDescription.insertNewObject(forEntityName: "JournalEntry", into: context)
             obj.setValue(e.id, forKey: "id")
             obj.setValue(e.content, forKey: "content")

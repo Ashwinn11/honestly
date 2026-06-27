@@ -11,11 +11,11 @@ struct PaywallView: View {
     @State private var legalDoc: LegalDoc?
     @State private var restoreMessage: String?
 
-    private var benefits: [(String, String)] {
-        [("lock.shield.fill", "block the apps that hijack you"),
-         ("sunrise.fill", "mornings on autopilot"),
-         ("book.fill", "your journal, everywhere"),
-         ("icloud.fill", "never lose an entry")]
+    private var benefits: [(String, Color, String)] {
+        [("lock.shield.fill", Theme.awful,    "block the apps that hijack you"),
+         ("sunrise.fill",     Theme.happy,    "mornings on autopilot"),
+         ("book.fill",        Theme.confused, "your journal, everywhere"),
+         ("icloud.fill",      Theme.cry,      "never lose an entry")]
     }
 
     private var selectedPlan: MorningClubPlan? {
@@ -115,12 +115,9 @@ struct PaywallView: View {
     private var benefitList: some View {
         VStack(spacing: 16) {
             ForEach(Array(benefits.enumerated()), id: \.offset) { _, b in
-                HStack(spacing: 16) {
-                    Image(systemName: b.0)
-                        .font(.system(size: 22, weight: .semibold))
-                        .foregroundStyle(Theme.orange)
-                        .frame(width: 44)
-                    Text(b.1)
+                HStack(spacing: 14) {
+                    ColorIconBadge(icon: b.0, color: b.1, size: 44)
+                    Text(b.2)
                         .font(AppFont.bodyBold(18))
                         .foregroundStyle(Theme.ink)
                     Spacer()

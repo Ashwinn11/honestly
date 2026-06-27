@@ -1,4 +1,4 @@
-import Foundation
+import SwiftUI
 
 enum Goal: String, CaseIterable, Codable, Identifiable {
     case clarity = "Clarity"
@@ -16,6 +16,16 @@ enum Goal: String, CaseIterable, Codable, Identifiable {
         case .peace:   return "leaf"
         case .focus:   return "scope"
         case .energy:  return "bolt.fill"
+        }
+    }
+
+    /// Badge colour for the goal option card.
+    var color: Color {
+        switch self {
+        case .clarity: return Theme.happy     // warm
+        case .peace:   return Theme.confused  // green
+        case .focus:   return Theme.cry       // blue
+        case .energy:  return Theme.sad       // pink
         }
     }
 

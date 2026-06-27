@@ -16,6 +16,27 @@ struct AppCard<Content: View>: View {
     }
 }
 
+// MARK: - Colored icon badge (for options / feature rows)
+
+struct ColorIconBadge: View {
+    let icon: String
+    let color: Color
+    var size: CGFloat = 52
+
+    var body: some View {
+        Image(systemName: icon)
+            .font(.system(size: size * 0.42, weight: .semibold))
+            .foregroundStyle(Theme.ink)
+            .frame(width: size, height: size)
+            .background(color)
+            .clipShape(RoundedRectangle(cornerRadius: size * 0.3, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: size * 0.3, style: .continuous)
+                    .stroke(Theme.ink, lineWidth: 2)
+            )
+    }
+}
+
 // MARK: - Eyebrow (handwriting accent label)
 
 struct Eyebrow: View {
