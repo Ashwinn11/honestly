@@ -14,7 +14,7 @@ struct GratitudeView: View {
         VStack(spacing: 0) {
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 18) {
-                    Eyebrow("❤️ GRATEFUL FOR", size: 18)
+                    IconEyebrow(icon: "heart.fill", text: "GRATEFUL FOR", size: 18)
 
                     Text(question.question)
                         .font(AppFont.cardTitle(26))
@@ -68,16 +68,13 @@ struct GratitudeView: View {
                 .frame(minHeight: 180)
                 .scrollContentBackground(.hidden)
                 .focused($focused)
-            Mascot(kind: .flower, size: 40)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
-                .allowsHitTesting(false)
         }
         .padding(16)
         .appCardStyle(fill: Theme.paper)
     }
 
     private var footer: some View {
-        PrimaryButton(title: "finish & unlock 🔒", action: onFinish)
+        PrimaryButton(title: "finish & unlock", icon: "lock.open.fill", action: onFinish)
             .padding(.horizontal, 24)
             .padding(.bottom, 28)
     }

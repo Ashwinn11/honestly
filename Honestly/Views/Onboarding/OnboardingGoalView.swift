@@ -25,7 +25,8 @@ struct OnboardingGoalView: View {
                 .padding(.bottom, 20)
             }
 
-            OnboardingBottomBar(stepIndex: stepIndex, primaryTitle: "that's the one ✨",
+            OnboardingBottomBar(stepIndex: stepIndex, primaryTitle: "that's the one",
+                                primaryIcon: "sparkles",
                                 onBack: onBack, onPrimary: onNext)
         }
     }

@@ -8,6 +8,8 @@ struct PaywallView: View {
 
     @State private var selectedID: String?
     @State private var purchasing = false
+    @State private var legalDoc: LegalDoc?
+    @State private var restoreMessage: String?
 
     private var benefits: [(MascotKind, String)] {
         [(.flower, "block the apps that hijack you"),
@@ -41,6 +43,25 @@ struct PaywallView: View {
         .onChange(of: subscriptionManager.plans.count) { _, _ in
             if selectedID == nil { selectedID = subscriptionManager.plans.first?.id }
         }
+        .sheet(item: $legalDoc) { doc in
+            if doc == .privacy { PrivacyPolicyView() } else { TermsOfServiceView() }
+        }
+        .alert("Restore Purchases", isPresented: Binding(get: { restoreMessage != nil }, set: { if !$0 { restoreMessage = nil } })) {
+            Button("OK", role: .cancel) { restoreMessage = nil }
+        } message: {
+            Text(restoreMessage ?? "")
+        }
+    }
+
+    private func restore() {
+        Task {
+            try? await subscriptionManager.restore()
+            if subscriptionManager.isPremium {
+                onDismiss()
+            } else {
+                restoreMessage = "No purchase found for this Apple ID."
+            }
+        }
     }
 
     private var topBar: some View {
@@ -70,7 +91,7 @@ struct PaywallView: View {
                 .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).stroke(Theme.ink, lineWidth: Theme.borderWidth))
                 .background(RoundedRectangle(cornerRadius: 24, style: .continuous).fill(Theme.ink).offset(y: Theme.shadowOffset))
             HStack(spacing: 6) {
-                Text("✦").foregroundStyle(Theme.orange)
+                Image(systemName: "sparkles").foregroundStyle(Theme.orange)
                 Text("MORNING CLUB")
                     .font(AppFont.bodyBold(15))
                     .tracking(1.5)
@@ -200,12 +221,12 @@ struct PaywallView: View {
     }
 
     private var legalRow: some View {
-        HStack(spacing: 18) {
-            Button("Restore Purchases") { Task { try? await subscriptionManager.restore() } }
+        HStack(spacing: 16) {
+            Button("Restore Purchases") { restore() }
             Text("·")
-            Link("Privacy Policy", destination: URL(string: "https://briefly.live/honestly/privacy-policy")!)
+            Button("Privacy Policy") { legalDoc = .privacy }
             Text("·")
-            Link("Terms", destination: URL(string: "https://briefly.live/honestly/terms-of-service")!)
+            Button("Terms of Service") { legalDoc = .terms }
         }
         .font(AppFont.caption(13))
         .foregroundStyle(Theme.inkFaint)

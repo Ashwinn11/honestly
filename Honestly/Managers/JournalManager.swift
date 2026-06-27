@@ -135,16 +135,52 @@ class JournalManager: ObservableObject {
 
     // MARK: - Data
 
+    /// Delete a single entry (long-press in the journal). Deletes individually so
+    /// CloudKit mirrors the removal. If it was today's, re-open today's ritual.
+    func delete(_ entry: JournalEntry) {
+        let request = NSFetchRequest<NSManagedObject>(entityName: "JournalEntry")
+        let objs = (try? context.fetch(request)) ?? []
+        for o in objs where (o.value(forKey: "id") as? UUID) == entry.id {
+            context.delete(o)
+        }
+        try? context.save()
+        if Calendar.current.isDateInToday(entry.date) {
+            defaults?.set(false, forKey: AppConstants.keyTodayCompleted)
+        }
+        reload()
+    }
+
+    /// Insert backed-up entries that aren't already present (restore from iCloud).
+    func restore(from backup: [JournalEntry]) {
+        let existing = Set(entries.map { $0.id })
+        for e in backup where !existing.contains(e.id) {
+            let obj = NSEntityDescription.insertNewObject(forEntityName: "JournalEntry", into: context)
+            obj.setValue(e.id, forKey: "id")
+            obj.setValue(e.content, forKey: "content")
+            obj.setValue(e.gratitude, forKey: "gratitude")
+            obj.setValue(e.mood.rawValue, forKey: "mood")
+            obj.setValue(e.date, forKey: "createdAt")
+            obj.setValue(Int64(e.wordCount), forKey: "wordCount")
+        }
+        try? context.save()
+        reload()
+    }
+
+    /// Full wipe — removes every entry AND resets onboarding so the user lands
+    /// back on the welcome flow. Deletes objects individually so CloudKit mirrors it.
     func deleteAllData() {
-        let request = NSFetchRequest<NSFetchRequestResult>(entityName: "JournalEntry")
-        let delete = NSBatchDeleteRequest(fetchRequest: request)
-        _ = try? context.execute(delete)
+        let request = NSFetchRequest<NSManagedObject>(entityName: "JournalEntry")
+        let objs = (try? context.fetch(request)) ?? []
+        objs.forEach(context.delete)
         try? context.save()
 
         [AppConstants.keyTodayCompleted, AppConstants.keyLastCompletionDate,
          AppConstants.keySproutCount, AppConstants.widgetKeyMood, AppConstants.widgetKeyJournal,
-         AppConstants.widgetKeyGratitude, AppConstants.widgetKeyDate]
+         AppConstants.widgetKeyGratitude, AppConstants.widgetKeyDate,
+         AppConstants.keyHasCompletedOnboarding, AppConstants.keyHasSeenPaywall,
+         AppConstants.keyUserOutcome, AppConstants.keyUserName, AppConstants.keyScrollMinutes]
             .forEach { defaults?.removeObject(forKey: $0) }
+        defaults?.synchronize()
 
         reload()
         isCompletedToday = false

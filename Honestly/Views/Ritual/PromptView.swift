@@ -52,17 +52,14 @@ struct PromptView: View {
 
     private var promptCard: some View {
         AppCard(padding: 18) {
-            HStack(alignment: .center, spacing: 14) {
-                PlantView(stage: .sprout, size: 44)
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("TODAY'S PROMPT")
-                        .font(AppFont.captionBold(13))
-                        .foregroundStyle(Theme.inkFaint)
-                        .tracking(1)
-                    Text(prompt)
-                        .font(AppFont.accent(19))
-                        .foregroundStyle(Theme.ink)
-                }
+            VStack(alignment: .leading, spacing: 6) {
+                Text("TODAY'S PROMPT")
+                    .font(AppFont.captionBold(13))
+                    .foregroundStyle(Theme.inkFaint)
+                    .tracking(1)
+                Text(prompt)
+                    .font(AppFont.accent(19))
+                    .foregroundStyle(Theme.ink)
             }
         }
     }
@@ -106,8 +103,9 @@ struct PromptView: View {
                 Spacer()
             }
             // No gate — always tappable. Styling only reflects encouragement.
-            PrimaryButton(title: "next: gratitude 💛",
+            PrimaryButton(title: "next: gratitude",
                           fill: encouraged ? Theme.orange : Theme.dark,
+                          icon: "heart.fill",
                           action: onNext)
         }
         .padding(.horizontal, 24)

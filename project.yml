@@ -21,11 +21,10 @@ packages:
 
 # Reused font list (app + widget both register these).
 .fonts: &appFonts
-  - Outfit-Regular.ttf
-  - Outfit-Medium.ttf
-  - Outfit-SemiBold.ttf
-  - Outfit-Bold.ttf
-  - Outfit-ExtraBold.ttf
+  - LTSaeada-Regular.otf
+  - LTSaeada-Medium.otf
+  - LTSaeada-SemiBold.otf
+  - LTSaeada-Bold.otf
   - Caveat-Regular.ttf
   - Caveat-Medium.ttf
   - Caveat-SemiBold.ttf

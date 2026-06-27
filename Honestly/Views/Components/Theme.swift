@@ -48,16 +48,15 @@ enum Theme {
 // MARK: - Typography
 
 /// Fonts are referenced by exact PostScript face name (no `.weight()` synthesis),
-/// because the static Outfit/Caveat weights ship as separate font families.
+/// because the static LTSaeada/Caveat weights ship as separate font families.
 enum AppFont {
     // PostScript faces (registered via UIAppFonts in the app + widget targets).
-    private static func outfit(_ weight: Font.Weight) -> String {
+    private static func ltSaeada(_ weight: Font.Weight) -> String {
         switch weight {
-        case .medium:            return "Outfit-Medium"
-        case .semibold:          return "Outfit-SemiBold"
-        case .bold:              return "Outfit-Bold"
-        case .heavy, .black:     return "Outfit-ExtraBold"
-        default:                 return "Outfit-Regular"
+        case .medium:                   return "LTSaeada-Medium"
+        case .semibold:                 return "LTSaeada-SemiBold"
+        case .bold, .heavy, .black:     return "LTSaeada-Bold"
+        default:                        return "LTSaeada-Regular"
         }
     }
     private static func caveat(_ weight: Font.Weight) -> String {
@@ -70,14 +69,14 @@ enum AppFont {
     }
 
     static func sans(_ size: CGFloat, _ weight: Font.Weight = .regular) -> Font {
-        .custom(outfit(weight), size: size)
+        .custom(ltSaeada(weight), size: size)
     }
     static func script(_ size: CGFloat, _ weight: Font.Weight = .regular) -> Font {
         .custom(caveat(weight), size: size)
     }
 
     // Semantic styles
-    static func display(_ size: CGFloat = 34) -> Font { sans(size, .heavy) }
+    static func display(_ size: CGFloat = 34) -> Font { sans(size, .bold) }
     static func title(_ size: CGFloat = 34)   -> Font { sans(size, .bold) }
     static func cardTitle(_ size: CGFloat = 26) -> Font { sans(size, .bold) }
     static func body(_ size: CGFloat = 16)    -> Font { sans(size, .regular) }
@@ -95,12 +94,16 @@ enum AppFont {
 // MARK: - View modifiers
 
 extension View {
-    /// Thick-border card with hard offset shadow — the signature surface.
+    /// Thick-border card with a hard offset shadow BELOW — the signature surface.
+    /// An opaque base sits under `fill` so translucent tints (e.g. selected state)
+    /// can't let the black shadow bleed through the whole card (which read as a
+    /// shadow on the wrong side).
     func appCardStyle(radius: CGFloat = Theme.cardRadius,
                       fill: Color = Theme.card,
                       borderColor: Color = Theme.ink) -> some View {
         self
-            .background(fill)
+            .background(fill)                       // tint directly behind content
+            .background(Theme.card)                 // opaque base blocks shadow bleed
             .clipShape(RoundedRectangle(cornerRadius: radius, style: .continuous))
             .overlay(
                 RoundedRectangle(cornerRadius: radius, style: .continuous)
@@ -109,7 +112,7 @@ extension View {
             .background(
                 RoundedRectangle(cornerRadius: radius, style: .continuous)
                     .fill(Theme.ink)
-                    .offset(x: 0, y: Theme.shadowOffset)
+                    .offset(y: Theme.shadowOffset)  // +y = below
             )
     }
 }

@@ -81,27 +81,30 @@ struct SmallWidgetView: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
                 Text("honestly")
-                    .font(.custom("Caveat", size: 14).weight(.semibold))
+                    .font(.custom("Caveat-SemiBold", size: 14))
                     .foregroundStyle(Color(hex: "#FF6B00"))
                 Spacer()
-                Text(entry.isCompletedToday ? "✓" : "")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(Color(hex: "#D1E4A5"))
+                if entry.isCompletedToday {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 12, weight: .bold))
+                        .foregroundStyle(Color(hex: "#D1E4A5"))
+                }
             }
 
             Spacer()
 
-            Text(plantEmoji(for: entry.stageName))
-                .font(.system(size: 36))
+            Image(systemName: plantSymbol(for: entry.stageName))
+                .font(.system(size: 32))
+                .foregroundStyle(Color(hex: "#D1E4A5"))
 
             Spacer()
 
             Text("\(entry.sproutCount) sprouts")
-                .font(.custom("Outfit", size: 12).weight(.semibold))
+                .font(.custom("LTSaeada-SemiBold", size: 12))
                 .foregroundStyle(Color(hex: "#1C1C1C").opacity(0.5))
 
-            Text(entry.isCompletedToday ? "Done today ✓" : "Ritual waiting")
-                .font(.custom("Outfit", size: 13).weight(.bold))
+            Text(entry.isCompletedToday ? "Done today" : "Ritual waiting")
+                .font(.custom("LTSaeada-Bold", size: 13))
                 .foregroundStyle(Color(hex: "#1C1C1C"))
         }
         .padding(14)
@@ -118,15 +121,19 @@ struct MediumWidgetView: View {
     var body: some View {
         HStack(spacing: 16) {
             VStack(alignment: .leading, spacing: 8) {
-                Text("✦ honestly")
-                    .font(.custom("Caveat", size: 16).weight(.semibold))
-                    .foregroundStyle(Color(hex: "#FF6B00"))
+                HStack(spacing: 5) {
+                    Image(systemName: "sparkles").font(.system(size: 12))
+                    Text("honestly")
+                        .font(.custom("Caveat-SemiBold", size: 16))
+                }
+                .foregroundStyle(Color(hex: "#FF6B00"))
 
-                Text(plantEmoji(for: entry.stageName))
-                    .font(.system(size: 40))
+                Image(systemName: plantSymbol(for: entry.stageName))
+                    .font(.system(size: 36))
+                    .foregroundStyle(Color(hex: "#D1E4A5"))
 
                 Text("\(entry.sproutCount) sprouts · \(entry.stageName)")
-                    .font(.custom("Outfit", size: 12))
+                    .font(.custom("LTSaeada-Regular", size: 12))
                     .foregroundStyle(Color(hex: "#1C1C1C").opacity(0.5))
             }
             .frame(maxHeight: .infinity, alignment: .topLeading)
@@ -136,21 +143,21 @@ struct MediumWidgetView: View {
 
             VStack(alignment: .leading, spacing: 6) {
                 if entry.isCompletedToday {
-                    Text("Morning done ✓")
-                        .font(.custom("Outfit", size: 15).weight(.bold))
+                    Text("Morning done")
+                        .font(.custom("LTSaeada-Bold", size: 15))
                         .foregroundStyle(Color(hex: "#1C1C1C"))
                     if !entry.journalSnippet.isEmpty {
                         Text(entry.journalSnippet)
-                            .font(.custom("Outfit", size: 13))
+                            .font(.custom("LTSaeada-Regular", size: 13))
                             .foregroundStyle(Color(hex: "#1C1C1C").opacity(0.55))
                             .lineLimit(3)
                     }
                 } else {
                     Text("Ritual waiting")
-                        .font(.custom("Outfit", size: 15).weight(.bold))
+                        .font(.custom("LTSaeada-Bold", size: 15))
                         .foregroundStyle(Color(hex: "#1C1C1C"))
                     Text("Pick your mood. Write.\nBe grateful. Unlock.")
-                        .font(.custom("Outfit", size: 13))
+                        .font(.custom("LTSaeada-Regular", size: 13))
                         .foregroundStyle(Color(hex: "#1C1C1C").opacity(0.55))
                 }
             }
@@ -168,14 +175,14 @@ struct LockScreenWidgetView: View {
 
     var body: some View {
         HStack(spacing: 6) {
-            Text(plantEmoji(for: entry.stageName))
-                .font(.system(size: 16))
+            Image(systemName: plantSymbol(for: entry.stageName))
+                .font(.system(size: 14))
             Text("\(entry.sproutCount)")
-                .font(.custom("Outfit", size: 14).weight(.bold))
-            Text(entry.isCompletedToday ? "✓" : "·")
-                .font(.system(size: 12))
+                .font(.custom("LTSaeada-Bold", size: 14))
+            Image(systemName: entry.isCompletedToday ? "checkmark" : "circle.fill")
+                .font(.system(size: entry.isCompletedToday ? 11 : 5))
             Text(entry.isCompletedToday ? "Done" : "Open")
-                .font(.custom("Outfit", size: 13))
+                .font(.custom("LTSaeada-Regular", size: 13))
         }
     }
 }
@@ -225,12 +232,12 @@ struct HonestlyLockScreenWidget: Widget {
 
 // MARK: - Helpers
 
-private func plantEmoji(for stageName: String) -> String {
+private func plantSymbol(for stageName: String) -> String {
     switch stageName {
-    case "Young":     return "🌿"
-    case "Mature":    return "🌳"
-    case "Flowering": return "🌸"
-    default:          return "🌱"
+    case "Young":     return "leaf.fill"
+    case "Mature":    return "tree.fill"
+    case "Flowering": return "camera.macro"   // flower glyph
+    default:          return "leaf"
     }
 }
 

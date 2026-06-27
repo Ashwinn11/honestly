@@ -28,7 +28,8 @@ struct OnboardingNotificationsView: View {
 
             Spacer()
 
-            OnboardingBottomBar(stepIndex: stepIndex, primaryTitle: "yes, remind me 🔔",
+            OnboardingBottomBar(stepIndex: stepIndex, primaryTitle: "yes, remind me",
+                                primaryIcon: "bell.fill",
                                 secondaryTitle: "skip for now",
                                 onBack: onBack,
                                 onPrimary: {

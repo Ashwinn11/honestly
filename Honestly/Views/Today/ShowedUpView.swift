@@ -43,8 +43,12 @@ struct ShowedUpView: View {
     }
 
     private var speechBubble: some View {
-        Text("done! ✓")
-            .font(AppFont.accent(20))
+        HStack(spacing: 5) {
+            Text("done!")
+                .font(AppFont.accent(20))
+            Image(systemName: "checkmark")
+                .font(.system(size: 14, weight: .bold))
+        }
             .foregroundStyle(Theme.ink)
             .padding(.horizontal, 16).padding(.vertical, 10)
             .background(Theme.card)

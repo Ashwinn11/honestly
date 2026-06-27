@@ -26,11 +26,10 @@
 	<string>1</string>
 	<key>UIAppFonts</key>
 	<array>
-		<string>Outfit-Regular.ttf</string>
-		<string>Outfit-Medium.ttf</string>
-		<string>Outfit-SemiBold.ttf</string>
-		<string>Outfit-Bold.ttf</string>
-		<string>Outfit-ExtraBold.ttf</string>
+		<string>LTSaeada-Regular.otf</string>
+		<string>LTSaeada-Medium.otf</string>
+		<string>LTSaeada-SemiBold.otf</string>
+		<string>LTSaeada-Bold.otf</string>
 		<string>Caveat-Regular.ttf</string>
 		<string>Caveat-Medium.ttf</string>
 		<string>Caveat-SemiBold.ttf</string>

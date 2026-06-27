@@ -6,12 +6,13 @@ struct SettingsView: View {
     @EnvironmentObject var blockingManager: BlockingManager
     @EnvironmentObject var subscriptionManager: SubscriptionManager
 
-    @AppStorage(AppConstants.keyCloudSyncEnabled, store: UserDefaults(suiteName: AppConstants.appGroupIdentifier))
-    private var cloudSyncEnabled = true
-
     @State private var showAppPicker = false
     @State private var showPaywall = false
     @State private var showDeleteConfirm = false
+    @State private var showCloudOptions = false
+    @State private var cloudMessage: String?
+    @State private var cloudBusy = false
+    @State private var legalDoc: LegalDoc?
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -38,10 +39,23 @@ struct SettingsView: View {
                 }
 
                 section("iCloud backup") {
-                    SettingsToggleRow(icon: "icloud.fill", iconBG: Theme.sad,
-                                      title: "iCloud Sync",
-                                      subtitle: "keep your entries safe across devices.",
-                                      isOn: $cloudSyncEnabled)
+                    SettingsRow(icon: "icloud.fill", iconBG: Theme.sad,
+                                title: "iCloud Sync",
+                                subtitle: "back up or restore your entries.",
+                                accessory: .chevron) {
+                        showCloudOptions = true
+                    }
+                }
+
+                section("Legal") {
+                    SettingsRow(icon: "hand.raised.fill", iconBG: Theme.cry,
+                                title: "Privacy Policy", accessory: .chevron) {
+                        legalDoc = .privacy
+                    }
+                    SettingsRow(icon: "doc.text.fill", iconBG: Theme.confused,
+                                title: "Terms of Service", accessory: .chevron) {
+                        legalDoc = .terms
+                    }
                 }
 
                 section("Data") {
@@ -64,14 +78,63 @@ struct SettingsView: View {
             PaywallView { showPaywall = false }
                 .environmentObject(subscriptionManager)
         }
+        .sheet(item: $legalDoc) { doc in
+            if doc == .privacy { PrivacyPolicyView() } else { TermsOfServiceView() }
+        }
         .confirmationDialog("Delete all data?", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
             Button("Delete everything", role: .destructive) {
                 journalManager.deleteAllData()
                 blockingManager.stopBlocking()
+                blockingManager.stopMonitoring()
             }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("This removes all journal entries, streaks, and plant progress. This can't be undone.")
+            Text("This removes all journal entries, streaks, and plant progress, and returns you to the start. This can't be undone.")
+        }
+        .confirmationDialog("iCloud", isPresented: $showCloudOptions, titleVisibility: .visible) {
+            Button("Back up now") { backUp() }
+            Button("Restore from backup") { restore() }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Back up your entries to iCloud, or restore from your latest backup.")
+        }
+        .alert("iCloud", isPresented: Binding(get: { cloudMessage != nil }, set: { if !$0 { cloudMessage = nil } })) {
+            Button("OK", role: .cancel) { cloudMessage = nil }
+        } message: {
+            Text(cloudMessage ?? "")
+        }
+        .onAppear { blockingManager.refreshAuthorizationStatus() }
+    }
+
+    private func backUp() {
+        guard !cloudBusy else { return }
+        cloudBusy = true
+        Task {
+            do {
+                try await BackupManager.shared.backUp(entries: journalManager.entries)
+                cloudMessage = "Backed up \(journalManager.entries.count) entries to iCloud."
+            } catch {
+                cloudMessage = "Backup failed. Check your iCloud connection."
+            }
+            cloudBusy = false
+        }
+    }
+
+    private func restore() {
+        guard !cloudBusy else { return }
+        cloudBusy = true
+        Task {
+            do {
+                if let backup = try await BackupManager.shared.latestBackup() {
+                    journalManager.restore(from: backup.entries)
+                    cloudMessage = "Restored \(backup.entries.count) entries from iCloud."
+                } else {
+                    cloudMessage = "No backup found in iCloud yet."
+                }
+            } catch {
+                cloudMessage = "Restore failed. Check your iCloud connection."
+            }
+            cloudBusy = false
         }
     }
 
@@ -91,26 +154,37 @@ struct SettingsView: View {
         .padding(.horizontal, 24)
     }
 
+    // Real status: not-authorized → authorized-but-no-apps → active.
+    private enum BlockState { case needsAuth, needsApps, active }
+    private var blockState: BlockState {
+        if !blockingManager.isAuthorized { return .needsAuth }
+        if blockingManager.selectedCount == 0 { return .needsApps }
+        return .active
+    }
+
     private var statusCard: some View {
-        let approved = blockingManager.authorizationStatus == .approved
-        return Button {
-            if !approved { Task { await blockingManager.requestAuthorization() } }
+        Button {
+            switch blockState {
+            case .needsAuth: Task { await blockingManager.requestAuthorization() }
+            case .needsApps: if subscriptionManager.isPremium { showAppPicker = true } else { showPaywall = true }
+            case .active:    showAppPicker = true
+            }
         } label: {
             AppCard(padding: 20) {
                 HStack(spacing: 16) {
                     Mascot(kind: .sun, size: 56)
                     VStack(alignment: .leading, spacing: 6) {
                         HStack(spacing: 8) {
-                            Text(approved ? "you're all set." : "you're all clear.")
+                            Text(statusTitle)
                                 .font(AppFont.cardTitle(22))
                                 .foregroundStyle(Theme.ink)
-                            Text(approved ? "active" : "ready")
+                            Text(statusBadge)
                                 .font(AppFont.accent(15))
                                 .foregroundStyle(Theme.orange)
                                 .padding(.horizontal, 10).padding(.vertical, 3)
                                 .overlay(Capsule().stroke(Theme.orange, lineWidth: 1.5))
                         }
-                        Text(approved ? "blocking is ready for tomorrow morning." : "enable screen time to get started.")
+                        Text(statusSubtitle)
                             .font(AppFont.accent(16))
                             .foregroundStyle(Theme.inkFaint)
                     }
@@ -120,6 +194,24 @@ struct SettingsView: View {
         }
         .buttonStyle(.plain)
         .padding(.horizontal, 20)
+    }
+
+    private var statusTitle: String {
+        switch blockState {
+        case .needsAuth: return "you're all clear."
+        case .needsApps: return "almost there."
+        case .active:    return "you're all set."
+        }
+    }
+    private var statusBadge: String {
+        blockState == .active ? "active" : "ready"
+    }
+    private var statusSubtitle: String {
+        switch blockState {
+        case .needsAuth: return "enable screen time to get started."
+        case .needsApps: return "choose the apps to block each morning."
+        case .active:    return "blocking \(blockingManager.selectedCount) app\(blockingManager.selectedCount == 1 ? "" : "s") until you journal."
+        }
     }
 
     private var aboutFooter: some View {
@@ -202,34 +294,6 @@ private struct SettingsRow: View {
             .appCardStyle()
         }
         .buttonStyle(.plain)
-    }
-}
-
-private struct SettingsToggleRow: View {
-    let icon: String
-    let iconBG: Color
-    let title: String
-    var subtitle: String? = nil
-    @Binding var isOn: Bool
-
-    var body: some View {
-        HStack(spacing: 14) {
-            IconBadge(icon: icon, bg: iconBG)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(AppFont.bodyBold(17))
-                    .foregroundStyle(Theme.ink)
-                if let subtitle {
-                    Text(subtitle)
-                        .font(AppFont.accent(15))
-                        .foregroundStyle(Theme.inkFaint)
-                }
-            }
-            Spacer()
-            Toggle("", isOn: $isOn).labelsHidden().tint(Theme.orange)
-        }
-        .padding(16)
-        .appCardStyle()
     }
 }
 

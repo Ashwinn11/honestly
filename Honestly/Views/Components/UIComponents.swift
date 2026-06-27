@@ -42,21 +42,43 @@ struct PrimaryButton: View {
     let title: String
     var fill: Color = Theme.orange
     var textColor: Color = .white
+    var icon: String? = nil            // trailing SF Symbol
     let action: () -> Void
 
     var body: some View {
         Button(action: action) {
-            Text(title)
-                .font(AppFont.button())
-                .foregroundStyle(textColor)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 18)
-                .background(fill)
-                .clipShape(Capsule(style: .continuous))
-                .overlay(Capsule(style: .continuous).stroke(Theme.ink, lineWidth: Theme.borderWidth))
-                .background(Capsule(style: .continuous).fill(Theme.ink).offset(y: Theme.shadowOffset))
+            HStack(spacing: 8) {
+                Text(title)
+                if let icon {
+                    Image(systemName: icon).font(.system(size: 16, weight: .bold))
+                }
+            }
+            .font(AppFont.button())
+            .foregroundStyle(textColor)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 18)
+            .background(fill)
+            .clipShape(Capsule(style: .continuous))
+            .overlay(Capsule(style: .continuous).stroke(Theme.ink, lineWidth: Theme.borderWidth))
+            .background(Capsule(style: .continuous).fill(Theme.ink).offset(y: Theme.shadowOffset))
         }
         .buttonStyle(.plain)
+    }
+}
+
+/// Eyebrow accent with a leading SF Symbol instead of an emoji.
+struct IconEyebrow: View {
+    let icon: String
+    let text: String
+    var color: Color = Theme.orange
+    var size: CGFloat = 18
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Image(systemName: icon).font(.system(size: size * 0.8, weight: .semibold))
+            Eyebrow(text, color: color, size: size)
+        }
+        .foregroundStyle(color)
     }
 }
 

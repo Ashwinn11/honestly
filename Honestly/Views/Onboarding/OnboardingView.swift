@@ -71,12 +71,12 @@ struct OnboardingView: View {
 
 // MARK: - Shared onboarding header (STRICT structure)
 // Every onboarding screen uses this so the rhythm is identical:
-//   1. orange Caveat eyebrow   2. Outfit headline   3. optional sub copy
+//   1. orange Caveat eyebrow   2. LT Saeada headline   3. optional sub copy
 struct OnboardingHeader: View {
     let eyebrow: String
     let title: String
     var subtitle: String? = nil
-    var subtitleScript: Bool = false        // Caveat (true) vs Outfit (false)
+    var subtitleScript: Bool = false        // Caveat (true) vs LT Saeada (false)
     var alignment: HorizontalAlignment = .leading
     var titleSize: CGFloat = 30
 
@@ -107,6 +107,7 @@ struct OnboardingBottomBar: View {
     let stepIndex: Int
     var showBack = true
     var primaryTitle: String
+    var primaryIcon: String? = nil    // trailing SF Symbol
     var primaryFilled = true          // orange vs dark
     var secondaryTitle: String? = nil
     var onBack: () -> Void = {}

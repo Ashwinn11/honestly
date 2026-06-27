@@ -67,7 +67,8 @@ struct WeekCalendarView: View {
 
     private var weekdayHeader: some View {
         HStack(spacing: 0) {
-            ForEach(weekdaySymbols, id: \.self) { d in
+            // Index as id — letters repeat (S, T) so \.self would collide.
+            ForEach(Array(weekdaySymbols.enumerated()), id: \.offset) { _, d in
                 Text(d)
                     .font(AppFont.caption(12))
                     .foregroundStyle(Theme.inkFaint)

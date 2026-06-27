@@ -2,7 +2,6 @@ import SwiftUI
 
 struct JournalView: View {
     @EnvironmentObject var journalManager: JournalManager
-    @State private var searching = false
     @State private var query = ""
 
     private var days: [JournalDay] {
@@ -16,55 +15,39 @@ struct JournalView: View {
 
     var body: some View {
         NavigationStack {
-            ZStack {
-                Theme.pageBackground
-                ScrollView(showsIndicators: false) {
-                    VStack(alignment: .leading, spacing: 22) {
-                        header
-                        if searching { searchField }
-                        SproutCollectionCard()
-                            .padding(.horizontal, 20)
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 22) {
+                    header
+                    SproutCollectionCard()
+                        .padding(.horizontal, 20)
 
-                        ForEach(days) { day in
-                            daySection(day)
-                        }
-                        Spacer(minLength: 120)
+                    ForEach(days) { day in
+                        daySection(day)
                     }
-                    .padding(.top, 8)
+                    Spacer(minLength: 120)
                 }
+                .padding(.top, 8)
             }
-            .navigationBarHidden(true)
+            .background(Theme.pageBackground)
+            .navigationTitle("")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(Theme.bg, for: .navigationBar)
+            // Native iOS search bar (correct contrast, replaces the broken custom one).
+            .searchable(text: $query,
+                        placement: .navigationBarDrawer(displayMode: .always),
+                        prompt: "search your mornings")
         }
     }
 
     private var header: some View {
-        HStack(alignment: .top) {
-            VStack(alignment: .leading, spacing: 0) {
-                Eyebrow("your little book of", size: 18)
-                Text("mornings")
-                    .font(AppFont.title(34))
-                    .foregroundStyle(Theme.ink)
-            }
-            Spacer()
-            Button { withAnimation { searching.toggle() } } label: {
-                Image(systemName: searching ? "xmark" : "magnifyingglass")
-                    .font(.system(size: 17, weight: .bold))
-                    .foregroundStyle(Theme.ink)
-                    .frame(width: 50, height: 50)
-                    .background(Theme.card).clipShape(Circle())
-                    .overlay(Circle().stroke(Theme.ink, lineWidth: Theme.borderWidth))
-            }
-            .buttonStyle(.plain)
+        VStack(alignment: .leading, spacing: 0) {
+            Eyebrow("your little book of", size: 18)
+            Text("mornings")
+                .font(AppFont.title(34))
+                .foregroundStyle(Theme.ink)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 24)
-    }
-
-    private var searchField: some View {
-        TextField("search your mornings…", text: $query)
-            .font(AppFont.body(16))
-            .padding(.horizontal, 16).padding(.vertical, 12)
-            .appCardStyle(radius: 16, fill: Theme.card)
-            .padding(.horizontal, 24)
     }
 
     private func daySection(_ day: JournalDay) -> some View {
@@ -86,6 +69,13 @@ struct JournalView: View {
                 }
                 .buttonStyle(.plain)
                 .padding(.horizontal, 20)
+                .contextMenu {
+                    Button(role: .destructive) {
+                        withAnimation { journalManager.delete(entry) }
+                    } label: {
+                        Label("Delete entry", systemImage: "trash")
+                    }
+                }
             }
         }
     }
@@ -120,7 +110,9 @@ private struct EntryRow: View {
                         .multilineTextAlignment(.leading)
                     if !entry.gratitude.isEmpty {
                         HStack(spacing: 5) {
-                            Text("❤️").font(.system(size: 12))
+                            Image(systemName: "heart.fill")
+                                .font(.system(size: 11))
+                                .foregroundStyle(Theme.orange)
                             Text(entry.gratitude)
                                 .font(AppFont.body(14))
                                 .foregroundStyle(Theme.inkFaint)

@@ -65,36 +65,26 @@ struct JournalEntryDetailView: View {
         ZStack(alignment: .topLeading) {
             LinedPaper()
             VStack(alignment: .leading, spacing: 12) {
-                Eyebrow("📖 THIS MORNING", size: 17)
+                IconEyebrow(icon: "book.fill", text: "THIS MORNING", size: 17)
                 Text(entry.content.isEmpty ? "—" : entry.content)
                     .font(AppFont.body(17))
                     .foregroundStyle(Theme.ink)
                     .lineSpacing(14)
             }
             .padding(20)
-            PlantView(stage: .sprout, size: 44)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
-                .padding(8)
-                .allowsHitTesting(false)
         }
         .appCardStyle(fill: Theme.card)
     }
 
     private var gratitudeCard: some View {
-        ZStack(alignment: .topLeading) {
-            VStack(alignment: .leading, spacing: 12) {
-                Eyebrow("❤️ GRATEFUL FOR", size: 17)
-                Text(entry.gratitude.isEmpty ? "—" : entry.gratitude)
-                    .font(AppFont.body(17))
-                    .foregroundStyle(Theme.ink)
-                    .lineSpacing(8)
-            }
-            .padding(20)
-            Mascot(kind: .flower, size: 42)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
-                .padding(8)
-                .allowsHitTesting(false)
+        VStack(alignment: .leading, spacing: 12) {
+            IconEyebrow(icon: "heart.fill", text: "GRATEFUL FOR", size: 17)
+            Text(entry.gratitude.isEmpty ? "—" : entry.gratitude)
+                .font(AppFont.body(17))
+                .foregroundStyle(Theme.ink)
+                .lineSpacing(8)
         }
+        .padding(20)
         .frame(maxWidth: .infinity, alignment: .leading)
         .appCardStyle(fill: Theme.gratitude)
     }

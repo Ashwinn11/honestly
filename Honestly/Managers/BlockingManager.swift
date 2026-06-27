@@ -34,6 +34,19 @@ class BlockingManager: ObservableObject {
         }
     }
 
+    /// Re-read live status (call on Settings appear — granting happens in a system UI).
+    func refreshAuthorizationStatus() {
+        authorizationStatus = center.authorizationStatus
+        loadSelection()
+    }
+
+    var isAuthorized: Bool { authorizationStatus == .approved }
+
+    /// How many apps/categories the user picked to block.
+    var selectedCount: Int {
+        selection.applicationTokens.count + selection.categoryTokens.count
+    }
+
     func saveSelection(_ newSelection: FamilyActivitySelection) {
         selection = newSelection
         if let data = try? JSONEncoder().encode(newSelection) {

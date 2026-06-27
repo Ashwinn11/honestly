@@ -14,7 +14,7 @@ class NotificationManager {
         center.removePendingNotificationRequests(withIdentifiers: ["morning-reminder"])
 
         let content = UNMutableNotificationContent()
-        content.title = "Good morning ☀️"
+        content.title = "Good morning"
         content.body = "Your ritual is waiting. 5 minutes before the scroll."
         content.sound = .default
 

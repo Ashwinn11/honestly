@@ -6,6 +6,7 @@ struct TodayView: View {
 
     @State private var ritualMood: Mood?
     @State private var detailEntry: JournalEntry?
+    @State private var showGarden = false
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -37,6 +38,10 @@ struct TodayView: View {
         .sheet(item: $detailEntry) { entry in
             JournalEntryDetailView(entry: entry)
         }
+        .sheet(isPresented: $showGarden) {
+            GardenStagesView(currentStage: journalManager.currentStage)
+                .presentationDetents([.medium, .large])
+        }
     }
 
     private var header: some View {
@@ -48,12 +53,16 @@ struct TodayView: View {
                     .foregroundStyle(Theme.ink)
             }
             Spacer()
-            HStack(spacing: 8) {
-                PlantView(stage: journalManager.currentStage, size: 52)
-                Text("\(journalManager.sproutCount)")
-                    .font(AppFont.title(28))
-                    .foregroundStyle(Theme.ink)
+            // Tap the pot/streak to open the garden-stages guide.
+            Button { showGarden = true } label: {
+                HStack(spacing: 8) {
+                    PlantView(stage: journalManager.currentStage, size: 52)
+                    Text("\(journalManager.sproutCount)")
+                        .font(AppFont.title(28))
+                        .foregroundStyle(Theme.ink)
+                }
             }
+            .buttonStyle(.plain)
         }
         .padding(.horizontal, 24)
     }
