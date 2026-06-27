@@ -48,15 +48,15 @@ enum Theme {
 // MARK: - Typography
 
 /// Fonts are referenced by exact PostScript face name (no `.weight()` synthesis),
-/// because the static LTSaeada/Caveat weights ship as separate font families.
+/// because the static Outfit/Caveat weights ship as separate font families.
 enum AppFont {
     // PostScript faces (registered via UIAppFonts in the app + widget targets).
-    private static func ltSaeada(_ weight: Font.Weight) -> String {
+    private static func outfit(_ weight: Font.Weight) -> String {
         switch weight {
-        case .medium:                   return "LTSaeada-Medium"
-        case .semibold:                 return "LTSaeada-SemiBold"
-        case .bold, .heavy, .black:     return "LTSaeada-Bold"
-        default:                        return "LTSaeada-Regular"
+        case .medium:               return "Outfit-Medium"
+        // Bold not used — SemiBold is the heaviest weight.
+        case .semibold, .bold, .heavy, .black: return "Outfit-SemiBold"
+        default:                    return "Outfit-Regular"
         }
     }
     private static func caveat(_ weight: Font.Weight) -> String {
@@ -68,11 +68,26 @@ enum AppFont {
         }
     }
 
+    // Outfit reads large per point (tall metrics), so big sizes were oversized.
+    // Dampen: shrink large sizes more than small ones, keeping body readable
+    // while bringing titles/headlines down. Tune `dampen` to taste.
+    private static func dampen(_ size: CGFloat) -> CGFloat {
+        switch size {
+        case ..<14:   return size * 0.96   // captions stay readable
+        case ..<20:   return size * 0.90   // body / buttons
+        case ..<28:   return size * 0.84   // card titles / options
+        default:      return size * 0.78   // big titles / headlines
+        }
+    }
+
+    // `fixedSize` = absolute points, NOT scaled by the device Text Size / Dynamic
+    // Type setting — so the layout stays as designed instead of ballooning.
     static func sans(_ size: CGFloat, _ weight: Font.Weight = .regular) -> Font {
-        .custom(ltSaeada(weight), size: size)
+        .custom(outfit(weight), fixedSize: dampen(size))
     }
     static func script(_ size: CGFloat, _ weight: Font.Weight = .regular) -> Font {
-        .custom(caveat(weight), size: size)
+        // Caveat already reads small; only a light trim.
+        .custom(caveat(weight), fixedSize: size * 0.95)
     }
 
     // Semantic styles

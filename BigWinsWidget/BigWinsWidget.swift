@@ -100,11 +100,11 @@ struct SmallWidgetView: View {
             Spacer()
 
             Text("\(entry.sproutCount) sprouts")
-                .font(.custom("LTSaeada-SemiBold", size: 12))
+                .font(.custom("Outfit-SemiBold", size: 12))
                 .foregroundStyle(Color(hex: "#1C1C1C").opacity(0.5))
 
             Text(entry.isCompletedToday ? "Done today" : "Ritual waiting")
-                .font(.custom("LTSaeada-Bold", size: 13))
+                .font(.custom("Outfit-Medium", size: 13))
                 .foregroundStyle(Color(hex: "#1C1C1C"))
         }
         .padding(14)
@@ -133,7 +133,7 @@ struct MediumWidgetView: View {
                     .foregroundStyle(Color(hex: "#D1E4A5"))
 
                 Text("\(entry.sproutCount) sprouts · \(entry.stageName)")
-                    .font(.custom("LTSaeada-Regular", size: 12))
+                    .font(.custom("Outfit-Regular", size: 12))
                     .foregroundStyle(Color(hex: "#1C1C1C").opacity(0.5))
             }
             .frame(maxHeight: .infinity, alignment: .topLeading)
@@ -144,20 +144,20 @@ struct MediumWidgetView: View {
             VStack(alignment: .leading, spacing: 6) {
                 if entry.isCompletedToday {
                     Text("Morning done")
-                        .font(.custom("LTSaeada-Bold", size: 15))
+                        .font(.custom("Outfit-Medium", size: 15))
                         .foregroundStyle(Color(hex: "#1C1C1C"))
                     if !entry.journalSnippet.isEmpty {
                         Text(entry.journalSnippet)
-                            .font(.custom("LTSaeada-Regular", size: 13))
+                            .font(.custom("Outfit-Regular", size: 13))
                             .foregroundStyle(Color(hex: "#1C1C1C").opacity(0.55))
                             .lineLimit(3)
                     }
                 } else {
                     Text("Ritual waiting")
-                        .font(.custom("LTSaeada-Bold", size: 15))
+                        .font(.custom("Outfit-Medium", size: 15))
                         .foregroundStyle(Color(hex: "#1C1C1C"))
                     Text("Pick your mood. Write.\nBe grateful. Unlock.")
-                        .font(.custom("LTSaeada-Regular", size: 13))
+                        .font(.custom("Outfit-Regular", size: 13))
                         .foregroundStyle(Color(hex: "#1C1C1C").opacity(0.55))
                 }
             }
@@ -178,11 +178,11 @@ struct LockScreenWidgetView: View {
             Image(systemName: plantSymbol(for: entry.stageName))
                 .font(.system(size: 14))
             Text("\(entry.sproutCount)")
-                .font(.custom("LTSaeada-Bold", size: 14))
+                .font(.custom("Outfit-Medium", size: 14))
             Image(systemName: entry.isCompletedToday ? "checkmark" : "circle.fill")
                 .font(.system(size: entry.isCompletedToday ? 11 : 5))
             Text(entry.isCompletedToday ? "Done" : "Open")
-                .font(.custom("LTSaeada-Regular", size: 13))
+                .font(.custom("Outfit-Regular", size: 13))
         }
     }
 }

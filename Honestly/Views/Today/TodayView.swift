@@ -26,10 +26,11 @@ struct TodayView: View {
                 }
                 .padding(.horizontal, 16)
 
-                Spacer(minLength: 120)
+                Spacer(minLength: 40)
             }
             .padding(.top, 8)
         }
+        .background(Theme.pageBackground)
         .fullScreenCover(item: $ritualMood) { mood in
             RitualContainerView(mood: mood)
                 .environmentObject(journalManager)

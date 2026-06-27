@@ -10,19 +10,15 @@ struct OnboardingNotificationsView: View {
             Spacer()
 
             VStack(spacing: 24) {
-                ZStack(alignment: .topTrailing) {
-                    PlantView(stage: .young, size: 120)
-                        .padding(28)
-                        .appCardStyle(fill: Theme.card)
-                    Mascot(kind: .clover, size: 30).offset(x: 8, y: -8)
-                }
+                PlantView(stage: .young, size: 120)
+                    .padding(28)
+                    .appCardStyle(fill: Theme.card)
 
                 OnboardingHeader(eyebrow: "before you start —",
-                                 title: "we'll tap you\nbefore the scroll",
-                                 subtitle: "a gentle nudge each morning so\nhonestly opens first.",
+                                 title: "we'll tap you before the scroll",
+                                 subtitle: "a gentle nudge each morning so honestly opens first.",
                                  subtitleScript: true,
-                                 alignment: .center,
-                                 titleSize: 34)
+                                 alignment: .center)
                     .padding(.horizontal, 28)
             }
 

@@ -15,8 +15,7 @@ struct OnboardingPlantStagesView: View {
                 VStack(alignment: .leading, spacing: 24) {
                     OnboardingHeader(eyebrow: "take care of",
                                      title: "your little plant",
-                                     subtitle: "show up every morning and watch it bloom.\nmiss a day and it needs you back.",
-                                     titleSize: 32)
+                                     subtitle: "show up every morning and watch it bloom. miss a day and it needs you back.")
 
                     HStack(spacing: 8) {
                         ForEach(Array(stages.enumerated()), id: \.offset) { _, item in

@@ -2,26 +2,19 @@ import SwiftUI
 
 /// Today-tab content shown once the ritual is complete for the day.
 struct ShowedUpView: View {
+    @EnvironmentObject var journalManager: JournalManager
+
     var body: some View {
         VStack(spacing: 20) {
-            // Sun-with-friends scene + "done!" bubble
+            // The plant (current stage) + a "done!" bubble.
             ZStack(alignment: .topTrailing) {
                 Circle()
                     .fill(Theme.happy.opacity(0.55))
                     .overlay(Circle().stroke(Theme.ink, lineWidth: Theme.borderWidth))
                     .frame(width: 220, height: 220)
                     .overlay(
-                        VStack(spacing: 6) {
-                            Mascot(kind: .sun, size: 84)
-                            HStack(spacing: 14) {
-                                Mascot(kind: .flower, size: 46)
-                                Mascot(kind: .mushroom, size: 46)
-                            }
-                        }
+                        PlantView(stage: journalManager.currentStage, size: 130)
                     )
-                    .overlay(alignment: .bottomLeading) {
-                        Mascot(kind: .clover, size: 34).offset(x: -6, y: 6)
-                    }
 
                 speechBubble
                     .offset(x: 18, y: -8)

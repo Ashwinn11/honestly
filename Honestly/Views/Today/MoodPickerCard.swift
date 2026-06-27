@@ -7,13 +7,9 @@ struct MoodPickerCard: View {
     var body: some View {
         AppCard(padding: 22) {
             VStack(alignment: .leading, spacing: 16) {
-                HStack(alignment: .top) {
-                    Text("how's the inside\nweather today?")
-                        .font(AppFont.cardTitle())
-                        .foregroundStyle(Theme.ink)
-                    Spacer()
-                    Mascot(kind: .sun, size: 52)
-                }
+                Text("how's the inside\nweather today?")
+                    .font(AppFont.cardTitle())
+                    .foregroundStyle(Theme.ink)
 
                 Eyebrow("tap a mood to begin writing", size: 18)
 

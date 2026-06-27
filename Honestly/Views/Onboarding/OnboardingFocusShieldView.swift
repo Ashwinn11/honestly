@@ -17,18 +17,14 @@ struct OnboardingFocusShieldView: View {
         VStack(spacing: 0) {
             Spacer()
 
-            ZStack(alignment: .topTrailing) {
-                PlantView(stage: .mature, size: 120)
-                    .padding(28)
-                    .appCardStyle(fill: Theme.card)
-                Mascot(kind: .clover, size: 30).offset(x: 8, y: -8)
-            }
-            .padding(.bottom, 8)
+            PlantView(stage: .mature, size: 120)
+                .padding(28)
+                .appCardStyle(fill: Theme.card)
+                .padding(.bottom, 8)
 
             OnboardingHeader(eyebrow: "the whole point —",
-                             title: "let us guard your\nmorning peace",
-                             alignment: .center,
-                             titleSize: 32)
+                             title: "let us guard your morning peace",
+                             alignment: .center)
                 .padding(.top, 16)
 
             VStack(spacing: 12) {

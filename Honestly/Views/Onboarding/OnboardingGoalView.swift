@@ -35,7 +35,9 @@ struct OnboardingGoalView: View {
         let isSelected = selected == goal
         return Button { selected = goal } label: {
             VStack(alignment: .leading, spacing: 10) {
-                Mascot(kind: goal.mascot, size: 48)
+                Image(systemName: goal.icon)
+                    .font(.system(size: 30, weight: .semibold))
+                    .foregroundStyle(isSelected ? Theme.orange : Theme.ink)
                     .frame(height: 52, alignment: .bottomLeading)
                 Text(goal.displayName)
                     .font(AppFont.bodyBold(20))

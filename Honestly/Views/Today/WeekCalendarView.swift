@@ -19,10 +19,7 @@ struct WeekCalendarView: View {
                         .font(AppFont.bodyBold(17))
                         .foregroundStyle(Theme.ink)
                     Spacer()
-                    HStack(spacing: 4) {
-                        Eyebrow("your little garden", color: Theme.inkFaint, size: 16)
-                        Mascot(kind: .clover, size: 18)
-                    }
+                    Eyebrow("your little garden", color: Theme.inkFaint, size: 16)
                 }
 
                 // Month + controls

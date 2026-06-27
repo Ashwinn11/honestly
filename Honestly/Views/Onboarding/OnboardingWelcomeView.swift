@@ -33,11 +33,10 @@ struct OnboardingWelcomeView: View {
                 .opacity(appeared ? 1 : 0)
 
             OnboardingHeader(eyebrow: "good morning,",
-                             title: "welcome to your\ntiny morning ritual",
-                             subtitle: "your little morning letter\nto yourself.",
+                             title: "welcome to your tiny morning ritual",
+                             subtitle: "your little morning letter to yourself.",
                              subtitleScript: true,
-                             alignment: .center,
-                             titleSize: 34)
+                             alignment: .center)
                 .padding(.horizontal, 28)
                 .padding(.top, 28)
                 .opacity(appeared ? 1 : 0)

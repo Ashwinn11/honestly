@@ -9,13 +9,13 @@ enum Goal: String, CaseIterable, Codable, Identifiable {
     var id: String { rawValue }
     var displayName: String { rawValue.lowercased() }
 
-    /// Mascot used on the goal card.
-    var mascot: MascotKind {
+    /// SF Symbol shown on the goal option card.
+    var icon: String {
         switch self {
-        case .clarity: return .sun
-        case .peace:   return .clover
-        case .focus:   return .mushroom
-        case .energy:  return .flower
+        case .clarity: return "sun.max"
+        case .peace:   return "leaf"
+        case .focus:   return "scope"
+        case .energy:  return "bolt.fill"
         }
     }
 

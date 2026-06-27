@@ -3,6 +3,8 @@ import SwiftUI
 struct JournalView: View {
     @EnvironmentObject var journalManager: JournalManager
     @State private var query = ""
+    @State private var searching = false
+    @FocusState private var searchFocused: Bool
 
     private var days: [JournalDay] {
         if query.isEmpty { return journalManager.groupedByDay }
@@ -24,30 +26,65 @@ struct JournalView: View {
                     ForEach(days) { day in
                         daySection(day)
                     }
-                    Spacer(minLength: 120)
+                    Spacer(minLength: 40)
                 }
                 .padding(.top, 8)
             }
             .background(Theme.pageBackground)
-            .navigationTitle("")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(Theme.bg, for: .navigationBar)
-            // Native iOS search bar (correct contrast, replaces the broken custom one).
-            .searchable(text: $query,
-                        placement: .navigationBarDrawer(displayMode: .always),
-                        prompt: "search your mornings")
+            .navigationBarHidden(true)
         }
     }
 
-    private var header: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Eyebrow("your little book of", size: 18)
-            Text("mornings")
-                .font(AppFont.title(34))
-                .foregroundStyle(Theme.ink)
+    // Title row, or — when the search icon is tapped — a search field in its place.
+    @ViewBuilder private var header: some View {
+        if searching { searchField } else { titleRow }
+    }
+
+    private var titleRow: some View {
+        HStack(alignment: .top) {
+            VStack(alignment: .leading, spacing: 0) {
+                Eyebrow("your little book of", size: 18)
+                Text("mornings")
+                    .font(AppFont.title(34))
+                    .foregroundStyle(Theme.ink)
+            }
+            Spacer()
+            Button { withAnimation { searching = true } } label: {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 17, weight: .bold))
+                    .foregroundStyle(Theme.ink)
+                    .frame(width: 50, height: 50)
+                    .background(Theme.card).clipShape(Circle())
+                    .overlay(Circle().stroke(Theme.ink, lineWidth: Theme.borderWidth))
+            }
+            .buttonStyle(.plain)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 24)
+    }
+
+    private var searchField: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "magnifyingglass")
+                .foregroundStyle(Theme.inkFaint)
+            TextField("search your mornings", text: $query)
+                .font(AppFont.body(17))
+                .foregroundStyle(Theme.ink)        // dark text — visible on the light field
+                .tint(Theme.orange)
+                .submitLabel(.search)
+                .autocorrectionDisabled()
+                .focused($searchFocused)
+            Button {
+                withAnimation { searching = false; query = "" }
+            } label: {
+                Image(systemName: "xmark.circle.fill")
+                    .foregroundStyle(Theme.inkFaint)
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 16).padding(.vertical, 14)
+        .appCardStyle(radius: 18, fill: Theme.card)
+        .padding(.horizontal, 24)
+        .onAppear { searchFocused = true }
     }
 
     private func daySection(_ day: JournalDay) -> some View {

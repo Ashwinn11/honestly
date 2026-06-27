@@ -66,10 +66,11 @@ struct SettingsView: View {
                 }
 
                 aboutFooter
-                Spacer(minLength: 120)
+                Spacer(minLength: 40)
             }
             .padding(.top, 8)
         }
+        .background(Theme.pageBackground)
         .familyActivityPicker(isPresented: $showAppPicker, selection: $blockingManager.selection)
         .onChange(of: blockingManager.selection) { _, newValue in
             blockingManager.saveSelection(newValue)
@@ -141,16 +142,13 @@ struct SettingsView: View {
     // MARK: header + status
 
     private var header: some View {
-        HStack(alignment: .top) {
-            VStack(alignment: .leading, spacing: 0) {
-                Eyebrow("your little", size: 18)
-                Text("Settings")
-                    .font(AppFont.title(34))
-                    .foregroundStyle(Theme.ink)
-            }
-            Spacer()
-            Mascot(kind: .clover, size: 40)
+        VStack(alignment: .leading, spacing: 0) {
+            Eyebrow("your little", size: 18)
+            Text("Settings")
+                .font(AppFont.title(34))
+                .foregroundStyle(Theme.ink)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 24)
     }
 
@@ -172,7 +170,10 @@ struct SettingsView: View {
         } label: {
             AppCard(padding: 20) {
                 HStack(spacing: 16) {
-                    Mascot(kind: .sun, size: 56)
+                    Image(systemName: "lock.shield.fill")
+                        .font(.system(size: 32, weight: .semibold))
+                        .foregroundStyle(Theme.orange)
+                        .frame(width: 50)
                     VStack(alignment: .leading, spacing: 6) {
                         HStack(spacing: 8) {
                             Text(statusTitle)
@@ -217,13 +218,6 @@ struct SettingsView: View {
     private var aboutFooter: some View {
         VStack(alignment: .leading, spacing: 6) {
             sectionHeader("About")
-            HStack {
-                Text("Version")
-                Spacer()
-                Text(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0")
-                    .foregroundStyle(Theme.inkFaint)
-            }
-            .font(AppFont.body(15))
             Button { openURL("mailto:ashwinnanbazhagan@gmail.com") } label: {
                 Text("Contact support")
                     .font(AppFont.body(15))

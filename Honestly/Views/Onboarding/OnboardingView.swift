@@ -76,25 +76,32 @@ struct OnboardingHeader: View {
     let eyebrow: String
     let title: String
     var subtitle: String? = nil
-    var subtitleScript: Bool = false        // Caveat (true) vs LT Saeada (false)
+    var subtitleScript: Bool = false        // Caveat (true) vs Outfit (false)
     var alignment: HorizontalAlignment = .leading
-    var titleSize: CGFloat = 30
+
+    // One fixed scale for EVERY onboarding screen — no per-screen sizes.
+    private static let eyebrowSize: CGFloat = 20
+    private static let titleSize: CGFloat = 30
+    private static let subtitleSize: CGFloat = 16
+    private static let subtitleScriptSize: CGFloat = 18
 
     private var textAlign: TextAlignment { alignment == .center ? .center : .leading }
 
     var body: some View {
         VStack(alignment: alignment, spacing: 10) {
-            Eyebrow(eyebrow, size: 20)
+            Eyebrow(eyebrow, size: Self.eyebrowSize)
             Text(title)
-                .font(AppFont.display(titleSize))
+                .font(AppFont.display(Self.titleSize))
                 .foregroundStyle(Theme.ink)
                 .multilineTextAlignment(textAlign)
                 .lineSpacing(2)
+                .fixedSize(horizontal: false, vertical: true)   // always wrap, never truncate
             if let subtitle {
                 Text(subtitle)
-                    .font(subtitleScript ? AppFont.accent(18) : AppFont.body(16))
+                    .font(subtitleScript ? AppFont.accent(Self.subtitleScriptSize) : AppFont.body(Self.subtitleSize))
                     .foregroundStyle(Theme.inkFaint)
                     .multilineTextAlignment(textAlign)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
         .frame(maxWidth: .infinity, alignment: alignment == .center ? .center : .leading)

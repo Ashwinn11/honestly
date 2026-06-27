@@ -19,12 +19,21 @@ packages:
     url: https://github.com/RevenueCat/purchases-ios
     from: "5.0.0"
 
+schemes:
+  Honestly:
+    build:
+      targets:
+        Honestly: all
+    run:
+      config: Debug
+    archive:
+      config: Release
+
 # Reused font list (app + widget both register these).
 .fonts: &appFonts
-  - LTSaeada-Regular.otf
-  - LTSaeada-Medium.otf
-  - LTSaeada-SemiBold.otf
-  - LTSaeada-Bold.otf
+  - Outfit-Regular.ttf
+  - Outfit-Medium.ttf
+  - Outfit-SemiBold.ttf
   - Caveat-Regular.ttf
   - Caveat-Medium.ttf
   - Caveat-SemiBold.ttf
