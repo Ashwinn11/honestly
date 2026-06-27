@@ -1,0 +1,174 @@
+name: Honestly
+options:
+  bundleIdPrefix: com.morning-journal
+  deploymentTarget:
+    iOS: "18.0"          # matches the shipped 3.3 (MinimumOSVersion 18.0)
+  createIntermediateGroups: true
+
+settings:
+  base:
+    MARKETING_VERSION: "3.4"            # exceeds the live 3.3
+    CURRENT_PROJECT_VERSION: "8"        # above the shipped build 7 (3.3) to avoid collision
+    SWIFT_VERSION: "5.0"
+    DEVELOPMENT_TEAM: PVQK77DQWL
+    CODE_SIGN_STYLE: Automatic
+    TARGETED_DEVICE_FAMILY: "1,2"   # iPhone + iPad
+
+packages:
+  RevenueCat:
+    url: https://github.com/RevenueCat/purchases-ios
+    from: "5.0.0"
+
+# Reused font list (app + widget both register these).
+.fonts: &appFonts
+  - Outfit-Regular.ttf
+  - Outfit-Medium.ttf
+  - Outfit-SemiBold.ttf
+  - Outfit-Bold.ttf
+  - Outfit-ExtraBold.ttf
+  - Caveat-Regular.ttf
+  - Caveat-Medium.ttf
+  - Caveat-SemiBold.ttf
+  - Caveat-Bold.ttf
+
+targets:
+
+  # ─────────────────────────── Main app ───────────────────────────
+  Honestly:
+    type: application
+    platform: iOS
+    sources:
+      - Honestly
+      - Fonts
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.morning-journal.app
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    info:
+      path: Honestly/Info.plist
+      properties:
+        CFBundleDisplayName: Honestly
+        UILaunchScreen: {}
+        UIApplicationSceneManifest:
+          UIApplicationSupportsMultipleScenes: true
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        "UISupportedInterfaceOrientations~ipad":
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        UIBackgroundModes:
+          - fetch
+          - processing
+          - remote-notification
+        BGTaskSchedulerPermittedIdentifiers:
+          - com.morning-journal.app.notif-refresh
+        UIAppFonts: *appFonts
+    entitlements:
+      path: Honestly/Honestly.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.morning-journal.app
+        com.apple.developer.family-controls: true
+        com.apple.developer.icloud-container-identifiers:
+          - iCloud.com.morning-journal.app
+        com.apple.developer.icloud-services:
+          - CloudKit
+        aps-environment: production   # TestFlight/App Store distribution (CloudKit push)
+    dependencies:
+      - package: RevenueCat
+        product: RevenueCat
+      - target: ShieldAction
+      - target: ActivityMonitor
+      - target: ShieldConfiguration
+      - target: BigWinsWidget
+
+  # ─────────────────── Shield action extension ────────────────────
+  ShieldAction:
+    type: app-extension
+    platform: iOS
+    sources: [ShieldAction]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.morning-journal.app.ShieldAction
+    info:
+      path: ShieldAction/Info.plist
+      properties:
+        CFBundleDisplayName: ShieldAction
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.ManagedSettings.shield-action-service
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ShieldActionExtension
+    entitlements:
+      path: ShieldAction/ShieldAction.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.morning-journal.app
+        com.apple.developer.family-controls: true
+
+  # ─────────────── Device-activity monitor extension ──────────────
+  ActivityMonitor:
+    type: app-extension
+    platform: iOS
+    sources: [ActivityMonitor]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.morning-journal.app.activity-monitor
+    info:
+      path: ActivityMonitor/Info.plist
+      properties:
+        CFBundleDisplayName: ActivityMonitor
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.deviceactivity.monitor-extension
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).DeviceActivityMonitorExtension
+    entitlements:
+      path: ActivityMonitor/ActivityMonitor.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.morning-journal.app
+        com.apple.developer.family-controls: true
+
+  # ─────────────── Shield configuration extension ─────────────────
+  ShieldConfiguration:
+    type: app-extension
+    platform: iOS
+    sources: [ShieldConfiguration]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.morning-journal.app.ShieldConfiguration
+    info:
+      path: ShieldConfiguration/Info.plist
+      properties:
+        CFBundleDisplayName: ShieldConfiguration
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.ManagedSettingsUI.shield-configuration-service
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).ShieldConfigurationExtension
+    entitlements:
+      path: ShieldConfiguration/ShieldConfiguration.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.morning-journal.app
+        com.apple.developer.family-controls: true
+
+  # ───────────────────────── Widget extension ─────────────────────
+  BigWinsWidget:
+    type: app-extension
+    platform: iOS
+    sources:
+      - BigWinsWidget
+      - Fonts          # widget runs in its own process — needs the fonts too
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.morning-journal.app.BigWinsWidget
+    info:
+      path: BigWinsWidget/Info.plist
+      properties:
+        CFBundleDisplayName: Honestly
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+        UIAppFonts: *appFonts
+    entitlements:
+      path: BigWinsWidget/BigWinsWidget.entitlements
+      properties:
+        com.apple.security.application-groups:
+          - group.morning-journal.app
