@@ -52,10 +52,23 @@ class BlockingManager: ObservableObject {
         if let data = try? JSONEncoder().encode(newSelection) {
             defaults?.set(data, forKey: AppConstants.keySelection)
         }
+        // Keep the live shield in sync with the edited selection: clear it when
+        // nothing is selected (otherwise the old shield keeps apps blocked), or
+        // refresh the tokens if a block is currently active.
+        if selectedCount == 0 {
+            stopBlocking()
+        } else if isBlocking {
+            applyShield()
+        }
     }
 
     func startBlocking() {
-        guard blockingEnabled, !selection.applicationTokens.isEmpty || !selection.categoryTokens.isEmpty else { return }
+        guard blockingEnabled, selectedCount > 0 else { return }
+        applyShield()
+    }
+
+    /// Push the current selection's tokens into the managed-settings shield.
+    private func applyShield() {
         store.shield.applications = selection.applicationTokens.isEmpty ? nil : selection.applicationTokens
         store.shield.applicationCategories = selection.categoryTokens.isEmpty
             ? nil

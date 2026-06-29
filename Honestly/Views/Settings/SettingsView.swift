@@ -174,9 +174,9 @@ struct SettingsView: View {
         } label: {
             AppCard(padding: 20) {
                 HStack(spacing: 16) {
-                    Image(systemName: "lock.shield.fill")
+                    Image(systemName: statusIcon)
                         .font(.system(size: 32, weight: .semibold))
-                        .foregroundStyle(Theme.orange)
+                        .foregroundStyle(statusColor)
                         .frame(width: 50)
                     VStack(alignment: .leading, spacing: 6) {
                         HStack(spacing: 8) {
@@ -185,9 +185,9 @@ struct SettingsView: View {
                                 .foregroundStyle(Theme.ink)
                             Text(statusBadge)
                                 .font(AppFont.accent(15))
-                                .foregroundStyle(Theme.orange)
+                                .foregroundStyle(statusColor)
                                 .padding(.horizontal, 10).padding(.vertical, 3)
-                                .overlay(Capsule().stroke(Theme.orange, lineWidth: 1.5))
+                                .overlay(Capsule().stroke(statusColor, lineWidth: 1.5))
                         }
                         Text(statusSubtitle)
                             .font(AppFont.accent(16))
@@ -203,19 +203,31 @@ struct SettingsView: View {
 
     private var statusTitle: String {
         switch blockState {
-        case .needsAuth: return "you're all clear."
-        case .needsApps: return "almost there."
-        case .active:    return "you're all set."
+        case .needsAuth: return "screen time's off."
+        case .needsApps: return "nothing's guarded yet."
+        case .active:    return "your mornings are guarded."
         }
     }
     private var statusBadge: String {
-        blockState == .active ? "active" : "ready"
+        blockState == .active ? "on" : "off"
+    }
+    private var statusIcon: String {
+        switch blockState {
+        case .needsAuth: return "exclamationmark.shield.fill"
+        case .needsApps: return "lock.open.fill"
+        case .active:    return "lock.shield.fill"
+        }
+    }
+    private var statusColor: Color {
+        blockState == .active ? Theme.orange : Theme.inkFaint
     }
     private var statusSubtitle: String {
         switch blockState {
-        case .needsAuth: return "enable screen time to get started."
-        case .needsApps: return "choose the apps to block each morning."
-        case .active:    return "blocking \(blockingManager.selectedCount) app\(blockingManager.selectedCount == 1 ? "" : "s") until you journal."
+        case .needsAuth: return "turn it on so we can guard your mornings."
+        case .needsApps: return "pick the apps to block until you journal."
+        case .active:
+            let n = blockingManager.selectedCount
+            return "\(n) app\(n == 1 ? "" : "s") rest until you journal each morning."
         }
     }
 
