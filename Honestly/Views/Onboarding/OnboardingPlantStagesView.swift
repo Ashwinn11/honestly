@@ -27,7 +27,7 @@ struct OnboardingPlantStagesView: View {
                                 Text(item.1)
                                     .font(AppFont.accent(15))
                                     .foregroundStyle(Theme.orange)
-                                Text(item.0.displayName)
+                                Text(item.0.localizedName)
                                     .font(AppFont.caption(10))
                                     .foregroundStyle(Theme.inkFaint)
                             }
@@ -64,7 +64,7 @@ struct OnboardingPlantStagesView: View {
         VStack(spacing: 12) {
             HStack(spacing: 8) {
                 Image(systemName: icon).foregroundStyle(tint)
-                Text(title).font(AppFont.bodyBold(17)).foregroundStyle(Theme.ink)
+                Text(LocalizedStringKey(title)).font(AppFont.bodyBold(17)).foregroundStyle(Theme.ink)
             }
             PlantView(stage: plant, size: 56)
         }

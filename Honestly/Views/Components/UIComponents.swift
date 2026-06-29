@@ -52,7 +52,7 @@ struct Eyebrow: View {
     }
 
     var body: some View {
-        Text(text)
+        Text(LocalizedStringKey(text))
             .font(AppFont.eyebrow(size))
             .foregroundStyle(color)
     }
@@ -70,7 +70,7 @@ struct PrimaryButton: View {
     var body: some View {
         Button(action: action) {
             HStack(spacing: 8) {
-                Text(title)
+                Text(LocalizedStringKey(title))
                 if let icon {
                     Image(systemName: icon).font(.system(size: 16, weight: .bold))
                 }
@@ -110,7 +110,7 @@ struct SecondaryButton: View {
 
     var body: some View {
         Button(action: action) {
-            Text(title)
+            Text(LocalizedStringKey(title))
                 .font(AppFont.button())
                 .foregroundStyle(Theme.ink)
                 .frame(maxWidth: .infinity)

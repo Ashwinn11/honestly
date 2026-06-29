@@ -36,8 +36,8 @@ struct PromptView: View {
     private var header: some View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 2) {
-                Eyebrow(date.formatted(.dateTime.weekday(.wide)).uppercased(), size: 18)
-                Text(date.formatted(.dateTime.month(.wide).day()))
+                Eyebrow(date.formatted(.dateTime.weekday(.wide).locale(appLocale)).uppercased(), size: 18)
+                Text(date.formatted(.dateTime.month(.wide).day().locale(appLocale)))
                     .font(AppFont.title(34))
                     .foregroundStyle(Theme.ink)
             }

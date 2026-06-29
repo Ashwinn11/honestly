@@ -28,10 +28,10 @@ struct OnboardingHowItWorksView: View {
                                     .resizable().scaledToFit()
                                     .frame(width: AppLayout.s(64), height: AppLayout.s(64))
                                 VStack(alignment: .leading, spacing: 4) {
-                                    Text(s.1)
+                                    Text(LocalizedStringKey(s.1))
                                         .font(AppFont.bodyBold(19))
                                         .foregroundStyle(Theme.ink)
-                                    Text(s.2)
+                                    Text(LocalizedStringKey(s.2))
                                         .font(AppFont.accent(16))
                                         .foregroundStyle(Theme.inkFaint)
                                         .fixedSize(horizontal: false, vertical: true)

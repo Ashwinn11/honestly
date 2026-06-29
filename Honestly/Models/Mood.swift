@@ -19,8 +19,12 @@ enum Mood: String, CaseIterable, Codable, Identifiable {
         }
     }
 
-    var displayName: String { rawValue }
+    /// Localized name for display. `rawValue` stays English — it's the Codable
+    /// storage key — so we look it up as a catalog key instead.
+    var displayName: String { L(rawValue) }
 
     /// Lowercase phrasing for the ritual header ("feeling awful").
-    var feelingLabel: String { "feeling \(rawValue.lowercased())" }
+    var feelingLabel: String {
+        String(format: L("feeling %@"), displayName.lowercased())
+    }
 }

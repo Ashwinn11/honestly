@@ -25,10 +25,10 @@ struct WeekCalendarView: View {
                 // Month + controls
                 HStack {
                     VStack(alignment: .leading, spacing: 0) {
-                        Text(monthAnchor.formatted(.dateTime.month(.wide)))
+                        Text(monthAnchor.formatted(.dateTime.month(.wide).locale(appLocale)))
                             .font(AppFont.cardTitle(22))
                             .foregroundStyle(Theme.ink)
-                        Text(monthAnchor.formatted(.dateTime.year()))
+                        Text(monthAnchor.formatted(.dateTime.year().locale(appLocale)))
                             .font(AppFont.caption(14))
                             .foregroundStyle(Theme.inkFaint)
                     }
@@ -75,7 +75,12 @@ struct WeekCalendarView: View {
     }
 
     private var weekdaySymbols: [String] {
-        let base = ["S", "M", "T", "W", "T", "F", "S"]
+        // Localized one-letter weekday symbols (Sunday-first), rotated to the
+        // locale's first weekday.
+        var c = Calendar(identifier: .gregorian)
+        c.locale = appLocale
+        let base = c.veryShortStandaloneWeekdaySymbols
+        guard base.count == 7 else { return base }
         return Array(base[cal.firstWeekday - 1 ..< 7] + base[0 ..< cal.firstWeekday - 1])
     }
 

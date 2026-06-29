@@ -37,7 +37,7 @@ struct OnboardingFocusShieldView: View {
                             .background(f.1)
                             .clipShape(RoundedRectangle(cornerRadius: AppLayout.s(11), style: .continuous))
                             .overlay(RoundedRectangle(cornerRadius: AppLayout.s(11), style: .continuous).stroke(Theme.ink, lineWidth: AppLayout.s(2)))
-                        Text(f.2)
+                        Text(LocalizedStringKey(f.2))
                             .font(AppFont.body(15))
                             .foregroundStyle(Theme.ink)
                             .fixedSize(horizontal: false, vertical: true)

@@ -14,6 +14,12 @@
 		176695F70D6AC8B9ACA6545A /* HonestlyApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 301ACF4EDEC2315F15F988BC /* HonestlyApp.swift */; };
 		1863CB188C9D51DD9CFC51E6 /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = 32D994E1D70F4C2EF68437D5 /* RevenueCat */; };
 		1B72CF03BED06347AD76322F /* Mood.swift in Sources */ = {isa = PBXBuildFile; fileRef = CF0A6EC67DE8777C0BBB2199 /* Mood.swift */; };
+		BBBB000000000000000000B1 /* AppLanguage.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA000000000000000000A1 /* AppLanguage.swift */; };
+		BBBB000000000000000000B2 /* Bundle+Language.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA000000000000000000A2 /* Bundle+Language.swift */; };
+		BBBB000000000000000000B3 /* LocalizationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA000000000000000000A3 /* LocalizationManager.swift */; };
+		BBBB000000000000000000B4 /* LanguagePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAA000000000000000000A4 /* LanguagePickerView.swift */; };
+		BBBB000000000000000000B5 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = AAAA000000000000000000A5 /* Localizable.xcstrings */; };
+		BBBB000000000000000000B6 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = AAAA000000000000000000A5 /* Localizable.xcstrings */; };
 		1D13C72F675E19B5B008311F /* Nunito-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 568941D398908A58ED4D1861 /* Nunito-Regular.ttf */; };
 		1E908F54B728CC951BD38C89 /* ShowedUpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1CA237436E73ED00BEACD874 /* ShowedUpView.swift */; };
 		2930BC91AD256961A0BCB0AF /* OnboardingHowItWorksView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 03682E129D2678D3AA0D7874 /* OnboardingHowItWorksView.swift */; };
@@ -176,6 +182,11 @@
 		C960B1F39D776D7CE4F50AB6 /* Goal.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Goal.swift; sourceTree = "<group>"; };
 		CCD278C4D6F605FDF3E05E70 /* BackupManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackupManager.swift; sourceTree = "<group>"; };
 		CF0A6EC67DE8777C0BBB2199 /* Mood.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Mood.swift; sourceTree = "<group>"; };
+		AAAA000000000000000000A1 /* AppLanguage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLanguage.swift; sourceTree = "<group>"; };
+		AAAA000000000000000000A2 /* Bundle+Language.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Bundle+Language.swift"; sourceTree = "<group>"; };
+		AAAA000000000000000000A3 /* LocalizationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalizationManager.swift; sourceTree = "<group>"; };
+		AAAA000000000000000000A4 /* LanguagePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LanguagePickerView.swift; sourceTree = "<group>"; };
+		AAAA000000000000000000A5 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		D1FEEC09E51129666A313713 /* AppConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConstants.swift; sourceTree = "<group>"; };
 		DE20C8110A3A6D1AAC2DAF62 /* OnboardingNotificationsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingNotificationsView.swift; sourceTree = "<group>"; };
 		E308BC09219BF5E5C0E8BB28 /* Caveat-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Caveat-Medium.ttf"; sourceTree = "<group>"; };
@@ -244,6 +255,7 @@
 				006B5620F76C352339C3F651 /* PlantView.swift */,
 				5F89865366BA221F790E7D6F /* Theme.swift */,
 				B91BACF6E61819EDA555C4E7 /* UIComponents.swift */,
+				AAAA000000000000000000A4 /* LanguagePickerView.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -381,6 +393,16 @@
 			path = Models;
 			sourceTree = "<group>";
 		};
+		CCCC000000000000000000C1 /* Localization */ = {
+			isa = PBXGroup;
+			children = (
+				AAAA000000000000000000A1 /* AppLanguage.swift */,
+				AAAA000000000000000000A2 /* Bundle+Language.swift */,
+				AAAA000000000000000000A3 /* LocalizationManager.swift */,
+			);
+			path = Localization;
+			sourceTree = "<group>";
+		};
 		F1DFD6DC65B90E147BB8AB41 /* Honestly */ = {
 			isa = PBXGroup;
 			children = (
@@ -390,7 +412,9 @@
 				6681F8BB4CE6FE3F6C5D8196 /* Honestly.entitlements */,
 				301ACF4EDEC2315F15F988BC /* HonestlyApp.swift */,
 				0D008EACDA4CA11FF884D4D5 /* Info.plist */,
+				AAAA000000000000000000A5 /* Localizable.xcstrings */,
 				A1F822E104AF4E103516AD82 /* Honestly.xcdatamodeld */,
+				CCCC000000000000000000C1 /* Localization */,
 				4A5CB33568F41C4D7509B743 /* Managers */,
 				E83EF70783BAAAEC109463BD /* Models */,
 				1012E601644E5CEB0F7710A3 /* Views */,
@@ -447,6 +471,7 @@
 			buildConfigurationList = 8735F2DA5D89AEBA34EB8EDC /* Build configuration list for PBXNativeTarget "ShieldConfiguration" */;
 			buildPhases = (
 				814C9581058F1FFAF2AB2836 /* Sources */,
+				DDDD000000000000000000D1 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -509,6 +534,19 @@
 			knownRegions = (
 				Base,
 				en,
+				ar,
+				de,
+				es,
+				fr,
+				it,
+				ja,
+				ko,
+				nl,
+				"pt-BR",
+				"pt-PT",
+				ru,
+				"zh-Hans",
+				"zh-Hant",
 			);
 			mainGroup = 38C7ED3CE16B0416D702BA12;
 			minimizedProjectReferenceProxies = 1;
@@ -529,11 +567,20 @@
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		DDDD000000000000000000D1 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BBBB000000000000000000B6 /* Localizable.xcstrings in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		D6ED710309FCA8725DC89542 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 				7A7ED69FF3AECB3D0F8DB800 /* Assets.xcassets in Resources */,
+				BBBB000000000000000000B5 /* Localizable.xcstrings in Resources */,
 				A4CC7F4B6BE293C47FEA662F /* Caveat-Bold.ttf in Resources */,
 				8DEB51DE0220D3C30FB535BF /* Caveat-Medium.ttf in Resources */,
 				CA1C639534A260120AD05301 /* Caveat-Regular.ttf in Resources */,
@@ -597,6 +644,10 @@
 				4BE169E7CF4B4F9F3E8791C9 /* LegalView.swift in Sources */,
 				D398AEFC7DE45196A663AED5 /* MainTabView.swift in Sources */,
 				1B72CF03BED06347AD76322F /* Mood.swift in Sources */,
+				BBBB000000000000000000B1 /* AppLanguage.swift in Sources */,
+				BBBB000000000000000000B2 /* Bundle+Language.swift in Sources */,
+				BBBB000000000000000000B3 /* LocalizationManager.swift in Sources */,
+				BBBB000000000000000000B4 /* LanguagePickerView.swift in Sources */,
 				9CA50DAAE54779DB28E11627 /* MoodFace.swift in Sources */,
 				A3DAE04B2AF9990E3DF573BB /* MoodPickerCard.swift in Sources */,
 				11DDE09118FD1DDB606AA5E7 /* NotificationManager.swift in Sources */,

@@ -32,7 +32,7 @@ struct MainTabView: View {
                 set: { if let v = $0 { selection = v } }
             )) { section in
                 NavigationLink(value: section) {
-                    Label(section.title, systemImage: section.icon)
+                    Label(LocalizedStringKey(section.title), systemImage: section.icon)
                         .font(AppFont.bodySemibold(17))
                 }
             }

@@ -111,9 +111,9 @@ struct JournalView: View {
     }
 
     private func dayLabel(_ date: Date) -> String {
-        if Calendar.current.isDateInToday(date) { return "Today" }
-        if Calendar.current.isDateInYesterday(date) { return "Yesterday" }
-        return date.formatted(.dateTime.weekday(.wide).month(.wide).day())
+        if Calendar.current.isDateInToday(date) { return L("Today") }
+        if Calendar.current.isDateInYesterday(date) { return L("Yesterday") }
+        return date.formatted(.dateTime.weekday(.wide).month(.wide).day().locale(appLocale))
     }
 }
 
@@ -129,7 +129,7 @@ private struct EntryRow: View {
                 VStack(alignment: .leading, spacing: 6) {
                     HStack {
                         Spacer()
-                        Text(entry.date.formatted(.dateTime.hour().minute()))
+                        Text(entry.date.formatted(.dateTime.hour().minute().locale(appLocale)))
                             .font(AppFont.caption(12))
                             .foregroundStyle(Theme.inkFaint)
                     }
@@ -171,7 +171,7 @@ private struct SproutCollectionCard: View {
             HStack(alignment: .top, spacing: 16) {
                 VStack(spacing: 6) {
                     PlantView(stage: journalManager.currentStage, size: 64)
-                    Text(journalManager.currentStage.displayName.capitalized)
+                    Text(journalManager.currentStage.localizedName.capitalized)
                         .font(AppFont.accent(18))
                         .foregroundStyle(Theme.orange)
                 }
@@ -190,7 +190,7 @@ private struct SproutCollectionCard: View {
                             VStack(spacing: 2) {
                                 Text(i == milestones.count - 1 ? "\(m)+" : "\(m)")
                                     .font(AppFont.captionBold(13))
-                                Text(PlantStage(rawValue: i)?.displayName.capitalized ?? "")
+                                Text(PlantStage(rawValue: i)?.localizedName.capitalized ?? "")
                                     .font(AppFont.caption(11))
                                     .foregroundStyle(Theme.inkFaint)
                             }

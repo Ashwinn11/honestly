@@ -5,21 +5,14 @@ struct OnboardingWelcomeView: View {
     let onContinue: () -> Void
 
     @State private var appeared = false
+    @State private var showLanguagePicker = false
 
     var body: some View {
         VStack(spacing: 0) {
-            // Language pill
+            // Language pill — opens the live language chooser.
             HStack {
                 Spacer()
-                HStack(spacing: 6) {
-                    Image(systemName: "globe")
-                    Text("English")
-                }
-                .font(AppFont.bodySemibold(15))
-                .foregroundStyle(Theme.ink)
-                .padding(.horizontal, 16).padding(.vertical, 10)
-                .background(Theme.card).clipShape(Capsule())
-                .overlay(Capsule().stroke(Theme.ink, lineWidth: Theme.borderWidth))
+                LanguagePill { showLanguagePicker = true }
             }
             .padding(.horizontal, 24)
             .padding(.top, 12)
@@ -54,5 +47,8 @@ struct OnboardingWelcomeView: View {
             .padding(.bottom, 36)
         }
         .onAppear { withAnimation(.spring(response: 0.6, dampingFraction: 0.7)) { appeared = true } }
+        .sheet(isPresented: $showLanguagePicker) {
+            LanguagePickerView()
+        }
     }
 }

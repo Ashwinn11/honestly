@@ -12,35 +12,23 @@ struct MorningClubPlan: Identifiable {
     /// Localized price string straight from the store ("$29.99", "₹2,499", …).
     var priceLabel: String { package.storeProduct.localizedPriceString }
 
-    /// True for a one-time / non-subscription purchase (e.g. lifetime).
-    var isLifetime: Bool { package.storeProduct.productType == .nonConsumable }
+    /// True for the lifetime plan. Keyed off RevenueCat's package type (how
+    /// `fetchPlans` tells the two plans apart) rather than the StoreKit product
+    /// type, which varies by how the lifetime product is configured.
+    var isLifetime: Bool { package.packageType == .lifetime }
 
-    /// "one-time" or the subscription period ("per month", "per year", …).
-    var unitLabel: String {
-        guard let period = package.storeProduct.subscriptionPeriod else { return "one-time" }
-        switch period.unit {
-        case .day:   return period.value == 1 ? "per day" : "every \(period.value) days"
-        case .week:  return period.value == 1 ? "per week" : "every \(period.value) weeks"
-        case .month: return period.value == 1 ? "per month" : "every \(period.value) months"
-        case .year:  return period.value == 1 ? "per year" : "every \(period.value) years"
-        @unknown default: return ""
-        }
-    }
+    // Morning Club only sells two plans — monthly + lifetime (see `fetchPlans`) —
+    // so the period copy below only covers those two cases.
 
-    /// Display title from RevenueCat's package type, falling back to the store product name.
-    var title: String {
-        switch package.packageType {
-        case .lifetime: return "Lifetime"
-        case .annual:   return "Yearly"
-        case .monthly:  return "Monthly"
-        case .weekly:   return "Weekly"
-        default:        return package.storeProduct.localizedTitle
-        }
-    }
+    /// "one-time" for lifetime, otherwise the monthly cadence.
+    var unitLabel: String { isLifetime ? L("one-time") : L("per month") }
 
-    var subtitle: String {
-        isLifetime ? "pay once, yours forever." : "billed \(unitLabel.replacingOccurrences(of: "per ", with: ""))"
-    }
+    /// Compact period suffix for the CTA ("$4.99/mo"). Empty for lifetime.
+    var shortPeriod: String { isLifetime ? "" : L("mo") }
+
+    var title: String { isLifetime ? L("Lifetime") : L("Monthly") }
+
+    var subtitle: String { isLifetime ? L("pay once, yours forever.") : L("billed monthly") }
 }
 
 class SubscriptionManager: ObservableObject {

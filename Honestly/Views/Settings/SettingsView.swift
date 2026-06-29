@@ -5,7 +5,9 @@ struct SettingsView: View {
     @EnvironmentObject var journalManager: JournalManager
     @EnvironmentObject var blockingManager: BlockingManager
     @EnvironmentObject var subscriptionManager: SubscriptionManager
+    @EnvironmentObject var localization: LocalizationManager
 
+    @State private var showLanguagePicker = false
     @State private var showAppPicker = false
     @State private var showPaywall = false
     @State private var showDeleteConfirm = false
@@ -19,6 +21,15 @@ struct SettingsView: View {
             VStack(alignment: .leading, spacing: 24) {
                 header
                 statusCard
+
+                section("Language") {
+                    SettingsRow(icon: "globe", iconBG: Theme.happy,
+                                title: "App Language",
+                                subtitle: localization.language.nativeName,
+                                accessory: .chevron) {
+                        showLanguagePicker = true
+                    }
+                }
 
                 section("App blocking") {
                     SettingsRow(icon: "apps.iphone", iconBG: Theme.confused,
@@ -92,6 +103,10 @@ struct SettingsView: View {
         .onChange(of: blockingManager.selection) { _, newValue in
             blockingManager.saveSelection(newValue)
         }
+        .sheet(isPresented: $showLanguagePicker) {
+            LanguagePickerView()
+                .columnSheet()
+        }
         .sheet(isPresented: $showPaywall) {
             PaywallView { showPaywall = false }
                 .environmentObject(subscriptionManager)
@@ -117,9 +132,9 @@ struct SettingsView: View {
         Task {
             do {
                 try await BackupManager.shared.backUp(entries: journalManager.entries)
-                cloudMessage = "Backed up \(journalManager.entries.count) entries to iCloud."
+                cloudMessage = String(format: L("Backed up %lld entries to iCloud."), journalManager.entries.count)
             } catch {
-                cloudMessage = "Backup failed. Check your iCloud connection."
+                cloudMessage = L("Backup failed. Check your iCloud connection.")
             }
             cloudBusy = false
         }
@@ -132,12 +147,12 @@ struct SettingsView: View {
             do {
                 if let backup = try await BackupManager.shared.latestBackup() {
                     journalManager.restore(from: backup.entries)
-                    cloudMessage = "Restored \(backup.entries.count) entries from iCloud."
+                    cloudMessage = String(format: L("Restored %lld entries from iCloud."), backup.entries.count)
                 } else {
-                    cloudMessage = "No backup found in iCloud yet."
+                    cloudMessage = L("No backup found in iCloud yet.")
                 }
             } catch {
-                cloudMessage = "Restore failed. Check your iCloud connection."
+                cloudMessage = L("Restore failed. Check your iCloud connection.")
             }
             cloudBusy = false
         }
@@ -179,16 +194,9 @@ struct SettingsView: View {
                         .foregroundStyle(statusColor)
                         .frame(width: 50)
                     VStack(alignment: .leading, spacing: 6) {
-                        HStack(spacing: 8) {
-                            Text(statusTitle)
-                                .font(AppFont.cardTitle(22))
-                                .foregroundStyle(Theme.ink)
-                            Text(statusBadge)
-                                .font(AppFont.accent(15))
-                                .foregroundStyle(statusColor)
-                                .padding(.horizontal, 10).padding(.vertical, 3)
-                                .overlay(Capsule().stroke(statusColor, lineWidth: 1.5))
-                        }
+                        Text(statusTitle)
+                            .font(AppFont.cardTitle(22))
+                            .foregroundStyle(Theme.ink)
                         Text(statusSubtitle)
                             .font(AppFont.accent(16))
                             .foregroundStyle(Theme.inkFaint)
@@ -203,13 +211,10 @@ struct SettingsView: View {
 
     private var statusTitle: String {
         switch blockState {
-        case .needsAuth: return "screen time's off."
-        case .needsApps: return "nothing's guarded yet."
-        case .active:    return "your mornings are guarded."
+        case .needsAuth: return L("screen time's off.")
+        case .needsApps: return L("nothing's guarded yet.")
+        case .active:    return L("your mornings are guarded.")
         }
-    }
-    private var statusBadge: String {
-        blockState == .active ? "on" : "off"
     }
     private var statusIcon: String {
         switch blockState {
@@ -223,11 +228,13 @@ struct SettingsView: View {
     }
     private var statusSubtitle: String {
         switch blockState {
-        case .needsAuth: return "turn it on so we can guard your mornings."
-        case .needsApps: return "pick the apps to block until you journal."
+        case .needsAuth: return L("turn it on so we can guard your mornings.")
+        case .needsApps: return L("pick the apps to block until you journal.")
         case .active:
             let n = blockingManager.selectedCount
-            return "\(n) app\(n == 1 ? "" : "s") rest until you journal each morning."
+            return n == 1
+                ? L("1 app rests until you journal each morning.")
+                : String(format: L("%lld apps rest until you journal each morning."), n)
         }
     }
 
@@ -269,11 +276,11 @@ private struct SettingsRow: View {
             HStack(spacing: 14) {
                 IconBadge(icon: icon, bg: iconBG)
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(title)
+                    Text(LocalizedStringKey(title))
                         .font(AppFont.bodyBold(17))
                         .foregroundStyle(Theme.ink)
                     if let subtitle {
-                        Text(subtitle)
+                        Text(LocalizedStringKey(subtitle))
                             .font(AppFont.accent(15))
                             .foregroundStyle(Theme.inkFaint)
                     }

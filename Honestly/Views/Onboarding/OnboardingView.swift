@@ -95,14 +95,14 @@ struct OnboardingHeader: View {
     var body: some View {
         VStack(alignment: alignment, spacing: 10) {
             Eyebrow(eyebrow, size: Self.eyebrowSize)
-            Text(title)
+            Text(LocalizedStringKey(title))
                 .font(AppFont.display(Self.titleSize))
                 .foregroundStyle(Theme.ink)
                 .multilineTextAlignment(textAlign)
                 .lineSpacing(2)
                 .fixedSize(horizontal: false, vertical: true)   // always wrap, never truncate
             if let subtitle {
-                Text(subtitle)
+                Text(LocalizedStringKey(subtitle))
                     .font(subtitleScript ? AppFont.accent(Self.subtitleScriptSize) : AppFont.body(Self.subtitleSize))
                     .foregroundStyle(Theme.inkFaint)
                     .multilineTextAlignment(textAlign)
@@ -142,7 +142,7 @@ struct OnboardingBottomBar: View {
 
             if let secondaryTitle {
                 Button(action: onSecondary) {
-                    Text(secondaryTitle)
+                    Text(LocalizedStringKey(secondaryTitle))
                         .font(AppFont.accent(16))
                         .foregroundStyle(Theme.inkFaint)
                 }

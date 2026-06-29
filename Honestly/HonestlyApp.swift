@@ -6,6 +6,7 @@ struct HonestlyApp: App {
     @StateObject private var journalManager = JournalManager()
     @StateObject private var blockingManager = BlockingManager.shared
     @StateObject private var subscriptionManager = SubscriptionManager()
+    @StateObject private var localizationManager = LocalizationManager.shared
 
     init() {
         registerBackgroundTasks()
@@ -18,6 +19,7 @@ struct HonestlyApp: App {
                 .environmentObject(blockingManager)
                 .environmentObject(subscriptionManager)
                 .preferredColorScheme(.light)   // app is light-only
+                .localized(localizationManager)
 
         }
     }

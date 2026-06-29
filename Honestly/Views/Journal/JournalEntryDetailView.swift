@@ -29,7 +29,7 @@ struct JournalEntryDetailView: View {
             }
             .buttonStyle(.plain)
             Spacer()
-            Text(entry.date.formatted(.dateTime.month(.abbreviated).day().year()))
+            Text(entry.date.formatted(.dateTime.month(.abbreviated).day().year().locale(appLocale)))
                 .font(AppFont.bodyBold(18))
                 .foregroundStyle(Theme.ink)
             Spacer()
@@ -42,8 +42,8 @@ struct JournalEntryDetailView: View {
     private var meta: some View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 4) {
-                Eyebrow("\(entry.date.formatted(.dateTime.weekday(.wide)).uppercased()) · \(entry.date.formatted(.dateTime.month(.wide).day()))", size: 18)
-                Text("\(entry.date.formatted(.dateTime.hour().minute())) · \(entry.wordCount) words")
+                Eyebrow("\(entry.date.formatted(.dateTime.weekday(.wide).locale(appLocale)).uppercased()) · \(entry.date.formatted(.dateTime.month(.wide).day().locale(appLocale)))", size: 18)
+                Text(String(format: L("%@ · %lld words"), entry.date.formatted(.dateTime.hour().minute().locale(appLocale)), entry.wordCount))
                     .font(AppFont.caption(14))
                     .foregroundStyle(Theme.inkFaint)
             }
@@ -82,15 +82,15 @@ struct JournalEntryDetailView: View {
 
     private var shareText: String {
         """
-        \(entry.date.formatted(.dateTime.weekday(.wide).month(.wide).day()))
+        \(entry.date.formatted(.dateTime.weekday(.wide).month(.wide).day().locale(appLocale)))
 
-        This morning:
+        \(L("This morning:"))
         \(entry.content)
 
-        Grateful for:
+        \(L("Grateful for:"))
         \(entry.gratitude)
 
-        — written with Honestly
+        \(L("— written with Honestly"))
         """
     }
 }

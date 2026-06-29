@@ -37,7 +37,7 @@ struct CompletionView: View {
                             .foregroundStyle(Theme.inkFaint)
                     }
 
-                    Text(subcopy)
+                    Text(LocalizedStringKey(subcopy))
                         .font(AppFont.body(16))
                         .foregroundStyle(Theme.inkFaint)
 

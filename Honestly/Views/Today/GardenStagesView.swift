@@ -49,7 +49,7 @@ struct GardenStagesView: View {
         let isCurrent = s == currentStage
         return VStack(spacing: 8) {
             PlantView(stage: s, size: 64)
-            Text(s.displayName)
+            Text(s.localizedName)
                 .font(AppFont.bodyBold(17))
                 .foregroundStyle(isCurrent ? Theme.orange : Theme.ink)
             Text(s.range)

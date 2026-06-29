@@ -61,7 +61,7 @@ struct TodayView: View {
     private var header: some View {
         HStack(alignment: .top) {
             VStack(alignment: .leading, spacing: 0) {
-                Eyebrow(Date().formatted(.dateTime.weekday(.wide).month(.wide).day()), size: 18)
+                Eyebrow(Date().formatted(.dateTime.weekday(.wide).month(.wide).day().locale(appLocale)), size: 18)
                 Text("Today")
                     .font(AppFont.title(34))
                     .foregroundStyle(Theme.ink)

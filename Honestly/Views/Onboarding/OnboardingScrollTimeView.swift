@@ -51,10 +51,10 @@ struct OnboardingScrollTimeView: View {
                     .background(opt.4)
                     .clipShape(RoundedRectangle(cornerRadius: AppLayout.s(15), style: .continuous))
                     .overlay(RoundedRectangle(cornerRadius: AppLayout.s(15), style: .continuous).stroke(Theme.ink, lineWidth: AppLayout.s(2)))
-                Text(opt.0)
+                Text(LocalizedStringKey(opt.0))
                     .font(AppFont.bodyBold(19))
                     .foregroundStyle(Theme.ink)
-                Text(opt.2)
+                Text(LocalizedStringKey(opt.2))
                     .font(AppFont.accent(15))
                     .foregroundStyle(Theme.inkFaint)
             }

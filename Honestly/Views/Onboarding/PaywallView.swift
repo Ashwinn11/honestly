@@ -23,7 +23,11 @@ struct PaywallView: View {
     }
 
     private var ctaTitle: String {
-        (selectedPlan?.isLifetime ?? false) ? "unlock lifetime" : "subscribe"
+        guard let plan = selectedPlan else { return L("subscribe") }
+        if plan.isLifetime {
+            return String(format: L("get lifetime for %@"), plan.priceLabel)
+        }
+        return String(format: L("subscribe for %@/%@"), plan.priceLabel, plan.shortPeriod)
     }
 
     var body: some View {
@@ -68,7 +72,7 @@ struct PaywallView: View {
             if subscriptionManager.isPremium {
                 onDismiss()
             } else {
-                restoreMessage = "No purchase found for this Apple ID."
+                restoreMessage = L("No purchase found for this Apple ID.")
             }
         }
     }
@@ -118,7 +122,7 @@ struct PaywallView: View {
 
     private var headline: some View {
         VStack(spacing: 2) {
-            Eyebrow("reclaim ~\(hoursReclaimed) hours a year", size: 20)
+            Eyebrow(String(format: L("reclaim ~%lld hours a year"), hoursReclaimed), size: 20)
             Text("Honestly Premium")
                 .font(AppFont.display(28))
                 .foregroundStyle(Theme.ink)
@@ -141,7 +145,7 @@ struct PaywallView: View {
                     Image(systemName: "checkmark")
                         .font(.system(size: 15, weight: .bold))
                         .foregroundStyle(Theme.orange)
-                    Text(b)
+                    Text(LocalizedStringKey(b))
                         .font(AppFont.body(16))
                         .foregroundStyle(Theme.ink)
                     Spacer()
@@ -195,8 +199,8 @@ struct PaywallView: View {
 
     private var reassurance: String {
         (selectedPlan?.isLifetime ?? false)
-            ? "secure checkout · one-time purchase"
-            : "cancel anytime · secure checkout"
+            ? L("secure checkout · one-time purchase")
+            : L("cancel anytime · secure checkout")
     }
 
     private var joinButton: some View {
@@ -205,6 +209,8 @@ struct PaywallView: View {
                 Text(purchasing ? "…" : ctaTitle)
                     .font(AppFont.button())
                     .foregroundStyle(.white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.6)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 17)
                     .background(Theme.orange)

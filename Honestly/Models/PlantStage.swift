@@ -19,6 +19,10 @@ enum PlantStage: Int, CaseIterable, Identifiable {
         }
     }
 
+    /// Localized name for display. `displayName` stays English so `assetKey`
+    /// keeps resolving to the on-disk asset.
+    var localizedName: String { L(displayName) }
+
     /// Asset name in Assets.xcassets (plant-<key>).
     var assetKey: String { displayName }
 
@@ -35,11 +39,11 @@ enum PlantStage: Int, CaseIterable, Identifiable {
     /// Short description shown on the "your garden stages" sheet.
     var blurb: String {
         switch self {
-        case .sprout: return "A few fresh leaves to start."
-        case .young:  return "Filling out, finding the light."
-        case .leafy:  return "Bushy and green all over."
-        case .lush:   return "Full, healthy, thriving."
-        case .bloom:  return "Flourishing — the milestone reward."
+        case .sprout: return L("A few fresh leaves to start.")
+        case .young:  return L("Filling out, finding the light.")
+        case .leafy:  return L("Bushy and green all over.")
+        case .lush:   return L("Full, healthy, thriving.")
+        case .bloom:  return L("Flourishing — the milestone reward.")
         }
     }
 
