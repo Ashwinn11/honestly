@@ -8,6 +8,7 @@ struct OnboardingGoalView: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            GeometryReader { geo in
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 20) {
                     OnboardingHeader(eyebrow: "your morning, your way —",
@@ -21,8 +22,9 @@ struct OnboardingGoalView: View {
                     }
                 }
                 .padding(.horizontal, 24)
-                .padding(.top, 60)
-                .padding(.bottom, 20)
+                .padding(.vertical, 20)
+                .frame(maxWidth: .infinity, minHeight: geo.size.height)
+            }
             }
 
             OnboardingBottomBar(stepIndex: stepIndex, primaryTitle: "that's the one",

@@ -28,7 +28,7 @@ struct OnboardingWelcomeView: View {
 
             Image("WelcomeHero")
                 .resizable().scaledToFit()
-                .frame(width: 220, height: 220)
+                .frame(width: AppLayout.s(220), height: AppLayout.s(220))
                 .scaleEffect(appeared ? 1 : 0.8)
                 .opacity(appeared ? 1 : 0)
 

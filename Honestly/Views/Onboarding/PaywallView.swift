@@ -12,10 +12,10 @@ struct PaywallView: View {
     @State private var restoreMessage: String?
 
     private var benefits: [String] {
-        ["block the apps that hijack you",
-         "every prompt & gratitude question",
-         "your journal, everywhere",
-         "unlimited garden & backups"]
+        ["reclaim the time the scroll steals",
+         "every prompt to clear your head",
+         "your mornings, kept & synced everywhere",
+         "and your garden keeps growing"]
     }
 
     private var selectedPlan: MorningClubPlan? {
@@ -32,7 +32,7 @@ struct PaywallView: View {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: 18) {
                     topBar
-                    plantHero
+                    appBadge
                     headline
                     ratingRow
                     benefitList
@@ -42,6 +42,7 @@ struct PaywallView: View {
                 }
                 .padding(.horizontal, 24)
                 .padding(.bottom, 32)
+                .contentColumn()
             }
         }
         .onAppear { if selectedID == nil { selectedID = subscriptionManager.plans.first?.id } }
@@ -49,7 +50,10 @@ struct PaywallView: View {
             if selectedID == nil { selectedID = subscriptionManager.plans.first?.id }
         }
         .sheet(item: $legalDoc) { doc in
-            if doc == .privacy { PrivacyPolicyView() } else { TermsOfServiceView() }
+            Group {
+                if doc == .privacy { PrivacyPolicyView() } else { TermsOfServiceView() }
+            }
+            .columnSheet()
         }
         .alert("Restore Purchases", isPresented: Binding(get: { restoreMessage != nil }, set: { if !$0 { restoreMessage = nil } })) {
             Button("OK", role: .cancel) { restoreMessage = nil }
@@ -73,29 +77,48 @@ struct PaywallView: View {
         HStack {
             Spacer()
             Button(action: onDismiss) {
-                Image(systemName: "xmark")
-                    .font(.system(size: 15, weight: .bold))
-                    .foregroundStyle(Theme.ink)
-                    .frame(width: 44, height: 44)
-                    .background(Theme.card).clipShape(Circle())
-                    .overlay(Circle().stroke(Theme.ink, lineWidth: 2))
+                Image(systemName: "xmark").headerCircle()
             }
             .buttonStyle(.plain)
         }
         .padding(.top, 12)
     }
 
-    private var plantHero: some View {
-        PlantView(stage: .bloom, size: 120)
-            .frame(width: 150, height: 150)
-            .background(Theme.happy.opacity(0.5))
-            .clipShape(Circle())
-            .overlay(Circle().stroke(Theme.ink.opacity(0.08), lineWidth: 1.5))
+    private var appBadge: some View {
+        VStack(spacing: 12) {
+            Image("WelcomeHero")
+                .resizable().scaledToFit()
+                .frame(width: AppLayout.s(96), height: AppLayout.s(96))
+                .padding(AppLayout.s(8))
+                .background(Theme.orange)
+                .clipShape(RoundedRectangle(cornerRadius: AppLayout.s(24), style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: AppLayout.s(24), style: .continuous).stroke(Theme.ink, lineWidth: Theme.borderWidth))
+                .background(RoundedRectangle(cornerRadius: AppLayout.s(24), style: .continuous).fill(Theme.ink).offset(y: Theme.shadowOffset))
+            HStack(spacing: 6) {
+                Image(systemName: "sparkles").foregroundStyle(Theme.orange)
+                Text("MORNING CLUB")
+                    .font(AppFont.bodyBold(15))
+                    .tracking(1.5)
+                    .foregroundStyle(.white)
+            }
+            .padding(.horizontal, 18).padding(.vertical, 9)
+            .background(Theme.ink)
+            .clipShape(Capsule())
+        }
+    }
+
+    /// The same hours/year figure shown on the cost screen, pointed forward as
+    /// the payoff. Reads the scroll estimate the user set during onboarding;
+    /// falls back to the 30-min default when none was saved (e.g. older installs).
+    private var hoursReclaimed: Int {
+        let store = UserDefaults(suiteName: AppConstants.appGroupIdentifier)
+        let minutes = store?.object(forKey: AppConstants.keyScrollMinutes) as? Int ?? 30
+        return max(1, minutes * 365 / 60)
     }
 
     private var headline: some View {
         VStack(spacing: 2) {
-            Eyebrow("grow the whole garden", size: 20)
+            Eyebrow("reclaim ~\(hoursReclaimed) hours a year", size: 20)
             Text("Honestly Premium")
                 .font(AppFont.display(28))
                 .foregroundStyle(Theme.ink)
@@ -170,29 +193,28 @@ struct PaywallView: View {
         .buttonStyle(.plain)
     }
 
+    private var reassurance: String {
+        (selectedPlan?.isLifetime ?? false)
+            ? "secure checkout · one-time purchase"
+            : "cancel anytime · secure checkout"
+    }
+
     private var joinButton: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: 10) {
             Button(action: purchase) {
-                VStack(spacing: 2) {
-                    Text(purchasing ? "…" : ctaTitle)
-                        .font(AppFont.button())
-                    if let plan = selectedPlan, !purchasing {
-                        Text("\(plan.priceLabel) · \(plan.unitLabel)")
-                            .font(AppFont.caption(13))
-                            .opacity(0.9)
-                    }
-                }
-                .foregroundStyle(.white)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 15)
-                .background(Theme.orange)
-                .clipShape(Capsule(style: .continuous))
-                .overlay(Capsule(style: .continuous).stroke(Theme.ink, lineWidth: Theme.borderWidth))
-                .background(Capsule(style: .continuous).fill(Theme.ink).offset(y: Theme.shadowOffset))
+                Text(purchasing ? "…" : ctaTitle)
+                    .font(AppFont.button())
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 17)
+                    .background(Theme.orange)
+                    .clipShape(Capsule(style: .continuous))
+                    .overlay(Capsule(style: .continuous).stroke(Theme.ink, lineWidth: Theme.borderWidth))
+                    .background(Capsule(style: .continuous).fill(Theme.ink).offset(y: Theme.shadowOffset))
             }
             .buttonStyle(.plain)
 
-            Text("cancel anytime · manage in settings")
+            Text(reassurance)
                 .font(AppFont.body(13))
                 .foregroundStyle(Theme.inkFaint)
         }
@@ -211,11 +233,11 @@ struct PaywallView: View {
 
     private var legalRow: some View {
         HStack(spacing: 16) {
-            Button("Restore Purchases") { restore() }
+            Button("restore") { restore() }
             Text("·")
-            Button("Privacy Policy") { legalDoc = .privacy }
+            Button("policy") { legalDoc = .privacy }
             Text("·")
-            Button("Terms of Service") { legalDoc = .terms }
+            Button("terms") { legalDoc = .terms }
         }
         .font(AppFont.caption(13))
         .foregroundStyle(Theme.inkFaint)

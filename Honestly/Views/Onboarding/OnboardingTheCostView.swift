@@ -14,48 +14,52 @@ struct OnboardingTheCostView: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            GeometryReader { geo in
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 18) {
                     OnboardingHeader(eyebrow: "here's the honest part —",
                                      title: "your mornings are quietly leaking.")
 
-                    // The cost
-                    VStack(spacing: 4) {
+                    // The cost — compact stat card
+                    VStack(spacing: 2) {
                         Text("\(hoursPerYear)")
-                            .font(AppFont.display(76))
+                            .font(AppFont.display(58))
                             .foregroundStyle(Theme.orange)
                         Text("hours a year")
-                            .font(AppFont.accent(22))
+                            .font(AppFont.accent(20))
                             .foregroundStyle(Theme.ink)
                         Rectangle().fill(Theme.inkGhost)
                             .frame(height: 1)
-                            .padding(.horizontal, 26).padding(.vertical, 14)
+                            .padding(.horizontal, 24).padding(.vertical, 10)
                         Text("lost to the morning scroll — about \(scrollMinutes) minutes, every single day.")
                             .font(AppFont.body(14))
                             .foregroundStyle(Theme.inkFaint)
                             .multilineTextAlignment(.center)
                     }
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 26)
+                    .padding(.vertical, 18)
                     .appCardStyle(fill: Theme.card)
 
-                    // The way back
-                    VStack(alignment: .leading, spacing: 8) {
+                    // The way back — plain, no card, centered
+                    VStack(spacing: 8) {
                         Eyebrow("the good news —", size: 18)
                         Text("you can take them back.")
                             .font(AppFont.cardTitle(24))
                             .foregroundStyle(Theme.ink)
+                            .multilineTextAlignment(.center)
                         Text("three quiet minutes with Honestly, and the rest of the morning is yours again — calm, clear, present.")
                             .font(AppFont.body(15))
                             .foregroundStyle(Theme.inkFaint)
+                            .multilineTextAlignment(.center)
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(20)
-                    .appCardStyle(fill: Theme.happy.opacity(0.12))
+                    .frame(maxWidth: .infinity)
+                    .padding(.horizontal, 4)
+                    .padding(.top, 4)
                 }
                 .padding(.horizontal, 24)
-                .padding(.top, 60)
-                .padding(.bottom, 20)
+                .padding(.vertical, 20)
+                .frame(maxWidth: .infinity, minHeight: geo.size.height)
+            }
             }
 
             OnboardingBottomBar(stepIndex: stepIndex, primaryTitle: "reclaim my mornings",

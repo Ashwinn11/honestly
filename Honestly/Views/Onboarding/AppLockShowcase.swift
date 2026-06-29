@@ -12,9 +12,9 @@ struct AppLockShowcase: View {
     private let brands: [AppBrand] = [.instagram, .snapchat, .x, .whatsapp]
 
     var body: some View {
-        HStack(spacing: 16) {
+        HStack(spacing: AppLayout.s(16)) {
             ForEach(brands) { brand in
-                AppIconTile(brand: brand, locked: locked, size: tile)
+                AppIconTile(brand: brand, locked: locked, size: AppLayout.s(tile))
             }
         }
         .onReceive(timer) { _ in

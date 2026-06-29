@@ -24,15 +24,16 @@ struct ColorIconBadge: View {
     var size: CGFloat = 52
 
     var body: some View {
+        let d = AppLayout.s(size)
         Image(systemName: icon)
-            .font(.system(size: size * 0.42, weight: .semibold))
+            .font(.system(size: d * 0.42, weight: .semibold))
             .foregroundStyle(Theme.ink)
-            .frame(width: size, height: size)
+            .frame(width: d, height: d)
             .background(color)
-            .clipShape(RoundedRectangle(cornerRadius: size * 0.3, style: .continuous))
+            .clipShape(RoundedRectangle(cornerRadius: d * 0.3, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: size * 0.3, style: .continuous)
-                    .stroke(Theme.ink, lineWidth: 2)
+                RoundedRectangle(cornerRadius: d * 0.3, style: .continuous)
+                    .stroke(Theme.ink, lineWidth: AppLayout.s(2))
             )
     }
 }
@@ -77,7 +78,7 @@ struct PrimaryButton: View {
             .font(AppFont.button())
             .foregroundStyle(textColor)
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 18)
+            .padding(.vertical, AppLayout.s(18))
             .background(fill)
             .clipShape(Capsule(style: .continuous))
             .overlay(Capsule(style: .continuous).stroke(Theme.ink, lineWidth: Theme.borderWidth))
@@ -113,7 +114,7 @@ struct SecondaryButton: View {
                 .font(AppFont.button())
                 .foregroundStyle(Theme.ink)
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 18)
+                .padding(.vertical, AppLayout.s(18))
                 .background(Theme.card)
                 .clipShape(Capsule(style: .continuous))
                 .overlay(Capsule(style: .continuous).stroke(Theme.ink, lineWidth: Theme.borderWidth))
@@ -131,15 +132,30 @@ struct CircleIconButton: View {
     var body: some View {
         Button(action: action) {
             Image(systemName: systemName)
-                .font(.system(size: 18, weight: .bold))
+                .font(.system(size: AppLayout.s(18), weight: .bold))
                 .foregroundStyle(Theme.ink)
-                .frame(width: 56, height: 56)
+                .frame(width: AppLayout.s(56), height: AppLayout.s(56))
                 .background(Theme.card)
                 .clipShape(Circle())
                 .overlay(Circle().stroke(Theme.ink, lineWidth: Theme.borderWidth))
                 .background(Circle().fill(Theme.ink).offset(y: Theme.shadowOffset))
         }
         .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Header icon chrome
+
+extension View {
+    /// Flat circular chrome for header actions (back / close / search / share).
+    /// One consistent, iPad-scaled size across the whole app. Apply to the icon Image.
+    func headerCircle() -> some View {
+        self
+            .font(.system(size: AppLayout.s(17), weight: .bold))
+            .foregroundStyle(Theme.ink)
+            .frame(width: AppLayout.s(48), height: AppLayout.s(48))
+            .background(Theme.card).clipShape(Circle())
+            .overlay(Circle().stroke(Theme.ink, lineWidth: Theme.borderWidth))
     }
 }
 
@@ -154,7 +170,7 @@ struct ProgressDots: View {
             ForEach(0..<count, id: \.self) { i in
                 Capsule()
                     .fill(color(for: i))
-                    .frame(width: i == index ? 26 : 9, height: 9)
+                    .frame(width: AppLayout.s(i == index ? 26 : 9), height: AppLayout.s(9))
                     .animation(.spring(response: 0.3, dampingFraction: 0.7), value: index)
             }
         }

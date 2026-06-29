@@ -12,7 +12,7 @@ struct OnboardingNotificationsView: View {
             VStack(spacing: 24) {
                 Image("art-clock")
                     .resizable().scaledToFit()
-                    .frame(width: 210, height: 210)
+                    .frame(width: AppLayout.s(210), height: AppLayout.s(210))
 
                 OnboardingHeader(eyebrow: "win the first move —",
                                  title: "we'll tap you before the scroll",

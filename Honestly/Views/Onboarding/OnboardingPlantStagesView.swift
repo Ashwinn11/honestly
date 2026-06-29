@@ -11,6 +11,7 @@ struct OnboardingPlantStagesView: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            GeometryReader { geo in
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 24) {
                     OnboardingHeader(eyebrow: "take care of",
@@ -49,8 +50,9 @@ struct OnboardingPlantStagesView: View {
                     }
                 }
                 .padding(.horizontal, 24)
-                .padding(.top, 60)
-                .padding(.bottom, 20)
+                .padding(.vertical, 20)
+                .frame(maxWidth: .infinity, minHeight: geo.size.height)
+            }
             }
 
             OnboardingBottomBar(stepIndex: stepIndex, primaryTitle: "continue",

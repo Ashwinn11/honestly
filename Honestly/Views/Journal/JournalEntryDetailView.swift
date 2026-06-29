@@ -17,6 +17,7 @@ struct JournalEntryDetailView: View {
                 }
                 .padding(.horizontal, 22)
                 .padding(.top, 12)
+                .contentColumn()
             }
         }
     }
@@ -24,12 +25,7 @@ struct JournalEntryDetailView: View {
     private var nav: some View {
         HStack {
             Button { dismiss() } label: {
-                Image(systemName: "chevron.left")
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundStyle(Theme.ink)
-                    .frame(width: 48, height: 48)
-                    .background(Theme.card).clipShape(Circle())
-                    .overlay(Circle().stroke(Theme.ink, lineWidth: Theme.borderWidth))
+                Image(systemName: "chevron.left").headerCircle()
             }
             .buttonStyle(.plain)
             Spacer()
@@ -38,12 +34,7 @@ struct JournalEntryDetailView: View {
                 .foregroundStyle(Theme.ink)
             Spacer()
             ShareLink(item: shareText) {
-                Image(systemName: "square.and.arrow.up")
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundStyle(Theme.ink)
-                    .frame(width: 48, height: 48)
-                    .background(Theme.card).clipShape(Circle())
-                    .overlay(Circle().stroke(Theme.ink, lineWidth: Theme.borderWidth))
+                Image(systemName: "square.and.arrow.up").headerCircle()
             }
         }
     }

@@ -16,6 +16,7 @@ struct OnboardingScrollTimeView: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            GeometryReader { geo in
             ScrollView(showsIndicators: false) {
                 VStack(alignment: .leading, spacing: 20) {
                     OnboardingHeader(eyebrow: "be honest —",
@@ -29,8 +30,9 @@ struct OnboardingScrollTimeView: View {
                     }
                 }
                 .padding(.horizontal, 24)
-                .padding(.top, 60)
-                .padding(.bottom, 20)
+                .padding(.vertical, 20)
+                .frame(maxWidth: .infinity, minHeight: geo.size.height)
+            }
             }
 
             OnboardingBottomBar(stepIndex: stepIndex, primaryTitle: "that's my pace →",
@@ -43,12 +45,12 @@ struct OnboardingScrollTimeView: View {
         return Button { minutes = opt.1 } label: {
             VStack(alignment: .leading, spacing: 10) {
                 Image(systemName: opt.3)
-                    .font(.system(size: 22, weight: .semibold))
+                    .font(.system(size: AppLayout.s(22), weight: .semibold))
                     .foregroundStyle(Theme.ink)
-                    .frame(width: 50, height: 50)
+                    .frame(width: AppLayout.s(50), height: AppLayout.s(50))
                     .background(opt.4)
-                    .clipShape(RoundedRectangle(cornerRadius: 15, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: 15, style: .continuous).stroke(Theme.ink, lineWidth: 2))
+                    .clipShape(RoundedRectangle(cornerRadius: AppLayout.s(15), style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: AppLayout.s(15), style: .continuous).stroke(Theme.ink, lineWidth: AppLayout.s(2)))
                 Text(opt.0)
                     .font(AppFont.bodyBold(19))
                     .foregroundStyle(Theme.ink)

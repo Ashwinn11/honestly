@@ -7,6 +7,7 @@ struct TodayView: View {
     @State private var ritualMood: Mood?
     @State private var detailEntry: JournalEntry?
     @State private var showGarden = false
+    @State private var celebrate = false
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -29,19 +30,31 @@ struct TodayView: View {
                 Spacer(minLength: 40)
             }
             .padding(.top, 8)
+            .contentColumn()
         }
         .background(Theme.pageBackground)
         .fullScreenCover(item: $ritualMood) { mood in
-            RitualContainerView(mood: mood)
+            RitualContainerView(mood: mood) { celebrate = true }
                 .environmentObject(journalManager)
                 .environmentObject(blockingManager)
         }
+        .overlay {
+            if celebrate {
+                CompletionView(stage: journalManager.currentStage,
+                               sproutCount: journalManager.sproutCount) {
+                    celebrate = false
+                }
+                .transition(.opacity)
+            }
+        }
+        .animation(.easeInOut(duration: 0.25), value: celebrate)
         .sheet(item: $detailEntry) { entry in
             JournalEntryDetailView(entry: entry)
+                .columnSheet()
         }
         .sheet(isPresented: $showGarden) {
             GardenStagesView(currentStage: journalManager.currentStage)
-                .presentationDetents([.large])
+                .columnSheet()
         }
     }
 

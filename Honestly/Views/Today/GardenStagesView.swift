@@ -41,6 +41,7 @@ struct GardenStagesView: View {
 
                 Spacer()
             }
+            .contentColumn()
         }
     }
 

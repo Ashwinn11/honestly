@@ -26,6 +26,7 @@ struct GratitudeView: View {
                 .padding(.horizontal, 24)
                 .padding(.top, 12)
                 .padding(.bottom, 120)
+                .contentColumn()
             }
             footer
         }
@@ -77,5 +78,6 @@ struct GratitudeView: View {
         PrimaryButton(title: "finish & unlock", icon: "lock.open.fill", action: onFinish)
             .padding(.horizontal, 24)
             .padding(.bottom, 28)
+            .contentColumn()
     }
 }

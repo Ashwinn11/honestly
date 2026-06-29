@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 // MARK: - Design System
 // Strict tokens for Honestly. "Soft neo-brutalist": warm cream surfaces,
@@ -28,9 +29,9 @@ enum Theme {
     static let gratitude = Color(hex: "#FAD8D6")   // pink gratitude card
 
     // MARK: Shape & elevation
-    static let cardRadius: CGFloat   = 24
-    static let borderWidth: CGFloat  = 2.5
-    static let shadowOffset: CGFloat = 3            // hard, solid offset (blur 0)
+    static var cardRadius: CGFloat   { AppLayout.s(24) }
+    static var borderWidth: CGFloat  { AppLayout.s(2.5) }
+    static var shadowOffset: CGFloat { AppLayout.s(3) }   // hard, solid offset (blur 0)
 
     // Peach radial wash for page backgrounds
     static var pageBackground: some View {
@@ -84,11 +85,11 @@ enum AppFont {
     // `fixedSize` = absolute points, NOT scaled by the device Text Size / Dynamic
     // Type setting — so the layout stays as designed instead of ballooning.
     static func sans(_ size: CGFloat, _ weight: Font.Weight = .regular) -> Font {
-        .custom(nunito(weight), fixedSize: dampen(size))
+        .custom(nunito(weight), fixedSize: dampen(size) * AppLayout.scale)
     }
     static func script(_ size: CGFloat, _ weight: Font.Weight = .regular) -> Font {
         // Caveat already reads small; only a light trim.
-        .custom(caveat(weight), fixedSize: size * 0.95)
+        .custom(caveat(weight), fixedSize: size * 0.95 * AppLayout.scale)
     }
 
     // Semantic styles
@@ -105,6 +106,51 @@ enum AppFont {
 
     static func eyebrow(_ size: CGFloat = 20) -> Font { script(size, .semibold) }
     static func accent(_ size: CGFloat = 18)  -> Font { script(size, .medium) }
+}
+
+// MARK: - Responsive layout
+
+enum AppLayout {
+    /// iPad gets a larger, scaled-up layout; iPhone stays 1:1.
+    static let isPad: Bool = UIDevice.current.userInterfaceIdiom == .pad
+    static let scale: CGFloat = isPad ? 1.45 : 1.0
+
+    /// Centered reading column — generous on iPad so text/cards aren't tiny.
+    static let maxContentWidth: CGFloat = isPad ? 720 : 460
+    static let maxOnboardingHeight: CGFloat = isPad ? 1180 : 920
+
+    /// Scale a size/spacing value for the current device.
+    static func s(_ v: CGFloat) -> CGFloat { v * scale }
+}
+
+extension View {
+    /// Cap content to a centered reading column (wider on iPad), filling the
+    /// background behind it. Apply to the *content*, not the background.
+    func contentColumn(_ width: CGFloat = AppLayout.maxContentWidth) -> some View {
+        frame(maxWidth: width).frame(maxWidth: .infinity)
+    }
+
+    /// Size a presented sheet to the reading-column width on iPad (sheets are
+    /// ours to size); leave iPhone sheets at their natural full width.
+    @ViewBuilder func columnSheet() -> some View {
+        if AppLayout.isPad {
+            presentationSizing(ColumnSheetSizing())
+        } else {
+            self
+        }
+    }
+}
+
+/// Constrains a sheet to the content-column width while keeping a tall,
+/// page-like height. Width is ours to control on iPad, unlike full screens.
+struct ColumnSheetSizing: PresentationSizing {
+    func proposedSize(for root: PresentationSizingRoot,
+                      context: PresentationSizingContext) -> ProposedViewSize {
+        // Max available presentation size (the screen on iPad).
+        let full = root.sizeThatFits(ProposedViewSize(width: .infinity, height: .infinity))
+        let w = min(AppLayout.maxContentWidth, full.width)
+        return ProposedViewSize(width: w, height: full.height * 0.92)
+    }
 }
 
 // MARK: - View modifiers

@@ -16,23 +16,21 @@ struct JournalView: View {
     }
 
     var body: some View {
-        NavigationStack {
-            ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 22) {
-                    header
-                    SproutCollectionCard()
-                        .padding(.horizontal, 20)
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: 22) {
+                header
+                SproutCollectionCard()
+                    .padding(.horizontal, 20)
 
-                    ForEach(days) { day in
-                        daySection(day)
-                    }
-                    Spacer(minLength: 40)
+                ForEach(days) { day in
+                    daySection(day)
                 }
-                .padding(.top, 8)
+                Spacer(minLength: 40)
             }
-            .background(Theme.pageBackground)
-            .navigationBarHidden(true)
+            .padding(.top, 8)
+            .contentColumn()
         }
+        .background(Theme.pageBackground)
     }
 
     // Title row, or — when the search icon is tapped — a search field in its place.
@@ -50,12 +48,7 @@ struct JournalView: View {
             }
             Spacer()
             Button { withAnimation { searching = true } } label: {
-                Image(systemName: "magnifyingglass")
-                    .font(.system(size: 17, weight: .bold))
-                    .foregroundStyle(Theme.ink)
-                    .frame(width: 50, height: 50)
-                    .background(Theme.card).clipShape(Circle())
-                    .overlay(Circle().stroke(Theme.ink, lineWidth: Theme.borderWidth))
+                Image(systemName: "magnifyingglass").headerCircle()
             }
             .buttonStyle(.plain)
         }

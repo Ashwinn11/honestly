@@ -17,6 +17,8 @@ struct HonestlyApp: App {
                 .environmentObject(journalManager)
                 .environmentObject(blockingManager)
                 .environmentObject(subscriptionManager)
+                .preferredColorScheme(.light)   // app is light-only
+
         }
     }
 

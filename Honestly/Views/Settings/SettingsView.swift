@@ -45,6 +45,13 @@ struct SettingsView: View {
                                 accessory: .chevron) {
                         showCloudOptions = true
                     }
+                    .confirmationDialog("iCloud", isPresented: $showCloudOptions, titleVisibility: .visible) {
+                        Button("Back up now") { backUp() }
+                        Button("Restore from backup") { restore() }
+                        Button("Cancel", role: .cancel) {}
+                    } message: {
+                        Text("Back up your entries to iCloud, or restore from your latest backup.")
+                    }
                 }
 
                 section("Legal") {
@@ -63,12 +70,22 @@ struct SettingsView: View {
                                 title: "Delete all data", accessory: .chevron) {
                         showDeleteConfirm = true
                     }
+                    .confirmationDialog("Delete all data?", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
+                        Button("Delete everything", role: .destructive) {
+                            journalManager.deleteAllData()
+                            blockingManager.stopBlocking()
+                            blockingManager.stopMonitoring()
+                        }
+                        Button("Cancel", role: .cancel) {}
+                    } message: {
+                        Text("This removes all journal entries, streaks, and plant progress, and returns you to the start. This can't be undone.")
+                    }
                 }
 
-                aboutFooter
                 Spacer(minLength: 40)
             }
             .padding(.top, 8)
+            .contentColumn()
         }
         .background(Theme.pageBackground)
         .familyActivityPicker(isPresented: $showAppPicker, selection: $blockingManager.selection)
@@ -78,26 +95,13 @@ struct SettingsView: View {
         .sheet(isPresented: $showPaywall) {
             PaywallView { showPaywall = false }
                 .environmentObject(subscriptionManager)
+                .columnSheet()
         }
         .sheet(item: $legalDoc) { doc in
-            if doc == .privacy { PrivacyPolicyView() } else { TermsOfServiceView() }
-        }
-        .confirmationDialog("Delete all data?", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
-            Button("Delete everything", role: .destructive) {
-                journalManager.deleteAllData()
-                blockingManager.stopBlocking()
-                blockingManager.stopMonitoring()
+            Group {
+                if doc == .privacy { PrivacyPolicyView() } else { TermsOfServiceView() }
             }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("This removes all journal entries, streaks, and plant progress, and returns you to the start. This can't be undone.")
-        }
-        .confirmationDialog("iCloud", isPresented: $showCloudOptions, titleVisibility: .visible) {
-            Button("Back up now") { backUp() }
-            Button("Restore from backup") { restore() }
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("Back up your entries to iCloud, or restore from your latest backup.")
+            .columnSheet()
         }
         .alert("iCloud", isPresented: Binding(get: { cloudMessage != nil }, set: { if !$0 { cloudMessage = nil } })) {
             Button("OK", role: .cancel) { cloudMessage = nil }
@@ -215,21 +219,6 @@ struct SettingsView: View {
         }
     }
 
-    private var aboutFooter: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            sectionHeader("About")
-            Button { openURL("mailto:ashwinnanbazhagan@gmail.com") } label: {
-                Text("Contact support")
-                    .font(AppFont.body(15))
-                    .foregroundStyle(Theme.orange)
-            }
-            Text("© 2026 Ashwin Anbazhagan")
-                .font(AppFont.caption(12))
-                .foregroundStyle(Theme.inkFaint)
-                .padding(.top, 4)
-        }
-        .padding(.horizontal, 28)
-    }
 
     // MARK: helpers
 

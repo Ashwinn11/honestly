@@ -75,6 +75,7 @@ targets:
         BGTaskSchedulerPermittedIdentifiers:
           - com.morning-journal.app.notif-refresh
         UIAppFonts: *appFonts
+        UIUserInterfaceStyle: Light   # force light mode regardless of device setting
     entitlements:
       path: Honestly/Honestly.entitlements
       properties:
@@ -92,7 +93,6 @@ targets:
       - target: ShieldAction
       - target: ActivityMonitor
       - target: ShieldConfiguration
-      - target: BigWinsWidget
 
   # ─────────────────── Shield action extension ────────────────────
   ShieldAction:
@@ -159,26 +159,3 @@ targets:
         com.apple.security.application-groups:
           - group.morning-journal.app
         com.apple.developer.family-controls: true
-
-  # ───────────────────────── Widget extension ─────────────────────
-  BigWinsWidget:
-    type: app-extension
-    platform: iOS
-    sources:
-      - BigWinsWidget
-      - Fonts          # widget runs in its own process — needs the fonts too
-    settings:
-      base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.morning-journal.app.BigWinsWidget
-    info:
-      path: BigWinsWidget/Info.plist
-      properties:
-        CFBundleDisplayName: Honestly
-        NSExtension:
-          NSExtensionPointIdentifier: com.apple.widgetkit-extension
-        UIAppFonts: *appFonts
-    entitlements:
-      path: BigWinsWidget/BigWinsWidget.entitlements
-      properties:
-        com.apple.security.application-groups:
-          - group.morning-journal.app

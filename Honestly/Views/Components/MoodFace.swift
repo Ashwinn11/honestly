@@ -11,13 +11,13 @@ struct MoodFace: View {
         ZStack {
             Circle()
                 .fill(mood.color)
-                .overlay(Circle().stroke(Theme.ink, lineWidth: max(2, size * 0.045)))
+                .overlay(Circle().stroke(Theme.ink, lineWidth: max(2, AppLayout.s(size) * 0.045)))
             face
         }
-        .frame(width: size, height: size)
+        .frame(width: AppLayout.s(size), height: AppLayout.s(size))
     }
 
-    private var s: CGFloat { size / 120 }
+    private var s: CGFloat { AppLayout.s(size) / 120 }
 
     @ViewBuilder private var face: some View {
         switch mood {

@@ -25,6 +25,7 @@ struct PromptView: View {
                 .padding(.horizontal, 24)
                 .padding(.top, 16)
                 .padding(.bottom, 120)
+                .contentColumn()
             }
 
             footer
@@ -110,5 +111,6 @@ struct PromptView: View {
         }
         .padding(.horizontal, 24)
         .padding(.bottom, 28)
+        .contentColumn()
     }
 }

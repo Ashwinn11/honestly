@@ -19,6 +19,8 @@ struct OnboardingView: View {
             Theme.pageBackground
 
             content
+                .frame(maxWidth: AppLayout.maxContentWidth, maxHeight: AppLayout.maxOnboardingHeight)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)   // center on iPad
                 .transition(.asymmetric(
                     insertion: .move(edge: .trailing).combined(with: .opacity),
                     removal: .move(edge: .leading).combined(with: .opacity)))
@@ -80,7 +82,7 @@ struct OnboardingHeader: View {
     let title: String
     var subtitle: String? = nil
     var subtitleScript: Bool = false        // Caveat (true) vs Outfit (false)
-    var alignment: HorizontalAlignment = .leading
+    var alignment: HorizontalAlignment = .center   // onboarding headers are centered everywhere
 
     // One fixed scale for EVERY onboarding screen — no per-screen sizes.
     private static let eyebrowSize: CGFloat = 20

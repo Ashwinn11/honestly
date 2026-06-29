@@ -12,13 +12,17 @@ struct RitualContainerView: View {
     @State private var step = 0           // 0 = write, 1 = gratitude
     @State private var content = ""
     @State private var gratitude = ""
-    @State private var showCompletion = false
+
+    /// Fired after the entry is saved, so Today can show the celebration over
+    /// the home screen (not trapped inside this full-screen cover).
+    let onFinished: () -> Void
 
     private let prompt: String
     private let gratitudeQuestion: GratitudeQuestion
 
-    init(mood: Mood) {
+    init(mood: Mood, onFinished: @escaping () -> Void) {
         self.mood = mood
+        self.onFinished = onFinished
         let stored = UserDefaults(suiteName: AppConstants.appGroupIdentifier)?
             .string(forKey: AppConstants.keyUserOutcome) ?? ""
         let goal = Goal(rawValue: stored) ?? .clarity
@@ -30,54 +34,41 @@ struct RitualContainerView: View {
         ZStack {
             Theme.pageBackground
 
-            if showCompletion {
-                CompletionView(stage: journalManager.currentStage,
-                               sproutCount: journalManager.sproutCount) {
-                    dismiss()
-                }
-                .transition(.opacity)
-            } else {
-                VStack(spacing: 0) {
-                    topBar
-                    if step == 0 {
-                        PromptView(date: Date(), mood: mood, prompt: prompt, content: $content) {
-                            withAnimation { step = 1 }
-                        }
-                    } else {
-                        GratitudeView(question: gratitudeQuestion, gratitude: $gratitude) {
-                            complete()
-                        }
+            VStack(spacing: 0) {
+                topBar
+                if step == 0 {
+                    PromptView(date: Date(), mood: mood, prompt: prompt, content: $content) {
+                        withAnimation { step = 1 }
+                    }
+                } else {
+                    GratitudeView(question: gratitudeQuestion, gratitude: $gratitude) {
+                        complete()
                     }
                 }
             }
         }
-        .animation(.easeInOut(duration: 0.25), value: showCompletion)
     }
 
     private var topBar: some View {
         HStack {
             Button { dismiss() } label: {
-                Image(systemName: "xmark")
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundStyle(Theme.ink)
-                    .frame(width: 52, height: 52)
-                    .background(Theme.card)
-                    .clipShape(Circle())
-                    .overlay(Circle().stroke(Theme.ink, lineWidth: Theme.borderWidth))
+                Image(systemName: "xmark").headerCircle()
             }
             .buttonStyle(.plain)
             Spacer()
             ProgressDots(count: 2, index: step)
             Spacer()
-            Color.clear.frame(width: 52, height: 52)
+            Color.clear.frame(width: AppLayout.s(48), height: AppLayout.s(48))
         }
         .padding(.horizontal, 24)
         .padding(.top, 12)
+        .contentColumn()
     }
 
     private func complete() {
         journalManager.markCompleted(mood: mood, content: content, gratitude: gratitude)
         blockingManager.stopBlocking()
-        withAnimation { showCompletion = true }
+        onFinished()
+        dismiss()
     }
 }

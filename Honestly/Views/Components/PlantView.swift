@@ -14,6 +14,6 @@ struct PlantView: View {
         Image("plant-\(stage.assetKey)")
             .resizable()
             .scaledToFit()
-            .frame(width: size, height: size)
+            .frame(width: AppLayout.s(size), height: AppLayout.s(size))
     }
 }

@@ -46,7 +46,8 @@ struct CompletionView: View {
                 }
                 .frame(maxWidth: .infinity)
             }
-            .padding(.horizontal, 40)
+            .frame(maxWidth: 460)
+            .padding(.horizontal, 32)
             .scaleEffect(appeared ? 1 : 0.85)
             .opacity(appeared ? 1 : 0)
         }

@@ -22,12 +22,7 @@ private struct LegalScreen: View {
                     Eyebrow("honestly", size: 18)
                     Spacer()
                     Button { dismiss() } label: {
-                        Image(systemName: "xmark")
-                            .font(.system(size: 15, weight: .bold))
-                            .foregroundStyle(Theme.ink)
-                            .frame(width: 44, height: 44)
-                            .background(Theme.card).clipShape(Circle())
-                            .overlay(Circle().stroke(Theme.ink, lineWidth: 2))
+                        Image(systemName: "xmark").headerCircle()
                     }
                     .buttonStyle(.plain)
                 }
