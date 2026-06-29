@@ -30,7 +30,7 @@ enum Theme {
     // MARK: Shape & elevation
     static let cardRadius: CGFloat   = 24
     static let borderWidth: CGFloat  = 2.5
-    static let shadowOffset: CGFloat = 5            // hard, solid offset (blur 0)
+    static let shadowOffset: CGFloat = 3            // hard, solid offset (blur 0)
 
     // Peach radial wash for page backgrounds
     static var pageBackground: some View {

@@ -41,7 +41,7 @@ struct TodayView: View {
         }
         .sheet(isPresented: $showGarden) {
             GardenStagesView(currentStage: journalManager.currentStage)
-                .presentationDetents([.medium, .large])
+                .presentationDetents([.large])
         }
     }
 

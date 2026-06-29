@@ -25,9 +25,16 @@ struct GardenStagesView: View {
                         .padding(.horizontal, 24)
                 }
 
-                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 14) {
-                    ForEach(PlantStage.allCases) { stage in
-                        stageCard(stage)
+                VStack(spacing: 14) {
+                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 14) {
+                        ForEach(Array(PlantStage.allCases.dropLast())) { stage in
+                            stageCard(stage)
+                        }
+                    }
+                    // Lone final stage (bloom) centered at one-column width.
+                    if let last = PlantStage.allCases.last {
+                        stageCard(last)
+                            .containerRelativeFrame(.horizontal, count: 2, span: 1, spacing: 14)
                     }
                 }
                 .padding(.horizontal, 24)

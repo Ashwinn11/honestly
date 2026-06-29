@@ -23,7 +23,7 @@ struct PaywallView: View {
     }
 
     private var ctaTitle: String {
-        (selectedPlan?.isLifetime ?? false) ? "unlock lifetime" : "start free trial"
+        (selectedPlan?.isLifetime ?? false) ? "unlock lifetime" : "subscribe"
     }
 
     var body: some View {
@@ -192,7 +192,7 @@ struct PaywallView: View {
             }
             .buttonStyle(.plain)
 
-            Text("cancel anytime · nothing charged today")
+            Text("cancel anytime · manage in settings")
                 .font(AppFont.body(13))
                 .foregroundStyle(Theme.inkFaint)
         }

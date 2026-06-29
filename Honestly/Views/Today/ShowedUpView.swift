@@ -4,35 +4,10 @@ import SwiftUI
 struct ShowedUpView: View {
     @EnvironmentObject var journalManager: JournalManager
 
-    // Scattered confetti accents: (xOffset, yOffset, color, isCircle, rotation)
-    private let confetti: [(CGFloat, CGFloat, Color, Bool, Double)] = [
-        (-104, -86, Theme.cry,      false, 18), (-58, -112, Theme.confused, true, 0),
-        ( 12, -120, Theme.sad,      false, -12), ( 96, -96, Theme.happy,    true, 0),
-        (118, -44, Theme.cry,       false, 24), (-118, 4, Theme.orange,     true, 0),
-        ( 70, -130, Theme.confused, true, 0),
-    ]
-
     var body: some View {
         VStack(spacing: 20) {
-            // The plant (current stage) + a "done!" bubble, ringed by confetti.
+            // The plant (current stage) + a "done!" bubble.
             ZStack(alignment: .topTrailing) {
-                ForEach(Array(confetti.enumerated()), id: \.offset) { _, c in
-                    Group {
-                        if c.3 {
-                            Circle().fill(c.2)
-                                .frame(width: 12, height: 12)
-                                .overlay(Circle().stroke(Theme.ink, lineWidth: 2))
-                        } else {
-                            RoundedRectangle(cornerRadius: 3)
-                                .fill(c.2)
-                                .frame(width: 12, height: 12)
-                                .overlay(RoundedRectangle(cornerRadius: 3).stroke(Theme.ink, lineWidth: 2))
-                                .rotationEffect(.degrees(c.4))
-                        }
-                    }
-                    .offset(x: c.0, y: c.1)
-                }
-
                 Circle()
                     .fill(Theme.happy.opacity(0.55))
                     .overlay(Circle().stroke(Theme.ink, lineWidth: Theme.borderWidth))
