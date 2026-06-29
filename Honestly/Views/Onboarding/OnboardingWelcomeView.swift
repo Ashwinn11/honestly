@@ -32,9 +32,9 @@ struct OnboardingWelcomeView: View {
                 .scaleEffect(appeared ? 1 : 0.8)
                 .opacity(appeared ? 1 : 0)
 
-            OnboardingHeader(eyebrow: "good morning,",
-                             title: "welcome to your tiny morning ritual",
-                             subtitle: "your little morning letter to yourself.",
+            OnboardingHeader(eyebrow: "the morning you actually want",
+                             title: "honestly.",
+                             subtitle: "three quiet minutes, not the scroll.",
                              subtitleScript: true,
                              alignment: .center)
                 .padding(.horizontal, 28)
@@ -45,7 +45,7 @@ struct OnboardingWelcomeView: View {
 
             VStack(spacing: 14) {
                 ProgressDots(count: OnboardingView.totalSteps, index: stepIndex)
-                PrimaryButton(title: "let's begin →", action: onContinue)
+                PrimaryButton(title: "start my mornings", action: onContinue)
                     .padding(.horizontal, 28)
                 Text("takes 2 minutes · pinky promise")
                     .font(AppFont.accent(15))

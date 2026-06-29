@@ -6,12 +6,12 @@ struct OnboardingScrollTimeView: View {
     let onNext: () -> Void
     let onBack: () -> Void
 
-    // (label, minutes, blurb, plant stage shown)
-    private let options: [(String, Int, String, PlantStage)] = [
-        ("under 5 min", 5,  "you're already pretty mindful.", .sprout),
-        ("5–15 min",    15, "a common morning scroll.",       .young),
-        ("15–30 min",   30, "deep in the feed.",              .mature),
-        ("30+ min",     60, "it adds up fast.",               .flowering),
+    // (label, minutes, blurb, SF Symbol, badge tint)
+    private let options: [(String, Int, String, String, Color)] = [
+        ("under 5 min", 5,  "pretty mindful.", "leaf.fill",          Theme.confused),
+        ("5–15 min",    15, "a common morning scroll.",       "iphone",             Theme.happy),
+        ("15–30 min",   30, "deep in the feed.",              "hourglass",          Theme.sad),
+        ("30+ min",     60, "it adds up fast.",               "exclamationmark.bubble.fill", Theme.awful),
     ]
 
     var body: some View {
@@ -38,11 +38,17 @@ struct OnboardingScrollTimeView: View {
         }
     }
 
-    private func card(_ opt: (String, Int, String, PlantStage)) -> some View {
+    private func card(_ opt: (String, Int, String, String, Color)) -> some View {
         let selected = minutes == opt.1
         return Button { minutes = opt.1 } label: {
             VStack(alignment: .leading, spacing: 10) {
-                PlantView(stage: opt.3, size: 56)
+                Image(systemName: opt.3)
+                    .font(.system(size: 22, weight: .semibold))
+                    .foregroundStyle(Theme.ink)
+                    .frame(width: 50, height: 50)
+                    .background(opt.4)
+                    .clipShape(RoundedRectangle(cornerRadius: 15, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 15, style: .continuous).stroke(Theme.ink, lineWidth: 2))
                 Text(opt.0)
                     .font(AppFont.bodyBold(19))
                     .foregroundStyle(Theme.ink)

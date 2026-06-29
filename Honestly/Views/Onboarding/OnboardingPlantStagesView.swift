@@ -6,7 +6,7 @@ struct OnboardingPlantStagesView: View {
     let onBack: () -> Void
 
     private let stages: [(PlantStage, String)] = [
-        (.sprout, "day 1"), (.young, "day 30"), (.mature, "day 90"), (.flowering, "day 180"),
+        (.sprout, "0"), (.young, "10"), (.leafy, "30"), (.lush, "90"), (.bloom, "180"),
     ]
 
     var body: some View {
@@ -17,17 +17,17 @@ struct OnboardingPlantStagesView: View {
                                      title: "your little plant",
                                      subtitle: "show up every morning and watch it bloom. miss a day and it needs you back.")
 
-                    HStack(spacing: 8) {
+                    HStack(spacing: 6) {
                         ForEach(Array(stages.enumerated()), id: \.offset) { _, item in
-                            VStack(spacing: 6) {
-                                PlantView(stage: item.0, size: 56)
-                                    .padding(10)
-                                    .appCardStyle(radius: 16, fill: item.0.bgTint)
+                            VStack(spacing: 5) {
+                                PlantView(stage: item.0, size: 44)
+                                    .padding(7)
+                                    .appCardStyle(radius: 14, fill: item.0.bgTint)
                                 Text(item.1)
-                                    .font(AppFont.accent(16))
+                                    .font(AppFont.accent(15))
                                     .foregroundStyle(Theme.orange)
                                 Text(item.0.displayName)
-                                    .font(AppFont.caption(12))
+                                    .font(AppFont.caption(10))
                                     .foregroundStyle(Theme.inkFaint)
                             }
                             .frame(maxWidth: .infinity)
@@ -36,7 +36,7 @@ struct OnboardingPlantStagesView: View {
 
                     HStack(spacing: 14) {
                         comparison(title: "show up", icon: "checkmark.circle.fill",
-                                   tint: Theme.orange, plant: .flowering, bg: Theme.confused.opacity(0.3))
+                                   tint: Theme.orange, plant: .bloom, bg: Theme.confused.opacity(0.3))
                         comparison(title: "miss a day", icon: "xmark.circle.fill",
                                    tint: Theme.inkFaint, plant: .sprout, bg: Theme.card)
                     }
@@ -75,9 +75,9 @@ struct OnboardingPlantStagesView: View {
 private extension PlantStage {
     var bgTint: Color {
         switch self {
-        case .sprout, .young: return Theme.confused.opacity(0.3)
-        case .mature:         return Theme.happy.opacity(0.3)
-        case .flowering:      return Theme.sad.opacity(0.3)
+        case .sprout, .young, .leafy: return Theme.confused.opacity(0.3)
+        case .lush:                   return Theme.happy.opacity(0.3)
+        case .bloom:                  return Theme.sad.opacity(0.3)
         }
     }
 }

@@ -17,37 +17,38 @@ struct OnboardingFocusShieldView: View {
         VStack(spacing: 0) {
             Spacer()
 
-            PlantView(stage: .mature, size: 120)
-                .padding(28)
-                .appCardStyle(fill: Theme.card)
-                .padding(.bottom, 8)
+            Image("art-journal")
+                .resizable().scaledToFit()
+                .frame(width: 180, height: 180)
+                .padding(.bottom, 2)
 
             OnboardingHeader(eyebrow: "the whole point —",
                              title: "let us guard your morning peace",
                              alignment: .center)
                 .padding(.top, 16)
 
-            VStack(spacing: 12) {
+            VStack(spacing: 10) {
                 ForEach(Array(features.enumerated()), id: \.offset) { _, f in
-                    HStack(spacing: 14) {
+                    HStack(spacing: 13) {
                         Image(systemName: f.0)
-                            .font(.system(size: 18, weight: .semibold))
+                            .font(.system(size: 17, weight: .semibold))
                             .foregroundStyle(Theme.ink)
-                            .frame(width: 44, height: 44)
+                            .frame(width: 40, height: 40)
                             .background(f.1)
-                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(Theme.ink, lineWidth: 2))
+                            .clipShape(RoundedRectangle(cornerRadius: 11, style: .continuous))
+                            .overlay(RoundedRectangle(cornerRadius: 11, style: .continuous).stroke(Theme.ink, lineWidth: 2))
                         Text(f.2)
-                            .font(AppFont.body(16))
+                            .font(AppFont.body(15))
                             .foregroundStyle(Theme.ink)
-                        Spacer()
+                            .fixedSize(horizontal: false, vertical: true)
+                            .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .padding(14)
-                    .appCardStyle(radius: 18)
+                    .padding(.horizontal, 13).padding(.vertical, 11)
+                    .appCardStyle(radius: 16)
                 }
             }
             .padding(.horizontal, 24)
-            .padding(.top, 20)
+            .padding(.top, 16)
 
             HStack(spacing: 6) {
                 Image(systemName: "lock.open.fill").foregroundStyle(Theme.orange)

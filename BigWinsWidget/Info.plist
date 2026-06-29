@@ -27,9 +27,11 @@
 	</dict>
 	<key>UIAppFonts</key>
 	<array>
-		<string>Outfit-Regular.ttf</string>
-		<string>Outfit-Medium.ttf</string>
-		<string>Outfit-SemiBold.ttf</string>
+		<string>Nunito-Regular.ttf</string>
+		<string>Nunito-Medium.ttf</string>
+		<string>Nunito-SemiBold.ttf</string>
+		<string>Nunito-Bold.ttf</string>
+		<string>Nunito-ExtraBold.ttf</string>
 		<string>Caveat-Regular.ttf</string>
 		<string>Caveat-Medium.ttf</string>
 		<string>Caveat-SemiBold.ttf</string>

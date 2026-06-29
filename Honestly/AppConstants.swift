@@ -27,7 +27,7 @@ struct AppConstants {
     static let keyScrollMinutes = "scrollMinutes"
     static let keySproutCount = "sproutCollectionCount"
 
-    static let plantStageThresholds = [0, 30, 90, 180]
+    static let plantStageThresholds = [0, 10, 30, 90, 180]
 
     static func stageForCount(_ count: Int) -> Int {
         var stage = 0

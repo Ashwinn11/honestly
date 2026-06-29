@@ -31,9 +31,11 @@ schemes:
 
 # Reused font list (app + widget both register these).
 .fonts: &appFonts
-  - Outfit-Regular.ttf
-  - Outfit-Medium.ttf
-  - Outfit-SemiBold.ttf
+  - Nunito-Regular.ttf
+  - Nunito-Medium.ttf
+  - Nunito-SemiBold.ttf
+  - Nunito-Bold.ttf
+  - Nunito-ExtraBold.ttf
   - Caveat-Regular.ttf
   - Caveat-Medium.ttf
   - Caveat-SemiBold.ttf

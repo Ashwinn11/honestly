@@ -10,11 +10,11 @@ struct OnboardingNotificationsView: View {
             Spacer()
 
             VStack(spacing: 24) {
-                PlantView(stage: .young, size: 120)
-                    .padding(28)
-                    .appCardStyle(fill: Theme.card)
+                Image("art-clock")
+                    .resizable().scaledToFit()
+                    .frame(width: 210, height: 210)
 
-                OnboardingHeader(eyebrow: "before you start —",
+                OnboardingHeader(eyebrow: "win the first move —",
                                  title: "we'll tap you before the scroll",
                                  subtitle: "a gentle nudge each morning so honestly opens first.",
                                  subtitleScript: true,

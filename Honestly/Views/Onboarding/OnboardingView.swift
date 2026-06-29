@@ -12,7 +12,7 @@ struct OnboardingView: View {
     @State private var goal: Goal = .clarity
     @State private var showPaywall = false
 
-    static let totalSteps = 7
+    static let totalSteps = 9
 
     var body: some View {
         ZStack {
@@ -34,14 +34,17 @@ struct OnboardingView: View {
     @ViewBuilder private var content: some View {
         switch step {
         case 0: OnboardingWelcomeView(stepIndex: 0) { advance() }
-        case 1: OnboardingScrollTimeView(stepIndex: 1, minutes: $scrollMinutes,
-                                         onNext: { advance() }, onBack: { back() })
+        case 1: OnboardingHowItWorksView(stepIndex: 1, onNext: { advance() }, onBack: { back() })
         case 2: OnboardingGoalView(stepIndex: 2, selected: $goal,
                                    onNext: { advance() }, onBack: { back() })
-        case 3: OnboardingHowItWorksView(stepIndex: 3, onNext: { advance() }, onBack: { back() })
-        case 4: OnboardingPlantStagesView(stepIndex: 4, onNext: { advance() }, onBack: { back() })
-        case 5: OnboardingNotificationsView(stepIndex: 5, onNext: { advance() }, onBack: { back() })
-        case 6: OnboardingFocusShieldView(stepIndex: 6, onNext: { advance() }, onBack: { back() })
+        case 3: OnboardingScrollTimeView(stepIndex: 3, minutes: $scrollMinutes,
+                                         onNext: { advance() }, onBack: { back() })
+        case 4: OnboardingTheCostView(stepIndex: 4, scrollMinutes: scrollMinutes,
+                                      onNext: { advance() }, onBack: { back() })
+        case 5: OnboardingAppBlockingView(stepIndex: 5, onNext: { advance() }, onBack: { back() })
+        case 6: OnboardingNotificationsView(stepIndex: 6, onNext: { advance() }, onBack: { back() })
+        case 7: OnboardingFocusShieldView(stepIndex: 7, onNext: { advance() }, onBack: { back() })
+        case 8: OnboardingPlantStagesView(stepIndex: 8, onNext: { advance() }, onBack: { back() })
         default: Color.clear
         }
     }

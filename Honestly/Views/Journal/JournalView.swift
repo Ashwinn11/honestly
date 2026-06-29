@@ -167,7 +167,7 @@ private struct EntryRow: View {
 private struct SproutCollectionCard: View {
     @EnvironmentObject var journalManager: JournalManager
 
-    private let milestones = AppConstants.plantStageThresholds   // [0,30,90,180]
+    private let milestones = AppConstants.plantStageThresholds   // [0,10,30,90,180]
     private var maxMilestone: Int { milestones.last ?? 180 }
     private var fraction: CGFloat {
         CGFloat(min(journalManager.sproutCount, maxMilestone)) / CGFloat(maxMilestone)

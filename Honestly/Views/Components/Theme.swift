@@ -48,15 +48,17 @@ enum Theme {
 // MARK: - Typography
 
 /// Fonts are referenced by exact PostScript face name (no `.weight()` synthesis),
-/// because the static Outfit/Caveat weights ship as separate font families.
+/// because the static Nunito/Caveat weights ship as separate font families.
 enum AppFont {
     // PostScript faces (registered via UIAppFonts in the app + widget targets).
-    private static func outfit(_ weight: Font.Weight) -> String {
+    private static func nunito(_ weight: Font.Weight) -> String {
         switch weight {
-        case .medium:               return "Outfit-Medium"
-        // Bold not used — SemiBold is the heaviest weight.
-        case .semibold, .bold, .heavy, .black: return "Outfit-SemiBold"
-        default:                    return "Outfit-Regular"
+        case .medium:          return "Nunito-Medium"
+        case .semibold:        return "Nunito-SemiBold"
+        case .bold:            return "Nunito-Bold"
+        // Big titles in the spec use weight 800 → ExtraBold.
+        case .heavy, .black:   return "Nunito-ExtraBold"
+        default:               return "Nunito-Regular"
         }
     }
     private static func caveat(_ weight: Font.Weight) -> String {
@@ -68,22 +70,21 @@ enum AppFont {
         }
     }
 
-    // Outfit reads large per point (tall metrics), so big sizes were oversized.
-    // Dampen: shrink large sizes more than small ones, keeping body readable
-    // while bringing titles/headlines down. Tune `dampen` to taste.
+    // Nunito has moderate metrics (slightly smaller per point than Outfit), so it
+    // needs little correction — sizes in the codebase were authored to match the
+    // redesign mock directly. Keep a light identity-ish trim only.
     private static func dampen(_ size: CGFloat) -> CGFloat {
         switch size {
-        case ..<14:   return size * 0.96   // captions stay readable
-        case ..<20:   return size * 0.90   // body / buttons
-        case ..<28:   return size * 0.84   // card titles / options
-        default:      return size * 0.78   // big titles / headlines
+        case ..<20:   return size            // captions / body / buttons as-is
+        case ..<28:   return size * 0.97     // card titles
+        default:      return size * 0.94     // big titles / headlines
         }
     }
 
     // `fixedSize` = absolute points, NOT scaled by the device Text Size / Dynamic
     // Type setting — so the layout stays as designed instead of ballooning.
     static func sans(_ size: CGFloat, _ weight: Font.Weight = .regular) -> Font {
-        .custom(outfit(weight), fixedSize: dampen(size))
+        .custom(nunito(weight), fixedSize: dampen(size))
     }
     static func script(_ size: CGFloat, _ weight: Font.Weight = .regular) -> Font {
         // Caveat already reads small; only a light trim.
@@ -91,9 +92,9 @@ enum AppFont {
     }
 
     // Semantic styles
-    static func display(_ size: CGFloat = 34) -> Font { sans(size, .bold) }
-    static func title(_ size: CGFloat = 34)   -> Font { sans(size, .bold) }
-    static func cardTitle(_ size: CGFloat = 26) -> Font { sans(size, .bold) }
+    static func display(_ size: CGFloat = 34) -> Font { sans(size, .heavy) }   // 800
+    static func title(_ size: CGFloat = 34)   -> Font { sans(size, .heavy) }   // 800
+    static func cardTitle(_ size: CGFloat = 26) -> Font { sans(size, .heavy) } // 800
     static func body(_ size: CGFloat = 16)    -> Font { sans(size, .regular) }
     static func bodyMedium(_ size: CGFloat = 16) -> Font { sans(size, .medium) }
     static func bodySemibold(_ size: CGFloat = 16) -> Font { sans(size, .semibold) }

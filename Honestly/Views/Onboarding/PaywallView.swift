@@ -11,25 +11,30 @@ struct PaywallView: View {
     @State private var legalDoc: LegalDoc?
     @State private var restoreMessage: String?
 
-    private var benefits: [(String, Color, String)] {
-        [("lock.shield.fill", Theme.awful,    "block the apps that hijack you"),
-         ("sunrise.fill",     Theme.happy,    "mornings on autopilot"),
-         ("book.fill",        Theme.confused, "your journal, everywhere"),
-         ("icloud.fill",      Theme.cry,      "never lose an entry")]
+    private var benefits: [String] {
+        ["block the apps that hijack you",
+         "every prompt & gratitude question",
+         "your journal, everywhere",
+         "unlimited garden & backups"]
     }
 
     private var selectedPlan: MorningClubPlan? {
         subscriptionManager.plans.first { $0.id == selectedID } ?? subscriptionManager.plans.first
     }
 
+    private var ctaTitle: String {
+        (selectedPlan?.isLifetime ?? false) ? "unlock lifetime" : "start free trial"
+    }
+
     var body: some View {
         ZStack {
             Theme.pageBackground
             ScrollView(showsIndicators: false) {
-                VStack(spacing: 22) {
+                VStack(spacing: 18) {
                     topBar
-                    appBadge
+                    plantHero
                     headline
+                    ratingRow
                     benefitList
                     planList
                     joinButton
@@ -80,51 +85,48 @@ struct PaywallView: View {
         .padding(.top, 12)
     }
 
-    private var appBadge: some View {
-        VStack(spacing: 12) {
-            Image("WelcomeHero")
-                .resizable().scaledToFit()
-                .frame(width: 96, height: 96)
-                .padding(8)
-                .background(Theme.orange)
-                .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).stroke(Theme.ink, lineWidth: Theme.borderWidth))
-                .background(RoundedRectangle(cornerRadius: 24, style: .continuous).fill(Theme.ink).offset(y: Theme.shadowOffset))
-            HStack(spacing: 6) {
-                Image(systemName: "sparkles").foregroundStyle(Theme.orange)
-                Text("MORNING CLUB")
-                    .font(AppFont.bodyBold(15))
-                    .tracking(1.5)
-                    .foregroundStyle(.white)
-            }
-            .padding(.horizontal, 18).padding(.vertical, 9)
-            .background(Theme.ink)
-            .clipShape(Capsule())
-        }
+    private var plantHero: some View {
+        PlantView(stage: .bloom, size: 120)
+            .frame(width: 150, height: 150)
+            .background(Theme.happy.opacity(0.5))
+            .clipShape(Circle())
+            .overlay(Circle().stroke(Theme.ink.opacity(0.08), lineWidth: 1.5))
     }
 
     private var headline: some View {
-        VStack(spacing: 4) {
-            Eyebrow("this is for", size: 22)
-            Text("your mornings.")
-                .font(AppFont.display(34))
+        VStack(spacing: 2) {
+            Eyebrow("grow the whole garden", size: 20)
+            Text("Honestly Premium")
+                .font(AppFont.display(28))
                 .foregroundStyle(Theme.ink)
         }
     }
 
+    private var ratingRow: some View {
+        HStack(spacing: 7) {
+            Text("★★★★★").font(AppFont.caption(14)).foregroundStyle(Theme.orange).tracking(1)
+            Text("4.9 · 12,000 calmer mornings")
+                .font(AppFont.bodySemibold(13))
+                .foregroundStyle(Theme.inkFaint)
+        }
+    }
+
     private var benefitList: some View {
-        VStack(spacing: 16) {
+        VStack(alignment: .leading, spacing: 11) {
             ForEach(Array(benefits.enumerated()), id: \.offset) { _, b in
-                HStack(spacing: 14) {
-                    ColorIconBadge(icon: b.0, color: b.1, size: 44)
-                    Text(b.2)
-                        .font(AppFont.bodyBold(18))
+                HStack(spacing: 11) {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 15, weight: .bold))
+                        .foregroundStyle(Theme.orange)
+                    Text(b)
+                        .font(AppFont.body(16))
                         .foregroundStyle(Theme.ink)
                     Spacer()
                 }
             }
         }
         .padding(.horizontal, 4)
+        .padding(.top, 4)
     }
 
     @ViewBuilder private var planList: some View {
@@ -143,34 +145,25 @@ struct PaywallView: View {
         let isSelected = selectedPlan?.id == plan.id
         return Button { selectedID = plan.id } label: {
             HStack {
-                VStack(alignment: .leading, spacing: 3) {
-                    HStack(spacing: 8) {
-                        Text(plan.title)
-                            .font(AppFont.cardTitle(24))
-                            .foregroundStyle(Theme.ink)
-                        if plan.isLifetime {
-                            Text("one-time")
-                                .font(AppFont.accent(14))
-                                .foregroundStyle(Theme.orange)
-                                .padding(.horizontal, 10).padding(.vertical, 3)
-                                .overlay(Capsule().stroke(Theme.orange, lineWidth: 1.5))
-                        }
-                    }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(plan.title)
+                        .font(AppFont.bodyBold(17))
+                        .foregroundStyle(Theme.ink)
                     Text(plan.subtitle)
-                        .font(AppFont.body(15))
+                        .font(AppFont.accent(15))
                         .foregroundStyle(Theme.inkFaint)
                 }
                 Spacer()
-                VStack(alignment: .trailing, spacing: 2) {
+                VStack(alignment: .trailing, spacing: 1) {
                     Text(plan.priceLabel)
-                        .font(AppFont.title(22))
+                        .font(AppFont.bodyBold(17))
                         .foregroundStyle(Theme.ink)
                     Text(plan.unitLabel)
-                        .font(AppFont.caption(13))
+                        .font(AppFont.caption(12))
                         .foregroundStyle(Theme.inkFaint)
                 }
             }
-            .padding(18)
+            .padding(16)
             .appCardStyle(fill: isSelected ? Theme.orange.opacity(0.14) : Theme.card,
                           borderColor: isSelected ? Theme.orange : Theme.ink)
         }
@@ -181,7 +174,7 @@ struct PaywallView: View {
         VStack(spacing: 12) {
             Button(action: purchase) {
                 VStack(spacing: 2) {
-                    Text(purchasing ? "…" : "join the club")
+                    Text(purchasing ? "…" : ctaTitle)
                         .font(AppFont.button())
                     if let plan = selectedPlan, !purchasing {
                         Text("\(plan.priceLabel) · \(plan.unitLabel)")
@@ -191,7 +184,7 @@ struct PaywallView: View {
                 }
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
+                .padding(.vertical, 15)
                 .background(Theme.orange)
                 .clipShape(Capsule(style: .continuous))
                 .overlay(Capsule(style: .continuous).stroke(Theme.ink, lineWidth: Theme.borderWidth))
@@ -199,9 +192,9 @@ struct PaywallView: View {
             }
             .buttonStyle(.plain)
 
-            Text("instant full access · cancel anytime.")
-                .font(AppFont.bodySemibold(14))
-                .foregroundStyle(Theme.ink)
+            Text("cancel anytime · nothing charged today")
+                .font(AppFont.body(13))
+                .foregroundStyle(Theme.inkFaint)
         }
         .padding(.top, 4)
     }

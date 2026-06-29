@@ -1,38 +1,45 @@
 import Foundation
 
 enum PlantStage: Int, CaseIterable, Identifiable {
-    case sprout    = 0
-    case young     = 1
-    case mature    = 2
-    case flowering = 3
+    case sprout = 0
+    case young  = 1
+    case leafy  = 2
+    case lush   = 3
+    case bloom  = 4
 
     var id: Int { rawValue }
 
     var displayName: String {
         switch self {
-        case .sprout:    return "sprout"
-        case .young:     return "young"
-        case .mature:    return "mature"
-        case .flowering: return "flowering"
+        case .sprout: return "sprout"
+        case .young:  return "young"
+        case .leafy:  return "leafy"
+        case .lush:   return "lush"
+        case .bloom:  return "bloom"
         }
     }
 
+    /// Asset name in Assets.xcassets (plant-<key>).
+    var assetKey: String { displayName }
+
     var range: String {
         switch self {
-        case .sprout:    return "0 – 29"
-        case .young:     return "30 – 89"
-        case .mature:    return "90 – 179"
-        case .flowering: return "180+"
+        case .sprout: return "0 – 9"
+        case .young:  return "10 – 29"
+        case .leafy:  return "30 – 89"
+        case .lush:   return "90 – 179"
+        case .bloom:  return "180+"
         }
     }
 
     /// Short description shown on the "your garden stages" sheet.
     var blurb: String {
         switch self {
-        case .sprout:    return "Day one. a single seedling."
-        case .young:     return "Stems up, real leaves unfurl."
-        case .mature:    return "Full, bushy foliage."
-        case .flowering: return "It blooms — the milestone reward."
+        case .sprout: return "A few fresh leaves to start."
+        case .young:  return "Filling out, finding the light."
+        case .leafy:  return "Bushy and green all over."
+        case .lush:   return "Full, healthy, thriving."
+        case .bloom:  return "Flourishing — the milestone reward."
         }
     }
 
