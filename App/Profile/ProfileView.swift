@@ -1,0 +1,234 @@
+import SwiftUI
+import FamilyControls
+
+/// You — the stats hero, the mood distribution, and grouped settings/account/about rows.
+/// Matches `Honestly.dc.html` lines 484–563 ("Honestly Premium" per the app's naming).
+struct ProfileView: View {
+    @Environment(JournalStore.self) private var store
+    @Environment(ScreenTimeManager.self) private var screenTime
+    @Environment(AppFlow.self) private var flow
+
+    @AppStorage("morningNudgeOn", store: SharedState.defaults) private var nudgeOn = true
+    @State private var showPicker = false
+    @State private var confirmDelete = false
+
+    var body: some View {
+        @Bindable var st = screenTime
+        ScreenScaffold {
+            VStack(alignment: .leading, spacing: 0) {
+                Text("You").font(Fonts.display(30, .bold)).foregroundStyle(Palette.ink)
+                Text("Little rituals, big mornings.")
+                    .font(Fonts.ui(14, .semibold)).foregroundStyle(Palette.inkSoft).padding(.top, 5)
+
+                heroCard.padding(.top, 16)
+                distributionCard.padding(.top, 16)
+                settingsCard.padding(.top, 16)
+
+                sectionEyebrow("Account")
+                accountCard
+                sectionEyebrow("About")
+                aboutCard
+                deleteCard.padding(.top, 16)
+            }
+        }
+        .familyActivityPicker(isPresented: $showPicker, selection: $st.selection)
+        .alert("Delete all data?", isPresented: $confirmDelete) {
+            Button("Delete", role: .destructive) { store.deleteAll(); Haptics.rigid() }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("This erases every page and resets your streak. It can't be undone.")
+        }
+        .onChange(of: nudgeOn) { _, on in
+            if on { Task { if await MorningNudge.requestAuthorization() { MorningNudge.schedule() } } }
+            else { MorningNudge.cancel() }
+        }
+    }
+
+    // MARK: Hero
+    private var heroCard: some View {
+        ZStack(alignment: .topTrailing) {
+            SunMark(size: 120, stroke: .white.opacity(0.3), fill: .white.opacity(0.3))
+                .spin(period: 30).offset(x: 28, y: -28)
+            VStack(alignment: .leading, spacing: 0) {
+                Text("\(store.streak)").font(Fonts.display(54, .heavy)).foregroundStyle(.white)
+                Eyebrow(text: "day streak", color: .white.opacity(0.92), tracking: 1, size: 13)
+                HStack(spacing: 26) {
+                    stat("\(store.totalMornings)", "total mornings")
+                    stat("\(store.bestStreak)", "best streak")
+                }
+                .padding(.top, 18)
+            }
+        }
+        .padding(22)
+        .background(Palette.amberGradient, in: RoundedRectangle(cornerRadius: 26, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
+        .shadow(color: Palette.amber.opacity(0.3), radius: 18, y: 12)
+    }
+    private func stat(_ value: String, _ label: String) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(value).font(Fonts.display(24, .heavy)).foregroundStyle(.white)
+            Text(label).font(Fonts.ui(11, .bold)).foregroundStyle(.white.opacity(0.9))
+        }
+    }
+
+    // MARK: Mood distribution
+    private var distributionCard: some View {
+        let counts = store.distribution
+        let total = max(counts.reduce(0, +), 1)
+        return VStack(alignment: .leading, spacing: 14) {
+            Text("Your moods, all told").font(Fonts.display(19, .bold)).foregroundStyle(Palette.ink)
+            GeometryReader { geo in
+                HStack(spacing: 2) {
+                    ForEach(0..<5, id: \.self) { i in
+                        if counts[i] > 0 {
+                            Palette.mood(i)
+                                .frame(width: max(2, (geo.size.width - 8) * CGFloat(counts[i]) / CGFloat(total)))
+                        }
+                    }
+                    if counts.allSatisfy({ $0 == 0 }) {
+                        Palette.ink.opacity(0.06)
+                    }
+                }
+                .frame(height: 16)
+                .clipShape(Capsule())
+            }
+            .frame(height: 16)
+            HStack {
+                ForEach(0..<5, id: \.self) { i in
+                    VStack(spacing: 5) {
+                        MoodFace(mood: i, size: 24)
+                        Text("\(counts[i])").font(Fonts.ui(12, .heavy)).foregroundStyle(Palette.ink)
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+            }
+        }
+        .softCard(padding: 18, radius: 22)
+    }
+
+    // MARK: Settings
+    private var settingsCard: some View {
+        VStack(spacing: 0) {
+            settingRow {
+                rowText("Morning nudge", "One gentle notification at 6:45 AM")
+            } trailing: {
+                AmberToggle(isOn: $nudgeOn)
+            }
+            divider
+            settingRow {
+                rowText("Morning window", nil)
+            } trailing: {
+                Text("6:00 – 9:00 AM").font(Fonts.ui(14, .bold)).foregroundStyle(Palette.inkSoft)
+            }
+            divider
+            Button { showPicker = true } label: {
+                settingRow {
+                    rowText("Apps on hold", "Managed by Screen Time")
+                } trailing: {
+                    Text(screenTime.selectedCount == 1 ? "1 app" : "\(screenTime.selectedCount) apps")
+                        .font(Fonts.ui(14, .bold)).foregroundStyle(Palette.amber)
+                }
+            }
+            .buttonStyle(RowPressStyle())
+        }
+        .background(.white, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .shadow(color: Color(hex: "78501E").opacity(0.08), radius: 13, y: 10)
+    }
+
+    // MARK: Account
+    private var accountCard: some View {
+        VStack(spacing: 0) {
+            settingRow {
+                rowText("iCloud sync", "Your pages, backed up privately")
+            } trailing: {
+                HStack(spacing: 9) {
+                    Text("On").font(Fonts.ui(14, .bold)).foregroundStyle(Palette.success)
+                    chevron
+                }
+            }
+            divider
+            Button { flow.showPaywall() } label: {
+                settingRow {
+                    rowText("Manage subscription", nil)
+                } trailing: {
+                    HStack(spacing: 9) {
+                        Text("Honestly Premium").font(Fonts.ui(14, .bold)).foregroundStyle(Palette.amber)
+                        chevron
+                    }
+                }
+            }
+            .buttonStyle(RowPressStyle())
+        }
+        .background(.white, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .shadow(color: Color(hex: "78501E").opacity(0.08), radius: 13, y: 10)
+    }
+
+    // MARK: About
+    private var aboutCard: some View {
+        VStack(spacing: 0) {
+            legalRow("Terms of Service", .terms)
+            divider
+            legalRow("Privacy Policy", .privacy)
+        }
+        .background(.white, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .shadow(color: Color(hex: "78501E").opacity(0.08), radius: 13, y: 10)
+    }
+    private func legalRow(_ title: String, _ doc: LegalDoc) -> some View {
+        NavigationLink {
+            LegalView(doc: doc).toolbar(.hidden, for: .navigationBar)
+        } label: {
+            settingRow {
+                Text(title).font(Fonts.ui(15, .bold)).foregroundStyle(Palette.ink)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            } trailing: { chevron }
+        }
+        .buttonStyle(RowPressStyle())
+    }
+
+    private var deleteCard: some View {
+        Button { confirmDelete = true } label: {
+            Text("Delete all data").font(Fonts.ui(15, .heavy)).foregroundStyle(Palette.danger)
+                .frame(maxWidth: .infinity).padding(.vertical, 16)
+        }
+        .buttonStyle(RowPressStyle())
+        .background(.white, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .shadow(color: Color(hex: "78501E").opacity(0.08), radius: 13, y: 10)
+    }
+
+    // MARK: Row building blocks
+    private func sectionEyebrow(_ text: String) -> some View {
+        Eyebrow(text: text, color: Color(hex: "C0B29A"), tracking: 1.2, size: 11)
+            .padding(.top, 22).padding(.bottom, 8).padding(.horizontal, 4)
+    }
+    private func settingRow<L: View, T: View>(@ViewBuilder _ leading: () -> L,
+                                              @ViewBuilder trailing: () -> T) -> some View {
+        HStack(spacing: 12) {
+            leading()
+            Spacer(minLength: 8)
+            trailing()
+        }
+        .padding(.horizontal, 18).padding(.vertical, 15)
+    }
+    private func rowText(_ title: String, _ subtitle: String?) -> some View {
+        VStack(alignment: .leading, spacing: 1) {
+            Text(title).font(Fonts.ui(15, .bold)).foregroundStyle(Palette.ink)
+            if let subtitle {
+                Text(subtitle).font(Fonts.ui(12, .medium)).foregroundStyle(Palette.inkSofter)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+    private var divider: some View { Rectangle().fill(Palette.ink.opacity(0.06)).frame(height: 1).padding(.leading, 18) }
+    private var chevron: some View {
+        Image(systemName: "chevron.right").font(.system(size: 12, weight: .bold)).foregroundStyle(Palette.hairline)
+    }
+}
+
+/// Row-press highlight (subtle paper wash) for the tappable list rows.
+private struct RowPressStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .background(configuration.isPressed ? Color(hex: "FAF5EE") : .clear)
+            .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
+    }
+}
