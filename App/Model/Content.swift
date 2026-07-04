@@ -92,37 +92,159 @@ enum AppContent {
         index == 0 ? "the first thing that comes to mind…" : "one more small thing…"
     }
 
-    // MARK: Onboarding — the ten slides
-    static let onboarding: [OnbSlide] = [
-        .init(kind: .brand,  title: "Honestly",
-              body: "The quiet part of the morning — before the world logs on."),
-        .init(kind: .noise,  title: "The first thing you touch each morning runs the whole day.",
-              body: "Reach for the phone and a hundred other voices get there before yours does."),
-        .init(kind: .page,   title: "So we give your mind a page before the world gets one.",
-              body: "Unfiltered. Unedited. Nobody watching. Just you, first."),
-        .init(kind: .moods,  title: "It starts with how you actually feel.",
-              body: "Tap a face. There are no wrong answers at 6am."),
-        .init(kind: .write,  title: "Then you empty your head onto the page.",
-              body: "Worries, plans, nonsense — let it spill. It stays yours and only yours."),
-        .init(kind: .grat,   title: "And you finish on five small good things.",
-              body: "Gratitude is a muscle. You'll flex it every single morning."),
-        .init(kind: .quiet,  title: "We keep the noise asleep while you write.",
-              body: "Your loudest apps stay locked until the page is done — powered by Screen Time. The quiet is the whole point."),
-        .init(kind: .streak, title: "Show up, and watch it grow.",
-              body: "A little each morning. Your streak is proof you kept a promise to yourself."),
-        .init(kind: .notif,  title: "One gentle nudge each morning?",
-              body: "No badges, no bait — just a nudge to meet yourself before the day does."),
-        .init(kind: .ready,  title: "Good morning, you.",
-              body: "Tomorrow, we'll be right here. Before everyone else."),
+    // MARK: - Onboarding funnel
+    // The onboarding is a conversion funnel, not a slideshow: hook → quiz → personalized plan →
+    // trust → paywall. The one number it promises (reclaimed time) is derived honestly from the
+    // user's own answers, never invented.
+
+    /// Copy for the two opening narrative slides (kept from the original deck, reused as the hook).
+    static let onbBrandTagline  = "The quiet part of the morning — before the world logs on."
+    static let onbProblemTitle  = "The first thing you touch each morning runs the whole day."
+    static let onbProblemBody   = "Reach for the phone and a hundred other voices get there before yours does."
+
+    // MARK: Quiz — goal (multi-select, up to 2)
+    static let goalQuestion = "What do you want your mornings to give you?"
+    static let goalHint     = "Pick up to two."
+
+    // MARK: Quiz — morning scroll time (single-select; feeds the reclaimed-time math)
+    static let scrollQuestion = "How long do you scroll before you're really up?"
+    static let scrollOptions: [ScrollOption] = [
+        .init(minutes: 5,  label: "Under 5 minutes",        note: "A quick peek"),
+        .init(minutes: 15, label: "About 15 minutes",       note: "One thing leads to another"),
+        .init(minutes: 30, label: "Half an hour, easy",     note: "The bed swallows me"),
+        .init(minutes: 60, label: "An hour or more — honestly", note: "Gone before I'm up"),
     ]
+
+    // MARK: Quiz — the apps (warm-up chips before the real Screen Time picker)
+    static let appsQuestion = "Which apps steal your mornings?"
+    static let appsHint     = "Tap the usual suspects. Next you'll pick them for real."
+
+    // MARK: Quiz — weekly commitment
+    static let commitQuestion = "How many mornings a week will you show up?"
+    static let commitOptions: [CommitOption] = [
+        .init(perWeek: 3, label: "3 mornings",   note: "Ease into it"),
+        .init(perWeek: 5, label: "5 mornings",   note: "Weekday warrior"),
+        .init(perWeek: 7, label: "Every morning", note: "All in — who I'm becoming"),
+    ]
+
+    // MARK: The three-step ritual (taught in one screen, condensing the old moods/write/grat slides)
+    static let ritualSteps: [RitualStep] = [
+        .init(kind: .moods, title: "Name the mood",  body: "Tap a face. No wrong answers at 6am."),
+        .init(kind: .write, title: "Empty your head", body: "A couple of minutes. Worries, plans, nonsense — let it spill."),
+        .init(kind: .grat,  title: "Five small goods", body: "Finish on gratitude. It's a muscle you'll build daily."),
+    ]
+
+    // MARK: The "building your plan" ticks
+    static let buildingTitle = "Designing your morning ritual…"
+    static let buildingTicks = ["Quieting your apps", "Choosing your prompts", "Setting your streak goal"]
+
+    // MARK: Notification nudge
+    static let notifTitle = "One gentle nudge each morning?"
+    static let notifBody  = "No badges, no bait — just a nudge to meet yourself before the day does."
+
+    // MARK: Reclaimed-time math (honest, derived from the user's own answers)
+
+    /// Hours per month currently handed to the scroll — assumes it happens every day (the pain).
+    static func painHours(scrollMin: Int) -> Int {
+        max(1, Int((Double(scrollMin) * 30.0 / 60.0).rounded()))
+    }
+
+    /// Hours per month taken back — the scroll time redirected on the mornings you actually show up.
+    static func reclaimedHours(scrollMin: Int, morningsPerWeek: Int) -> Int {
+        max(1, Int((Double(scrollMin) * Double(morningsPerWeek) * 4.345 / 60.0).rounded()))
+    }
+
+    // MARK: Social proof
+    // Honest by construction: fill `rating`/`ratingsCount`/`quotes` with REAL App Store values when
+    // available. While empty, the screen renders an aspirational form with no fabricated numbers.
+    static let socialProof = SocialProof(
+        rating: "",          // e.g. "4.8"
+        ratingsCount: "",    // e.g. "1,200+ ratings"
+        quotes: []           // e.g. [.init(text: "…", author: "…")]
+    )
 }
 
-struct OnbSlide: Identifiable {
-    let id = UUID()
+// MARK: - Funnel model types
+
+/// The stated goal — drives the plan-reveal empathy line and the personalized paywall.
+enum OnbGoal: String, CaseIterable, Identifiable {
+    case clearHead, calmStart, offPhone, momentForMe, feelFeelings
+    var id: String { rawValue }
+
+    /// The quiz option label.
+    var option: String {
+        switch self {
+        case .clearHead:    return "A clearer head"
+        case .calmStart:    return "A calmer start"
+        case .offPhone:     return "Off the phone, into my day"
+        case .momentForMe:  return "A few honest minutes for myself"
+        case .feelFeelings: return "To feel what I'm actually feeling"
+        }
+    }
+    /// Personalized paywall headline.
+    var paywallHero: String {
+        switch self {
+        case .clearHead:    return "A clearer head, every morning"
+        case .calmStart:    return "A calmer start to every day"
+        case .offPhone:     return "Take your mornings back"
+        case .momentForMe:  return "A few honest minutes, daily"
+        case .feelFeelings: return "Meet yourself, honestly"
+        }
+    }
+    /// Empathy line on the plan-reveal, addressed to their "why".
+    var planEmpathy: String {
+        switch self {
+        case .clearHead:    return "Let's clear the morning fog before the world fills it."
+        case .calmStart:    return "Let's trade the anxious scroll for a calmer few minutes."
+        case .offPhone:     return "Let's get you off the phone and into your actual day."
+        case .momentForMe:  return "Let's carve out a few minutes that are only yours."
+        case .feelFeelings: return "Let's make space to feel what you're actually feeling."
+        }
+    }
+    /// SF Symbol of the paywall benefit this goal cares about most (moved to the top of the list).
+    var leadBenefit: String {
+        switch self {
+        case .clearHead, .calmStart: return "leaf.fill"
+        case .offPhone:              return "sunrise.fill"
+        case .momentForMe:           return "lock.fill"
+        case .feelFeelings:          return "flame.fill"
+        }
+    }
+}
+
+struct ScrollOption: Identifiable {
+    let minutes: Int
+    let label: String
+    let note: String
+    var id: Int { minutes }
+}
+
+struct CommitOption: Identifiable {
+    let perWeek: Int
+    let label: String
+    let note: String
+    var id: Int { perWeek }
+}
+
+struct RitualStep: Identifiable {
     let kind: OnbKind
     let title: String
     let body: String
-    var hasText: Bool { kind != .brand }
+    var id: String { title }
 }
 
+struct SocialProof {
+    let rating: String        // "" until a real App Store rating is supplied
+    let ratingsCount: String  // "" until a real ratings count is supplied
+    let quotes: [Quote]       // empty until real review quotes are supplied
+    var hasStats: Bool { !rating.isEmpty }
+
+    struct Quote: Identifiable {
+        let text: String
+        let author: String
+        var id: String { author + text }
+    }
+}
+
+/// Illustration identities used by `OnbIllustration` in the onboarding view.
 enum OnbKind { case brand, noise, page, moods, write, grat, quiet, streak, notif, ready }

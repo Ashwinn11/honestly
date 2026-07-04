@@ -1,147 +1,364 @@
 import SwiftUI
 import FamilyControls
 
-/// The ten-slide onboarding, matching `Honestly.dc.html` 1:1 — a horizontal pager with a Skip
-/// affordance, animated illustrations, pager dots, and per-slide CTAs. The Screen Time and
-/// notification permission requests are wired into the relevant slides (the OS UI appears over
-/// the matching slide, so the visual flow is unchanged).
+/// The onboarding is a conversion funnel, not a slideshow: hook → interactive quiz → a plan built
+/// from the user's own answers → trust → the hard paywall. Every quiz answer does something real
+/// (drives the block list, the weekly goal, and the personalized plan/paywall). The one number it
+/// promises — reclaimed hours — is derived from the user's stated scroll time, never invented.
+///
+/// One chrome across every beat: content + footer are grouped and centered (so they never drift
+/// apart on tall screens), dotted progress rides above a `[back]  [Continue]` row where the amber
+/// CTA fills the width left of a square back button.
 struct OnboardingView: View {
     var onFinish: () -> Void
 
     @Environment(ScreenTimeManager.self) private var screenTime
-    @State private var step = 0
-    @State private var showPicker = false
-    @State private var dragX: CGFloat = 0
-    @State private var atPaywall = false        // final step — the hard paywall, can't be skipped
 
-    private var slides: [OnbSlide] { AppContent.onboarding }
-    private var slide: OnbSlide { slides[step] }
-    private var isLast: Bool { step == slides.count - 1 }
-    private var showSkip: Bool { step > 0 && !isLast }
+    @State private var answers = OnboardingAnswers()
+    @State private var index = 0
+    @State private var forward = true
+    @State private var showPicker = false
+
+    /// The ordered funnel. `allCases` follows declaration order.
+    private enum Beat: Int, CaseIterable {
+        case brand, problem, goal, scroll, pain, apps, commitment, building, plan, ritual, social, notif, paywall
+    }
+    private let beats = Beat.allCases
+    private var beat: Beat { beats[index] }
+
+    /// Total dots = every beat before the paywall.
+    private var dotTotal: Int { beats.count - 1 }
+    private var canGoBack: Bool { index > 0 && beat != .building }
 
     var body: some View {
         @Bindable var st = screenTime
-        Group {
-            if atPaywall {
-                // The paywall IS the last step of onboarding — reached only after the final slide,
-                // never via Skip. Unlocking (purchase or restore) finishes onboarding.
-                PaywallView(gate: true, onClose: { finish() })
+        ZStack {
+            PaperBackground()
+            if beat == .paywall {
+                // The paywall IS the last beat — reached only here, unskippable. Unlocking finishes.
+                PaywallView(gate: true, onClose: finish)
                     .transition(.move(edge: .trailing).combined(with: .opacity))
             } else {
-                ZStack {
-                    PaperBackground()
-                    VStack(spacing: 0) {
-                        header
-                        pager
-                        controls
-                    }
-                    .capWidth(Metrics.maxContentWidth)   // centered column; pager reads the capped width
-                }
-                .familyActivityPicker(isPresented: $showPicker, selection: $st.selection)
-                .onChange(of: showPicker) { _, presented in
-                    if !presented { advance() }        // picking done → move on
-                }
+                beatView
+                    .id(index)
+                    .transition(slide)
+                    .capWidth(Metrics.maxContentWidth)
             }
         }
-        .animation(Motion.gentle, value: atPaywall)
+        .animation(Motion.gentle, value: index)
+        .familyActivityPicker(isPresented: $showPicker, selection: $st.selection)
+        .onChange(of: showPicker) { _, presented in
+            if !presented { advance() }        // picker dismissed → move past the apps beat
+        }
     }
 
-    // MARK: Header (Skip)
-    private var header: some View {
-        HStack {
-            Spacer()
-            if showSkip {
-                // Skip jumps to the LAST slide, not into the app — so the paywall after it can't be skipped.
-                Button("Skip") { withAnimation(Motion.gentle) { step = slides.count - 1 } }
-                    .font(Fonts.ui(14, .bold))
-                    .foregroundStyle(Palette.inkSofter)
-                    .padding(6)
-                    .transition(.opacity)
-            }
-        }
-        .frame(height: 32)
-        .padding(.top, 56)
-        .padding(.horizontal, 22)
+    private var slide: AnyTransition {
+        .asymmetric(
+            insertion: .move(edge: forward ? .trailing : .leading).combined(with: .opacity),
+            removal:   .move(edge: forward ? .leading : .trailing).combined(with: .opacity))
     }
 
-    // MARK: Pager
-    private var pager: some View {
-        GeometryReader { geo in
-            let w = geo.size.width
-            HStack(spacing: 0) {
-                ForEach(Array(slides.enumerated()), id: \.element.id) { i, s in
-                    OnbSlideView(slide: s, active: i == step)
-                        .frame(width: w)
+    // MARK: - Per-beat body
+
+    @ViewBuilder private var beatView: some View {
+        switch beat {
+        case .brand:
+            chrome(primary: .init(title: "Good morning") { advance() }) {
+                narrative(.brand)
+            }
+
+        case .problem:
+            chrome(primary: .init(title: "Continue") { advance() }) {
+                narrative(.noise, title: AppContent.onbProblemTitle, body: AppContent.onbProblemBody)
+            }
+
+        case .goal:
+            chrome(primary: .init(title: "Continue", enabled: !answers.goals.isEmpty) { advance() }) {
+                questionColumn(AppContent.goalQuestion, hint: AppContent.goalHint) {
+                    ForEach(OnbGoal.allCases) { g in
+                        OnbOptionRow(label: g.option, selected: answers.isGoalSelected(g), multi: true) {
+                            withAnimation(Motion.snappy) { answers.toggleGoal(g) }
+                            Haptics.select()
+                        }
+                    }
                 }
             }
-            .frame(width: w, alignment: .leading)
-            .offset(x: -CGFloat(step) * w + dragX)
-            .animation(Motion.gentle, value: step)
-            .contentShape(Rectangle())
-            .gesture(
-                DragGesture()
-                    .onChanged { g in dragX = g.translation.width * 0.7 }
-                    .onEnded { g in
-                        let threshold = w * 0.22
-                        if g.translation.width < -threshold, !isLast { step += 1; Haptics.select() }
-                        else if g.translation.width > threshold, step > 0 { step -= 1; Haptics.select() }
-                        withAnimation(Motion.gentle) { dragX = 0 }
+
+        case .scroll:
+            chrome(primary: .init(title: "Continue", enabled: answers.scrollMinutes > 0) { advance() }) {
+                questionColumn(AppContent.scrollQuestion) {
+                    ForEach(AppContent.scrollOptions) { opt in
+                        OnbOptionRow(label: opt.label, note: opt.note,
+                                     selected: answers.scrollMinutes == opt.minutes) {
+                            withAnimation(Motion.snappy) { answers.scrollMinutes = opt.minutes }
+                            Haptics.select()
+                        }
                     }
-            )
+                }
+            }
+
+        case .pain:
+            chrome(primary: .init(title: "Let's fix that") { advance() }) {
+                painReveal
+            }
+
+        case .apps:
+            chrome(primary: .init(title: "Choose apps to quiet") { chooseApps() },
+                   secondary: .init(title: "Not now") { advance() }) {
+                appsQuestion
+            }
+
+        case .commitment:
+            chrome(primary: .init(title: "Continue") { advance() }) {
+                questionColumn(AppContent.commitQuestion) {
+                    ForEach(AppContent.commitOptions) { opt in
+                        OnbOptionRow(label: opt.label, note: opt.note,
+                                     selected: answers.weeklyGoal == opt.perWeek) {
+                            withAnimation(Motion.snappy) { answers.weeklyGoal = opt.perWeek }
+                            Haptics.select()
+                        }
+                    }
+                }
+            }
+
+        case .building:
+            OnbBuildingView(onDone: advance, dotIndex: index, dotTotal: dotTotal)
+
+        case .plan:
+            chrome(primary: .init(title: "This is me") { advance() }) {
+                OnbPlanView(answers: answers)
+            }
+
+        case .ritual:
+            chrome(primary: .init(title: "Continue") { advance() }) {
+                OnbRitualTeachView()
+            }
+
+        case .social:
+            chrome(primary: .init(title: "Continue") { advance() }) {
+                OnbSocialProofView()
+            }
+
+        case .notif:
+            chrome(primary: .init(title: "Allow notifications") { requestNotifications() },
+                   secondary: .init(title: "Maybe later") { advance() }) {
+                narrative(.notif, title: AppContent.notifTitle, body: AppContent.notifBody)
+            }
+
+        case .paywall:
+            EmptyView()   // handled at the top level
         }
-        .clipped()
     }
 
-    // MARK: Bottom controls
-    private var controls: some View {
-        VStack(spacing: 4) {
-            PagerDots(count: slides.count, index: step)
-                .padding(.bottom, 18)
+    // MARK: - Shared chrome (content + footer grouped and centered)
 
-            if slide.kind == .notif {
-                PrimaryButton(title: "Allow notifications") {
-                    Task {
-                        if await MorningNudge.requestAuthorization() { MorningNudge.schedule() }
-                        advance()
-                    }
+    @ViewBuilder
+    private func chrome<C: View>(primary: FooterButton,
+                                 secondary: FooterLink? = nil,
+                                 @ViewBuilder content: @escaping () -> C) -> some View {
+        VStack(spacing: 0) {
+            // Same strategy as the paywall: content is vertically centered in the space between the
+            // top and the footer, and scrolls only when it's taller than that space — so short beats
+            // sit centered (not pushed to the bottom) and long ones never clip.
+            GeometryReader { geo in
+                ScrollView {
+                    content()
+                        .frame(maxWidth: .infinity)
+                        .frame(minHeight: geo.size.height, alignment: .center)
+                        .padding(.vertical, 12)
                 }
-                GhostButton(title: "Maybe later") { advance() }
-            } else {
-                PrimaryButton(title: ctaLabel) { primaryTapped() }
+                .scrollIndicators(.hidden)
+                .scrollBounceBehavior(.basedOnSize)
             }
+            footer(primary: primary, secondary: secondary)   // pinned at the bottom
         }
-        .padding(.horizontal, 30)
-        .padding(.top, 14)
+        .padding(.horizontal, 26)
+        .padding(.top, 8)
         .padding(.bottom, 30)
     }
 
-    private var ctaLabel: String {
-        switch slide.kind {
-        case .brand: return "Good morning"
-        case .ready: return "Enter Honestly"
-        default:     return "Continue"
+    private func footer(primary: FooterButton, secondary: FooterLink?) -> some View {
+        VStack(spacing: 18) {
+            OnbDots(index: index, total: dotTotal)
+            HStack(spacing: 12) {
+                if canGoBack { backButton }
+                ctaButton(primary)
+            }
+            if let secondary {
+                Button { Haptics.tap(); secondary.action() } label: {
+                    Text(secondary.title)
+                        .font(Fonts.ui(14.5, .bold)).foregroundStyle(Palette.inkSofter)
+                        .frame(maxWidth: .infinity).padding(.vertical, 2)
+                }
+                .buttonStyle(PressableStyle(scale: 0.98))
+            }
         }
     }
 
-    // MARK: Actions
-    private func primaryTapped() {
-        if slide.kind == .quiet {
-            // Screen Time slide → same centralized gate as Settings: ask permission first, and only
-            // open the app picker if granted; on "Don't Allow", just move on (never picker unauthorized).
-            Task {
-                if await screenTime.ensureAuthorizedForPicker() { showPicker = true } else { advance() }
-            }
-            return
+    /// Square back container (rounded corners, not a circle), sized to sit beside the CTA.
+    private var backButton: some View {
+        Button { Haptics.tap(); back() } label: {
+            Image(systemName: "chevron.left")
+                .font(.system(size: DesignScale.s(16), weight: .bold))
+                .foregroundStyle(Palette.inkSoft)
+                .frame(width: DesignScale.s(56), height: DesignScale.s(56))
+                .background(Palette.ink.opacity(0.05),
+                            in: RoundedRectangle(cornerRadius: DesignScale.s(17), style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: DesignScale.s(17), style: .continuous)
+                    .stroke(Palette.hairline, lineWidth: 1.3))
         }
-        advance()
+        .buttonStyle(PressableStyle())
     }
+
+    /// The app's amber CTA — fills the width left of the back button (never edge-to-edge when back shows).
+    private func ctaButton(_ b: FooterButton) -> some View {
+        Button {
+            guard b.enabled else { return }
+            Haptics.tap(); b.action()
+        } label: {
+            Text(b.title)
+                .font(Fonts.ui(16.5, .heavy))
+                .foregroundStyle(b.enabled ? .white : Palette.inkSofter)
+                .frame(maxWidth: .infinity, minHeight: DesignScale.s(56))
+                .background(b.enabled ? AnyShapeStyle(Palette.amber) : AnyShapeStyle(Palette.ink.opacity(0.08)),
+                            in: RoundedRectangle(cornerRadius: DesignScale.s(17), style: .continuous))
+                .shadow(color: b.enabled ? Palette.amber.opacity(0.32) : .clear,
+                        radius: DesignScale.s(11), y: DesignScale.s(9))
+        }
+        .buttonStyle(PressableStyle())
+        .disabled(!b.enabled)
+        .animation(Motion.snappy, value: b.enabled)
+    }
+
+    private struct FooterButton {
+        let title: String
+        var enabled: Bool = true
+        let action: () -> Void
+    }
+    private struct FooterLink {
+        let title: String
+        let action: () -> Void
+    }
+
+    // MARK: - Content builders (component → title → subcopy rhythm, centered by the chrome)
+
+    private func narrative(_ kind: OnbKind, title: String? = nil, body: String? = nil) -> some View {
+        VStack(spacing: 26) {
+            OnbIllustration(kind: kind)
+            if let title {
+                VStack(spacing: 11) {
+                    Text(title)
+                        .font(Fonts.display(27, .bold)).foregroundStyle(Palette.ink)
+                        .multilineTextAlignment(.center).lineSpacing(2)
+                    if let body {
+                        Text(body)
+                            .font(Fonts.ui(15.5, .semibold)).foregroundStyle(Palette.inkSoft)
+                            .multilineTextAlignment(.center).lineSpacing(4)
+                    }
+                }
+                .padding(.horizontal, 8)
+            }
+        }
+    }
+
+    private func questionColumn<Rows: View>(_ title: String, hint: String? = nil,
+                                            @ViewBuilder rows: () -> Rows) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            VStack(alignment: .leading, spacing: 9) {
+                Text(title)
+                    .font(Fonts.display(26, .bold)).foregroundStyle(Palette.ink).lineSpacing(2)
+                if let hint {
+                    Text(hint).font(Fonts.ui(14, .semibold)).foregroundStyle(Palette.inkSoft)
+                }
+            }
+            .padding(.bottom, 22)
+
+            VStack(spacing: 10) { rows() }
+        }
+    }
+
+    private var painReveal: some View {
+        VStack(spacing: 0) {
+            Eyebrow(text: "Right now", tracking: 2, size: 13)
+            Text("\(answers.painHours)")
+                .font(Fonts.display(96, .heavy)).foregroundStyle(Palette.amber)
+                .padding(.top, 8)
+            Text("hours a month")
+                .font(Fonts.display(26, .bold)).foregroundStyle(Palette.ink)
+            Text("handed to the scroll — gone before\nyou're even awake.")
+                .font(Fonts.ui(16, .semibold)).foregroundStyle(Palette.inkSoft)
+                .multilineTextAlignment(.center).lineSpacing(4)
+                .padding(.top, 16)
+        }
+    }
+
+    private var appsQuestion: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            VStack(alignment: .leading, spacing: 9) {
+                Text(AppContent.appsQuestion)
+                    .font(Fonts.display(26, .bold)).foregroundStyle(Palette.ink).lineSpacing(2)
+                Text(AppContent.appsHint).font(Fonts.ui(14, .semibold)).foregroundStyle(Palette.inkSoft)
+            }
+            .padding(.bottom, 24)
+
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 16), count: 3), spacing: 18) {
+                ForEach(Brand.allCases) { b in
+                    let picked = answers.isBrandPicked(b)
+                    Button {
+                        Haptics.select()
+                        withAnimation(Motion.snappy) { answers.toggleBrand(b) }
+                    } label: {
+                        VStack(spacing: 7) {
+                            BrandIcon(brand: b, size: 62)
+                                .grayscale(picked ? 0 : 0.7)
+                                .opacity(picked ? 1 : 0.55)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 62 * 0.23, style: .continuous)
+                                        .stroke(Palette.amber, lineWidth: picked ? 3 : 0))
+                            Text(b.displayName)
+                                .font(Fonts.ui(11.5, .bold))
+                                .foregroundStyle(picked ? Palette.ink : Palette.inkSofter)
+                        }
+                    }
+                    .buttonStyle(PressableStyle())
+                }
+            }
+        }
+    }
+
+    // MARK: - Navigation
 
     private func advance() {
-        if isLast { atPaywall = true }         // end of slides → the paywall step
-        else { withAnimation(Motion.gentle) { step += 1 } }
+        guard index < beats.count - 1 else { return }
+        forward = true
+        withAnimation(Motion.gentle) { index += 1 }
+        if beat == .building { answers.persist() }   // lock answers in before the paywall reads them
+    }
+
+    private func back() {
+        guard index > 0 else { return }
+        forward = false
+        var target = index - 1
+        if beats[target] == .building { target -= 1 }   // don't land on the auto-advancing build beat
+        withAnimation(Motion.gentle) { index = max(0, target) }
+    }
+
+    private func chooseApps() {
+        Task {
+            if await screenTime.ensureAuthorizedForPicker() { showPicker = true }
+            else { advance() }
+        }
+    }
+
+    private func requestNotifications() {
+        Task {
+            if await MorningNudge.requestAuthorization() { MorningNudge.schedule() }
+            advance()
+        }
     }
 
     private func finish() {
+        answers.persist()
         screenTime.armSchedule()
         SharedState.onboardingComplete = true
         Haptics.success()
@@ -149,38 +366,307 @@ struct OnboardingView: View {
     }
 }
 
-// MARK: - One slide (illustration + optional title/body)
+// MARK: - Dotted progress
 
-private struct OnbSlideView: View {
-    let slide: OnbSlide
-    let active: Bool
+private struct OnbDots: View {
+    let index: Int      // current beat (0-based)
+    let total: Int
+    var body: some View {
+        HStack(spacing: 7) {
+            ForEach(0..<total, id: \.self) { i in
+                Circle()
+                    .fill(i <= index ? Palette.amber : Palette.ink.opacity(0.12))
+                    .frame(width: i == index ? 8 : 6, height: i == index ? 8 : 6)
+            }
+        }
+        .animation(Motion.snappy, value: index)
+    }
+}
+
+// MARK: - Option row (single = radio, multi = checkbox)
+
+private struct OnbOptionRow: View {
+    let label: String
+    var note: String? = nil
+    let selected: Bool
+    var multi: Bool = false
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 13) {
+                indicator
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(label).font(Fonts.ui(16, .heavy)).foregroundStyle(Palette.ink)
+                    if let note {
+                        Text(note).font(Fonts.ui(12.5, .semibold)).foregroundStyle(Palette.inkSofter)
+                    }
+                }
+                Spacer(minLength: 8)
+            }
+            .padding(15)
+            .background(selected ? Palette.amber.opacity(0.08) : .white,
+                        in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(selected ? Palette.amber : Palette.hairline, lineWidth: selected ? 2 : 1.2))
+        }
+        .buttonStyle(PressableStyle(scale: 0.98))
+    }
+
+    @ViewBuilder private var indicator: some View {
+        ZStack {
+            if multi {
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .fill(selected ? Palette.amber : .clear)
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .stroke(selected ? Palette.amber : Palette.hairline, lineWidth: 2)
+                if selected {
+                    Image(systemName: "checkmark").font(.system(size: 12, weight: .heavy)).foregroundStyle(.white)
+                }
+            } else {
+                Circle().stroke(selected ? Palette.amber : Palette.hairline, lineWidth: 2)
+                if selected { Circle().fill(Palette.amber).frame(width: 12, height: 12) }
+            }
+        }
+        .frame(width: 22, height: 22)
+    }
+}
+
+// MARK: - Building screen
+
+private struct OnbBuildingView: View {
+    var onDone: () -> Void
+    let dotIndex: Int
+    let dotTotal: Int
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var rise = false
+    @State private var visibleTicks = 0
 
     var body: some View {
         VStack(spacing: 0) {
-            OnbIllustration(kind: slide.kind)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .padding(.horizontal, 34)
-
-            if slide.hasText {
-                VStack(spacing: 11) {
-                    Text(slide.title)
-                        .font(Fonts.display(27, .bold))
-                        .foregroundStyle(Palette.ink)
-                        .lineSpacing(2)
-                    Text(slide.body)
-                        .font(Fonts.ui(15.5, .semibold))
-                        .foregroundStyle(Palette.inkSoft)
-                        .lineSpacing(4)
+            Spacer()
+            VStack(spacing: 26) {
+                ZStack {
+                    Circle().fill(Palette.amber.opacity(0.14)).frame(width: 150, height: 150)
+                    SunMark(size: 104).spin(period: 22)
                 }
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, 34)
-                .padding(.bottom, 10)
+                .offset(y: rise ? 0 : 26)
+                .opacity(rise ? 1 : 0.15)
+                .floaty(period: 6)
+
+                Text(AppContent.buildingTitle)
+                    .font(Fonts.display(23, .bold)).foregroundStyle(Palette.ink)
+                    .multilineTextAlignment(.center)
+
+                VStack(alignment: .leading, spacing: 13) {
+                    ForEach(Array(AppContent.buildingTicks.enumerated()), id: \.offset) { i, t in
+                        HStack(spacing: 11) {
+                            ZStack {
+                                Circle().fill(i < visibleTicks ? Palette.amber : Palette.ink.opacity(0.08))
+                                    .frame(width: 24, height: 24)
+                                if i < visibleTicks {
+                                    Image(systemName: "checkmark").font(.system(size: 11, weight: .heavy))
+                                        .foregroundStyle(.white)
+                                }
+                            }
+                            Text(t).font(Fonts.ui(15, .bold))
+                                .foregroundStyle(i < visibleTicks ? Palette.ink : Palette.inkSofter)
+                        }
+                        .opacity(i < visibleTicks ? 1 : 0.5)
+                    }
+                }
+            }
+            Spacer()
+            OnbDots(index: dotIndex, total: dotTotal)     // pinned at the bottom like the footer
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(.horizontal, 40)
+        .padding(.top, 8)
+        .padding(.bottom, 30)
+        .task { await run() }
+    }
+
+    private func run() async {
+        if reduceMotion {
+            rise = true; visibleTicks = AppContent.buildingTicks.count
+            try? await Task.sleep(for: .seconds(0.5))
+            onDone(); return
+        }
+        withAnimation(.easeOut(duration: 0.6)) { rise = true }
+        for i in 1...AppContent.buildingTicks.count {
+            try? await Task.sleep(for: .seconds(0.62))
+            withAnimation(Motion.snappy) { visibleTicks = i }
+        }
+        try? await Task.sleep(for: .seconds(0.55))
+        onDone()
+    }
+}
+
+// MARK: - Plan reveal
+
+private struct OnbPlanView: View {
+    let answers: OnboardingAnswers
+
+    var body: some View {
+        VStack(spacing: 20) {
+            Eyebrow(text: "Your mornings, redesigned", tracking: 1.6, size: 12)
+
+            VStack(spacing: 3) {
+                Text("≈ \(answers.reclaimedHours) hours")
+                    .font(Fonts.display(48, .heavy)).foregroundStyle(Palette.amber)
+                Text("a month, taken back from the scroll")
+                    .font(Fonts.ui(14.5, .semibold)).foregroundStyle(Palette.inkSoft)
+            }
+            .multilineTextAlignment(.center)
+
+            Text(answers.primaryGoal.planEmpathy)
+                .font(Fonts.display(19, .bold)).foregroundStyle(Palette.ink)
+                .multilineTextAlignment(.center).lineSpacing(2)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, 4)
+
+            VStack(spacing: 15) {
+                planRow("sparkles", "The ritual",
+                        "Mood → a 2-minute write → 5 gratitudes  ·  ~3 min")
+                planRow("moon.zzz.fill", "The quiet",
+                        "\(answers.appsPhrase) stay asleep until you've written")
+                planRow("flame.fill", "The goal",
+                        "\(answers.weeklyGoal) mornings a week · a 30-day streak to make it stick")
+            }
+            .softCard(padding: 18)
+        }
+    }
+
+    private func planRow(_ icon: String, _ title: String, _ body: String) -> some View {
+        HStack(alignment: .top, spacing: 13) {
+            Image(systemName: icon)
+                .font(.system(size: 15, weight: .bold)).foregroundStyle(Palette.amber)
+                .frame(width: 38, height: 38)
+                .background(Palette.amber.opacity(0.12), in: Circle())
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title).font(Fonts.ui(15.5, .heavy)).foregroundStyle(Palette.ink)
+                Text(body).font(Fonts.ui(13.5, .semibold)).foregroundStyle(Palette.inkSoft).lineSpacing(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 0)
+        }
+    }
+}
+
+// MARK: - Ritual teach (three steps in one screen)
+
+private struct OnbRitualTeachView: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            VStack(alignment: .leading, spacing: 9) {
+                Text("Your 3-minute ritual")
+                    .font(Fonts.display(27, .bold)).foregroundStyle(Palette.ink)
+                Text("Three small steps, every morning.")
+                    .font(Fonts.ui(14.5, .semibold)).foregroundStyle(Palette.inkSoft)
+            }
+            .padding(.bottom, 24)
+
+            VStack(spacing: 14) {
+                ForEach(Array(AppContent.ritualSteps.enumerated()), id: \.element.id) { i, step in
+                    HStack(spacing: 15) {
+                        glyph(step.kind)
+                            .frame(width: 52, height: 52)
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(step.title).font(Fonts.ui(16, .heavy)).foregroundStyle(Palette.ink)
+                            Text(step.body).font(Fonts.ui(13.5, .semibold)).foregroundStyle(Palette.inkSoft)
+                                .lineSpacing(2).fixedSize(horizontal: false, vertical: true)
+                        }
+                        Spacer(minLength: 0)
+                    }
+                    .padding(14)
+                    .background(.white, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).stroke(Palette.hairline, lineWidth: 1))
+                    .staggeredAppear(index: i)
+                }
+            }
+        }
+    }
+
+    @ViewBuilder private func glyph(_ kind: OnbKind) -> some View {
+        switch kind {
+        case .moods:
+            MoodFace(mood: 0, size: 48)
+        case .write:
+            VStack(spacing: 5) {
+                lineCap(0.9, Palette.amberLight)
+                lineCap(1.0, Palette.ink.opacity(0.14))
+                lineCap(0.6, Palette.amber)
+            }
+            .padding(9)
+            .frame(width: 48, height: 48)
+            .background(.white, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(Palette.hairline, lineWidth: 1))
+        case .grat:
+            SunMark(size: 44, stroke: Palette.amber, fill: Palette.amberLight)
+        default:
+            SunMark(size: 44)
+        }
+    }
+    private func lineCap(_ frac: CGFloat, _ c: Color) -> some View {
+        GeometryReader { g in Capsule().fill(c).frame(width: g.size.width * frac, height: 5) }
+            .frame(height: 5)
+    }
+}
+
+// MARK: - Social proof
+
+private struct OnbSocialProofView: View {
+    private var sp: SocialProof { AppContent.socialProof }
+
+    var body: some View {
+        VStack(spacing: 20) {
+            HStack(spacing: 6) {
+                ForEach(0..<5, id: \.self) { _ in
+                    Image(systemName: "star.fill").font(.system(size: 22)).foregroundStyle(Palette.amber)
+                }
+            }
+            if sp.hasStats {
+                VStack(spacing: 2) {
+                    Text(sp.rating).font(Fonts.display(40, .heavy)).foregroundStyle(Palette.ink)
+                    if !sp.ratingsCount.isEmpty {
+                        Text(sp.ratingsCount).font(Fonts.ui(14, .semibold)).foregroundStyle(Palette.inkSoft)
+                    }
+                }
+            } else {
+                Text("Loved at first light")
+                    .font(Fonts.display(28, .bold)).foregroundStyle(Palette.ink)
+            }
+
+            if sp.quotes.isEmpty {
+                VStack(spacing: 12) {
+                    Text("“Meet yourself before the world logs on.”")
+                        .font(Fonts.display(20, .bold)).foregroundStyle(Palette.ink)
+                        .multilineTextAlignment(.center).lineSpacing(3)
+                    Text("You're about to join people who reclaimed their mornings.")
+                        .font(Fonts.ui(14.5, .semibold)).foregroundStyle(Palette.inkSoft)
+                        .multilineTextAlignment(.center).lineSpacing(3)
+                }
+                .padding(.horizontal, 8)
+            } else {
+                VStack(spacing: 12) {
+                    ForEach(sp.quotes) { q in
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("“\(q.text)”")
+                                .font(Fonts.ui(15, .bold)).foregroundStyle(Palette.ink).lineSpacing(3)
+                                .fixedSize(horizontal: false, vertical: true)
+                            Text("— \(q.author)")
+                                .font(Fonts.ui(12.5, .semibold)).foregroundStyle(Palette.inkSofter)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .softCard(padding: 16)
+                    }
+                }
             }
         }
     }
 }
 
-// MARK: - Illustrations (one per slide kind)
+// MARK: - Illustrations (one per slide kind) — retained from the original deck
 
 private struct OnbIllustration: View {
     let kind: OnbKind
@@ -218,13 +704,11 @@ private struct OnbIllustration: View {
 
     private var noise: some View {
         ZStack {
-            // phone
             RoundedRectangle(cornerRadius: 26, style: .continuous)
                 .fill(Palette.ink).frame(width: 118, height: 230)
                 .shadow(color: Palette.ink.opacity(0.24), radius: 17, y: 9)
             RoundedRectangle(cornerRadius: 20, style: .continuous)
                 .fill(Color(hex: "4A3A2A")).frame(width: 100, height: 210)
-            // floating notification bars
             bar(Palette.amber, w: 118).offset(x: -46, y: -78).floaty(period: 3.2)
             bar(Palette.mood(1), w: 120).offset(x: 44, y: -24).floaty(period: 3.8, delay: 0.3)
             bar(Palette.mood(4), w: 110).offset(x: -50, y: 30).floaty(period: 3.4, delay: 0.6)

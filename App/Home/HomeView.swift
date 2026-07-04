@@ -155,10 +155,34 @@ struct HomeView: View {
                     .frame(maxWidth: .infinity)
                 }
             }
+            weeklyGoalRow
         }
         .softCard(padding: 18)
         .staggeredAppear(index: 1)
     }
+
+    /// The weekly commitment the user made in onboarding, made visible: mornings shown up vs goal.
+    private var morningsThisWeek: Int { store.weekStrip.filter { $0.entry != nil }.count }
+    private var weeklyGoalRow: some View {
+        let goal = max(SharedState.weeklyGoal, 1)
+        let done = morningsThisWeek
+        let frac = min(CGFloat(done) / CGFloat(goal), 1)
+        return HStack(spacing: 11) {
+            Eyebrow(text: "This week", tracking: 1, size: 10.5)
+            GeometryReader { g in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(Palette.ink.opacity(0.08))
+                    Capsule().fill(Palette.amber).frame(width: max(6, g.size.width * frac))
+                }
+            }
+            .frame(height: 6)
+            Text(done >= goal ? "Goal met" : "\(done)/\(goal)")
+                .font(Fonts.ui(12, .heavy))
+                .foregroundStyle(done >= goal ? Palette.success : Palette.inkSoft)
+        }
+        .padding(.top, 2)
+    }
+
     private var streakSubtitle: String {
         let s = store.streak
         if s == 0 { return "A fresh page is waiting. Begin today." }

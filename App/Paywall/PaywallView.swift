@@ -16,13 +16,33 @@ struct PaywallView: View {
     @State private var showRestoreAlert = false
     @State private var legal: LegalDoc? = nil
 
-    // Sell the vision, not the feature list — each line is the *impact* / who you become.
-    private let benefits: [(String, String)] = [
-        ("sunrise.fill", "Reclaim your mornings from the scroll"),
-        ("leaf.fill",    "Start every day calmer and clearer"),
-        ("flame.fill",   "Become someone who shows up — daily"),
-        ("lock.fill",    "A private record of who you're becoming"),
-    ]
+    // Sell the vision, not the feature list — each line is the *impact* / who you become. The order
+    // is personalized: the benefit matching the user's stated onboarding goal is floated to the top.
+    private var benefits: [(String, String)] {
+        let all: [(String, String)] = [
+            ("sunrise.fill", "Reclaim your mornings from the scroll"),
+            ("leaf.fill",    "Start every day calmer and clearer"),
+            ("flame.fill",   "Become someone who shows up — daily"),
+            ("lock.fill",    "A private record of who you're becoming"),
+        ]
+        guard let lead = goal?.leadBenefit,
+              let i = all.firstIndex(where: { $0.0 == lead }) else { return all }
+        var arr = all
+        arr.insert(arr.remove(at: i), at: 0)
+        return arr
+    }
+
+    // The user's stated goal + scroll time, captured in onboarding — used to personalize the pitch.
+    private var goal: OnbGoal? { OnbGoal(rawValue: SharedState.onboardingGoal) }
+    private var heroTitle: String { goal?.paywallHero ?? "Take your mornings back" }
+    private var heroSub: String {
+        let mins = SharedState.scrollMinutes
+        if mins > 0 {
+            let h = AppContent.reclaimedHours(scrollMin: mins, morningsPerWeek: SharedState.weeklyGoal)
+            return "Unlock the ritual and take back ~\(h) hours a month from the scroll."
+        }
+        return "Reflect honestly each morning — and become who you're writing toward."
+    }
 
     var body: some View {
         ZStack {
@@ -71,10 +91,10 @@ struct PaywallView: View {
     private var hero: some View {
         VStack(spacing: 12) {
             SunMark(size: 68, stroke: Palette.amber, fill: Palette.amberLight).floaty()
-            Text("Manifest 3× faster")
+            Text(heroTitle)
                 .display(32, .heavy)
                 .multilineTextAlignment(.center)
-            Text("Reflect honestly each morning — and become who you're writing toward.")
+            Text(heroSub)
                 .ui(15, .semibold, color: Palette.inkSoft)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)

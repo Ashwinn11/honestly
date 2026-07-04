@@ -42,6 +42,7 @@
 		67DDF327D636834DEB368EAE /* CloudBackup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2231F4643A77903710C39679 /* CloudBackup.swift */; };
 		69C3FBAEAEB3F185C8064723 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 467A5480FADE60412A768408 /* HistoryView.swift */; };
 		6B16962BB5B38A531DFDC368 /* CalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54CE3C1C4576F0863F5CC877 /* CalendarView.swift */; };
+		6CEB490D17FB571FBF3BC7A0 /* OnboardingAnswers.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4A3FA778BCA346BFF78CC3D /* OnboardingAnswers.swift */; };
 		6D674A8E3EE8C314F7DEEC31 /* BlockingCodec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 061ECF0CF39440C344FB8DE7 /* BlockingCodec.swift */; };
 		707629C47E4B9B1D6986F8EA /* ShieldActionExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 2B50BFB4245FC077633028D0 /* ShieldActionExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		774E4E089AC052150791360D /* ShantellSans-ExtraBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = BAF9F7C84F8C7EA7FCC8557F /* ShantellSans-ExtraBold.ttf */; };
@@ -185,6 +186,7 @@
 		CE44E20BCB7FA81897657AE2 /* Nunito-ExtraBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Nunito-ExtraBold.ttf"; sourceTree = "<group>"; };
 		CE81F331686ACA60CF7D4B8E /* Nunito-Black.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Nunito-Black.ttf"; sourceTree = "<group>"; };
 		CFE1699424DA01A5DAB15C60 /* JournalStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JournalStore.swift; sourceTree = "<group>"; };
+		D4A3FA778BCA346BFF78CC3D /* OnboardingAnswers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingAnswers.swift; sourceTree = "<group>"; };
 		D51B539F838958F39739F3A7 /* Nunito-Bold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Nunito-Bold.ttf"; sourceTree = "<group>"; };
 		D62147A92601AB0CBF5AE714 /* AppFlow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppFlow.swift; sourceTree = "<group>"; };
 		D88A49E5ED3DB1C335A96B5C /* ShieldConfigurationExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ShieldConfigurationExtension.entitlements; sourceTree = "<group>"; };
@@ -388,6 +390,7 @@
 		CB269076970BCB892B3B0C85 /* Onboarding */ = {
 			isa = PBXGroup;
 			children = (
+				D4A3FA778BCA346BFF78CC3D /* OnboardingAnswers.swift */,
 				0C67B55D50159B662AEB0776 /* OnboardingView.swift */,
 			);
 			path = Onboarding;
@@ -658,6 +661,7 @@
 				A313199AC6E8E817001A5767 /* MoodFace.swift in Sources */,
 				AFD08F48896997E4EA0CEB02 /* MorningNudge.swift in Sources */,
 				CC78CCE91B26FD6FAAB63A5D /* Motion.swift in Sources */,
+				6CEB490D17FB571FBF3BC7A0 /* OnboardingAnswers.swift in Sources */,
 				2F69830582B97B939B3C3A5B /* OnboardingView.swift in Sources */,
 				653BC8CDF4AA9C5F5204DE26 /* Palette.swift in Sources */,
 				2F2015B0DEC67B7C753D23F1 /* PaperBackground.swift in Sources */,

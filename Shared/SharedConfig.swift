@@ -41,6 +41,9 @@ enum SharedState {
         static let language           = "app.language"              // "en" | "es"
         static let hasEverBlocked     = "blocking.hasEverConfigured"
         static let streak             = "ritual.streak"
+        static let weeklyGoal         = "onboarding.weeklyGoal"     // mornings/week the user committed to
+        static let onboardingGoal     = "onboarding.goal"           // primary stated goal (OnbGoal key)
+        static let scrollMinutes      = "onboarding.scrollMinutes"  // self-reported morning scroll minutes
     }
 
     // MARK: Day key helpers
@@ -100,5 +103,25 @@ enum SharedState {
     static var streak: Int {
         get { defaults.integer(forKey: Key.streak) }
         set { defaults.set(newValue, forKey: Key.streak) }
+    }
+
+    // MARK: Onboarding answers (drive the personalized plan, paywall, and weekly goal)
+
+    /// Mornings-per-week the user committed to in onboarding. Defaults to 5 as a sane fallback.
+    static var weeklyGoal: Int {
+        get { let v = defaults.integer(forKey: Key.weeklyGoal); return v == 0 ? 5 : v }
+        set { defaults.set(newValue, forKey: Key.weeklyGoal) }
+    }
+
+    /// The primary goal chosen in onboarding (an `OnbGoal` raw key); read by the paywall.
+    static var onboardingGoal: String {
+        get { defaults.string(forKey: Key.onboardingGoal) ?? "" }
+        set { defaults.set(newValue, forKey: Key.onboardingGoal) }
+    }
+
+    /// Self-reported minutes spent scrolling first thing — the honest input to reclaimed-time.
+    static var scrollMinutes: Int {
+        get { defaults.integer(forKey: Key.scrollMinutes) }
+        set { defaults.set(newValue, forKey: Key.scrollMinutes) }
     }
 }
