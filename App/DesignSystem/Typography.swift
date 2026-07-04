@@ -78,7 +78,8 @@ struct Eyebrow: View {
     var tracking: CGFloat = 1.4
     var size: CGFloat = 11.5
     var body: some View {
-        Text(text.uppercased())
+        Text(loc: text)                       // localize the source label, then uppercase for display
+            .textCase(.uppercase)
             .font(Fonts.ui(size, .heavy))
             .tracking(tracking)
             .foregroundStyle(color)

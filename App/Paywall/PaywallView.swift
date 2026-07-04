@@ -70,10 +70,10 @@ struct PaywallView: View {
         VStack(spacing: 10) {
             SunMark(size: 60).floaty()
                 .background { SoftGlow(color: Palette.amber, opacity: 0.15, size: 210) }
-            Text(heroTitle)
+            Text(loc: heroTitle)
                 .display(27, .bold)
                 .multilineTextAlignment(.center)
-            Text(heroSub)
+            Text(loc: heroSub)
                 .ui(13.5, .semibold, color: Palette.inkSoft)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
@@ -86,7 +86,7 @@ struct PaywallView: View {
             ForEach(benefits, id: \.self) { b in
                 HStack(spacing: 11) {
                     SunMark(size: 22, rays: false)
-                    Text(b).ui(14.5, .semibold)
+                    Text(loc: b).ui(14.5, .semibold)
                     Spacer(minLength: 0)
                 }
             }
@@ -126,13 +126,13 @@ struct PaywallView: View {
                 }
                 VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: 7) {
-                        Text(name).ui(16, .heavy)
-                        Text(badge).ui(9.5, .heavy, color: Palette.amberDeep)
+                        Text(loc: name).ui(16, .heavy)
+                        Text(loc: badge).ui(9.5, .heavy, color: Palette.amberDeep)
                             .tracking(0.5)
                             .padding(.horizontal, 7).padding(.vertical, 3)
                             .background(Palette.amber.opacity(0.14), in: Capsule())
                     }
-                    Text(sub).ui(12.5, .semibold, color: Palette.inkSofter)
+                    Text(loc: sub).ui(12.5, .semibold, color: Palette.inkSofter)
                 }
                 Spacer(minLength: 8)
                 HStack(spacing: 1) {
@@ -153,7 +153,7 @@ struct PaywallView: View {
     private var footer: some View {
         VStack(spacing: 11) {
             PrimaryButton(title: ctaTitle, enabled: !purchasing) { purchase() }
-            Text(subNote)
+            Text(loc: subNote)
                 .ui(12, .semibold, color: Palette.inkSofter)
                 .multilineTextAlignment(.center)
             HStack(spacing: 18) {
@@ -171,14 +171,8 @@ struct PaywallView: View {
 
     private var ctaTitle: String {
         if purchasing { return "Please wait…" }
-        switch selected {
-        case .lifetime:
-            let p = premium.lifetimePriceString
-            return p.isEmpty ? "Unlock forever" : "Unlock forever · \(p)"
-        case .monthly:
-            let p = premium.monthlyPriceString
-            return p.isEmpty ? "Continue" : "Continue · \(p)/mo"
-        }
+        // Price is shown in the plan cards; keep the CTA a clean, fully-localizable label.
+        return selected == .lifetime ? "Unlock forever" : "Continue"
     }
 
     private var subNote: String {
@@ -217,7 +211,7 @@ struct PaywallView: View {
     }
 
     private func footerLink(_ title: String, _ action: @escaping () -> Void) -> some View {
-        Button(action: action) { Text(title).ui(13.5, .bold, color: Palette.inkSofter) }
+        Button(action: action) { Text(loc: title).ui(13.5, .bold, color: Palette.inkSofter) }
     }
     private var footerDot: some View {
         Circle().fill(Palette.inkSofter.opacity(0.45)).frame(width: 3, height: 3)

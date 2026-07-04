@@ -11,9 +11,9 @@ struct EntryRow<Trailing: View>: View {
             MoodFace(mood: entry.moodRaw, size: 42)
             VStack(alignment: .leading, spacing: 2) {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    Text(isToday ? "This morning" : HDate.monthDay(entry.date))
+                    (isToday ? Text("This morning") : Text(HDate.monthDay(entry.date)))
                         .font(Fonts.ui(13.5, .heavy)).foregroundStyle(Palette.ink)
-                    Text(isToday ? "Today" : HDate.weekdayShort(entry.date))
+                    (isToday ? Text("Today") : Text(HDate.weekdayShort(entry.date)))
                         .font(Fonts.ui(11, .semibold)).foregroundStyle(Palette.inkMuted)
                 }
                 Text(entry.journal).font(Fonts.ui(13, .medium)).foregroundStyle(Palette.inkSoft)

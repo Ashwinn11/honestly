@@ -47,7 +47,7 @@ enum LegalDoc: Identifiable {
         ("Changes",
          "We may update these terms as the app evolves. If we make material changes, we'll note them here with a new effective date. Continued use means you accept the current terms."),
         ("Contact",
-         "Reach us at hello@honestly.app."),
+         "Reach us at ashwinnanbazhagan@gmail.com."),
     ]
 }
 
@@ -63,15 +63,15 @@ struct LegalView: View {
                     SoftCircleButton(icon: "chevron.left", iconSize: 15) { dismiss() }
                         .padding(.bottom, 16)
 
-                    Text(doc.title).font(Fonts.display(30, .bold)).foregroundStyle(Palette.ink)
+                    Text(loc: doc.title).font(Fonts.display(30, .bold)).foregroundStyle(Palette.ink)
                     Eyebrow(text: doc.effective, color: Palette.inkSofter, tracking: 1.2, size: 11)
                         .padding(.top, 6).padding(.bottom, 22)
 
                     ForEach(Array(doc.sections.enumerated()), id: \.offset) { _, s in
-                        Text(s.heading)
+                        Text(loc: s.heading)
                             .font(Fonts.display(19, .semibold)).foregroundStyle(Palette.ink)
                             .padding(.bottom, 7)
-                        Text(s.body)
+                        Text(loc: s.body)
                             .font(Fonts.ui(15, .medium)).foregroundStyle(Palette.inkBody)
                             .lineSpacing(6)
                             .padding(.bottom, 22)

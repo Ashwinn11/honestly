@@ -43,11 +43,9 @@ struct HomeView: View {
 
     private var unwrittenCard: some View {
         let count = screenTime.selectedCount
-        let appsLine = count == 1
-            ? "1 app stays asleep until you write. A few quiet minutes, just for you."
-            : count > 1
-                ? "\(count) apps stay asleep until you write. A few quiet minutes, just for you."
-                : "Your apps stay asleep until you write. A few quiet minutes, just for you."
+        let appsLine: Text = count > 0
+            ? Text("\(count) apps stay asleep until you write. A few quiet minutes, just for you.")
+            : Text("Your apps stay asleep until you write. A few quiet minutes, just for you.")
         return ZStack(alignment: .topTrailing) {
             Circle().fill(.white.opacity(0.16)).frame(width: 120, height: 120).offset(x: 30, y: -30)
             SunMark(size: 50, tint: Color(hex: "FFF4E0")).rotationEffect(.degrees(-8))
@@ -59,7 +57,7 @@ struct HomeView: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.top, 6)
-                Text(appsLine)
+                appsLine
                     .font(Fonts.ui(13.5, .semibold)).foregroundStyle(.white.opacity(0.95))
                     .lineSpacing(2)
                     .fixedSize(horizontal: false, vertical: true)
@@ -124,7 +122,7 @@ struct HomeView: View {
                         Text("\(store.streak)").font(Fonts.display(30, .heavy)).foregroundStyle(Palette.ink)
                         Text("day streak").font(Fonts.ui(14, .heavy)).foregroundStyle(Palette.inkSoft)
                     }
-                    Text(streakSubtitle).font(Fonts.ui(12.5, .semibold)).foregroundStyle(Palette.inkSofter)
+                    Text(loc: streakSubtitle).font(Fonts.ui(12.5, .semibold)).foregroundStyle(Palette.inkSofter)
                 }
                 Spacer(minLength: 0)
             }

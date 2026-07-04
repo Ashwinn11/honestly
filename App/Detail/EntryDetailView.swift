@@ -47,8 +47,9 @@ struct EntryDetailView: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("\(HDate.weekdayFull(entry.date)), \(HDate.monthDay(entry.date))")
                             .font(Fonts.display(26, .bold)).foregroundStyle(Palette.ink)
-                        Eyebrow(text: "\(entry.moodValue.label) · \(grats) gratitude\(grats == 1 ? "" : "s")",
-                                color: Palette.inkSofter, size: 10.5)
+                        Text("\(Text(loc: entry.moodValue.label)) · \(grats) gratitudes")
+                            .textCase(.uppercase)
+                            .font(Fonts.ui(10.5, .heavy)).tracking(1.4).foregroundStyle(Palette.inkSofter)
                     }
                     Spacer(minLength: 0)
                 }
@@ -66,7 +67,7 @@ struct EntryDetailView: View {
             if !entry.prompt.isEmpty {
                 Eyebrow(text: "Today's prompt", color: Palette.amberDeep, tracking: 1.3, size: 11)
                     .padding(.bottom, 5)
-                Text(entry.prompt)
+                Text(loc: entry.prompt)
                     .font(Fonts.display(19, .semibold)).foregroundStyle(Palette.inkSoft)
                     .lineSpacing(4).padding(.bottom, 16)
             }

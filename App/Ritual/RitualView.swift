@@ -20,7 +20,8 @@ struct RitualView: View {
 
     var body: some View {
         if step == 3 {
-            CelebrationView(mood: mood ?? 2, streak: store.streak, summary: summary, onStart: onClose)
+            CelebrationView(mood: mood ?? 2, streak: store.streak,
+                            words: wordCount, grats: gratCount, onStart: onClose)
         } else {
             VStack(spacing: 0) {
                 header.capWidth(Metrics.maxContentWidth)
@@ -45,11 +46,6 @@ struct RitualView: View {
         }
     }
 
-    private var summary: String {
-        let m = Mood(rawValue: mood ?? 2)?.label ?? "Sad"
-        let g = gratCount == 1 ? "1 gratitude" : "\(gratCount) gratitudes"
-        return "Mood: \(m)  ·  \(wordCount) words  ·  \(g)"
-    }
 
     // MARK: Header (close + progress) — pinned at the top
     private var header: some View {
@@ -119,7 +115,7 @@ struct RitualView: View {
                 MoodFace(mood: i, size: 52, expressive: true)
                     .scaleEffect(scale)
                     .opacity(mood == nil || selected ? 1 : 0.42)
-                Text(Mood(rawValue: i)!.label)
+                Text(loc: Mood(rawValue: i)!.label)
                     .font(Fonts.ui(12, selected ? .heavy : .semibold))
                     .foregroundStyle(selected ? Palette.amberDeep : Palette.inkSofter)
             }
@@ -136,7 +132,7 @@ struct RitualView: View {
             HStack(alignment: .top, spacing: 12) {
                 VStack(alignment: .leading, spacing: 5) {
                     Eyebrow(text: "Today's prompt", color: Palette.amberDeep, tracking: 1.3, size: 11)
-                    Text(prompt).font(Fonts.display(21, .semibold)).foregroundStyle(Palette.ink)
+                    Text(loc: prompt).font(Fonts.display(21, .semibold)).foregroundStyle(Palette.ink)
                         .lineSpacing(3).fixedSize(horizontal: false, vertical: true)
                         .contentTransition(.opacity)
                 }
@@ -152,7 +148,7 @@ struct RitualView: View {
                 .focused($journalFocused)
                 .padding(.top, 14)
 
-            Text(AppContent.journalHint(wordCount: wordCount))
+            (wordCount == 0 ? Text("This page is just for you.") : Text("\(wordCount) words — nice"))
                 .font(Fonts.ui(12.5, .semibold)).foregroundStyle(Palette.inkSofter)
                 .padding(.top, 12).padding(.horizontal, 2)
         }
@@ -179,7 +175,7 @@ struct RitualView: View {
             SunMark(size: 26, muted: !lit)
                 .scaleEffect(lit ? 1.08 : 1)
                 .animation(Motion.pop, value: lit)
-            TextField(AppContent.gratitudePlaceholder(i), text: $gratitudes[i])
+            TextField(LocalizedStringKey(AppContent.gratitudePlaceholder(i)), text: $gratitudes[i])
                 .font(Fonts.ui(15, .semibold)).foregroundStyle(Palette.ink)
                 .submitLabel(.next)
         }
@@ -219,7 +215,7 @@ private struct RuledTextEditor: View {
                     .frame(height: Self.height)
 
                 if text.isEmpty {
-                    Text(placeholder)
+                    Text(loc: placeholder)
                         .font(Fonts.ui(16, .semibold))
                         .foregroundStyle(Palette.inkSofter)
                         .padding(.horizontal, 16)
@@ -236,7 +232,8 @@ private struct RuledTextEditor: View {
 private struct CelebrationView: View {
     let mood: Int
     let streak: Int
-    let summary: String
+    let words: Int
+    let grats: Int
     var onStart: () -> Void
 
     @Environment(\.requestReview) private var requestReview
@@ -281,7 +278,8 @@ private struct CelebrationView: View {
                 .padding(.top, 22)
                 .popIn(delay: 0.35)
 
-                Text(summary).font(Fonts.ui(12.5, .bold)).foregroundStyle(.white.opacity(0.9))
+                Text("Mood: \(Text(loc: Mood(rawValue: mood)?.label ?? "Sad"))  ·  \(words) words  ·  \(grats) gratitudes")
+                    .font(Fonts.ui(12.5, .bold)).foregroundStyle(.white.opacity(0.9))
                     .padding(.top, 18)
 
                 CreamButton(title: "Start my day") { onStart() }

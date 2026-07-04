@@ -14,7 +14,7 @@ struct PrimaryButton: View {
             guard enabled else { return }
             Haptics.tap(); action()
         } label: {
-            Text(title)
+            Text(loc: title)
                 .font(Fonts.ui(16.5, .heavy))
                 .foregroundStyle(enabled ? textColor : Palette.inkSofter)
                 .frame(maxWidth: Metrics.maxButtonWidth)          // capped, fluid below — never full-column
@@ -45,7 +45,7 @@ struct CreamButton: View {
     var body: some View {
         Button { Haptics.tap(); action() } label: {
             HStack(spacing: 9) {
-                Text(title).font(Fonts.ui(16, .heavy)).foregroundStyle(textColor)
+                Text(loc: title).font(Fonts.ui(16, .heavy)).foregroundStyle(textColor)
                 if arrow {
                     Image(systemName: "arrow.right")
                         .font(.system(size: DesignScale.s(14), weight: .bold)).foregroundStyle(textColor)
@@ -68,7 +68,7 @@ struct GhostButton: View {
     var action: () -> Void
     var body: some View {
         Button { Haptics.tap(); action() } label: {
-            Text(title).font(Fonts.ui(14.5, .bold)).foregroundStyle(color)
+            Text(loc: title).font(Fonts.ui(14.5, .bold)).foregroundStyle(color)
                 .frame(maxWidth: Metrics.maxButtonWidth).padding(.vertical, DesignScale.s(14))
                 .frame(maxWidth: .infinity)
         }

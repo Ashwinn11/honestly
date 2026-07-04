@@ -109,7 +109,7 @@ struct ProfileView: View {
     private func stat(_ value: String, _ label: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {
             Text(value).font(Fonts.display(20, .heavy)).foregroundStyle(.white)
-            Text(label).font(Fonts.ui(11, .bold)).foregroundStyle(.white.opacity(0.9))
+            Text(loc: label).font(Fonts.ui(11, .bold)).foregroundStyle(.white.opacity(0.9))
         }
     }
 
@@ -134,11 +134,13 @@ struct ProfileView: View {
                 settingRow {
                     rowText("Apps on hold", "Managed by Screen Time")
                 } trailing: {
-                    Text(screenTime.selectionSummary)
+                    Text(loc: screenTime.selectionSummary)
                         .font(Fonts.ui(14, .bold)).foregroundStyle(Palette.amberDeep)
                 }
             }
             .buttonStyle(RowPressStyle())
+            divider
+            LanguagePickerRow()
         }
         .background(Palette.cream, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).stroke(Palette.outlineSoft, lineWidth: 1.5))
@@ -202,7 +204,7 @@ struct ProfileView: View {
             LegalView(doc: doc).toolbar(.hidden, for: .navigationBar)
         } label: {
             settingRow {
-                Text(title).font(Fonts.ui(15, .bold)).foregroundStyle(Palette.ink)
+                Text(loc: title).font(Fonts.ui(15, .bold)).foregroundStyle(Palette.ink)
                     .frame(maxWidth: .infinity, alignment: .leading)
             } trailing: { chevron }
         }
@@ -239,9 +241,9 @@ struct ProfileView: View {
     }
     private func rowText(_ title: String, _ subtitle: String? = nil) -> some View {
         VStack(alignment: .leading, spacing: 1) {
-            Text(title).font(Fonts.ui(15, .bold)).foregroundStyle(Palette.ink)
+            Text(loc: title).font(Fonts.ui(15, .bold)).foregroundStyle(Palette.ink)
             if let subtitle {
-                Text(subtitle).font(Fonts.ui(12, .medium)).foregroundStyle(Palette.inkSofter)
+                Text(loc: subtitle).font(Fonts.ui(12, .medium)).foregroundStyle(Palette.inkSofter)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)

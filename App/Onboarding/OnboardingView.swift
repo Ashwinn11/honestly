@@ -34,6 +34,11 @@ struct OnboardingView: View {
                     .capWidth(Metrics.maxContentWidth)
             }
         }
+        .overlay(alignment: .top) {
+            if beat == .brand {          // language picker lives on the very first screen
+                LanguagePickerPill().padding(.top, 6)
+            }
+        }
         .animation(Motion.gentle, value: index)
         .familyActivityPicker(isPresented: $showPicker, selection: $st.selection)
         .onChange(of: showPicker) { _, presented in
@@ -175,7 +180,7 @@ struct OnboardingView: View {
                     // Mirror the back button's gutter so the link centers under the CTA, not the footer.
                     if canGoBack { Color.clear.frame(width: DesignScale.s(56), height: 1) }
                     Button { Haptics.tap(); secondary.action() } label: {
-                        Text(secondary.title)
+                        Text(loc: secondary.title)
                             .font(Fonts.ui(14.5, .bold)).foregroundStyle(Palette.inkSofter)
                             .frame(maxWidth: .infinity).padding(.vertical, 2)
                     }
@@ -195,7 +200,7 @@ struct OnboardingView: View {
             guard b.enabled else { return }
             Haptics.tap(); b.action()
         } label: {
-            Text(b.title)
+            Text(loc: b.title)
                 .font(Fonts.ui(16.5, .heavy))
                 .foregroundStyle(b.enabled ? .white : Palette.inkSofter)
                 .frame(maxWidth: .infinity, minHeight: DesignScale.s(56))
@@ -227,11 +232,11 @@ struct OnboardingView: View {
             OnbIllustration(kind: kind)
             if let title {
                 VStack(spacing: 11) {
-                    Text(title)
+                    Text(loc: title)
                         .font(Fonts.display(27, .bold)).foregroundStyle(Palette.ink)
                         .multilineTextAlignment(.center).lineSpacing(2)
                     if let body {
-                        Text(body)
+                        Text(loc: body)
                             .font(Fonts.ui(15.5, .semibold)).foregroundStyle(Palette.inkSoft)
                             .multilineTextAlignment(.center).lineSpacing(4)
                     }
@@ -245,10 +250,10 @@ struct OnboardingView: View {
                                             @ViewBuilder rows: () -> Rows) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             VStack(alignment: .leading, spacing: 9) {
-                Text(title)
+                Text(loc: title)
                     .font(Fonts.display(26, .bold)).foregroundStyle(Palette.ink).lineSpacing(2)
                 if let hint {
-                    Text(hint).font(Fonts.ui(14, .semibold)).foregroundStyle(Palette.inkSoft)
+                    Text(loc: hint).font(Fonts.ui(14, .semibold)).foregroundStyle(Palette.inkSoft)
                 }
             }
             .padding(.bottom, 22)
@@ -382,9 +387,9 @@ private struct OnbOptionRow: View {
             HStack(spacing: 13) {
                 indicator
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(label).font(Fonts.ui(16, .heavy)).foregroundStyle(Palette.ink)
+                    Text(loc: label).font(Fonts.ui(16, .heavy)).foregroundStyle(Palette.ink)
                     if let note {
-                        Text(note).font(Fonts.ui(12.5, .semibold)).foregroundStyle(Palette.inkSofter)
+                        Text(loc: note).font(Fonts.ui(12.5, .semibold)).foregroundStyle(Palette.inkSofter)
                     }
                 }
                 Spacer(minLength: 8)
@@ -441,7 +446,7 @@ private struct OnbBuildingView: View {
                 .opacity(rise ? 1 : 0.15)
                 .floaty(period: 6)
 
-                Text(AppContent.buildingTitle)
+                Text(loc: AppContent.buildingTitle)
                     .font(Fonts.display(23, .bold)).foregroundStyle(Palette.ink)
                     .multilineTextAlignment(.center)
 
@@ -458,7 +463,7 @@ private struct OnbBuildingView: View {
                                         .foregroundStyle(.white)
                                 }
                             }
-                            Text(t).font(Fonts.ui(15, .bold))
+                            Text(loc: t).font(Fonts.ui(15, .bold))
                                 .foregroundStyle(i < visibleTicks ? Palette.ink : Palette.inkSofter)
                         }
                         .opacity(i < visibleTicks ? 1 : 0.5)
@@ -508,7 +513,7 @@ private struct OnbPlanView: View {
             }
             .multilineTextAlignment(.center)
 
-            Text(answers.primaryGoal.planEmpathy)
+            Text(loc: answers.primaryGoal.planEmpathy)
                 .font(Fonts.display(19, .bold)).foregroundStyle(Palette.ink)
                 .multilineTextAlignment(.center).lineSpacing(2)
                 .fixedSize(horizontal: false, vertical: true)
@@ -531,8 +536,8 @@ private struct OnbPlanView: View {
         HStack(alignment: .top, spacing: 12) {
             IconTile(size: 38, fill: Palette.iconTile) { glyph }
             VStack(alignment: .leading, spacing: 3) {
-                Text(title).font(Fonts.ui(15, .heavy)).foregroundStyle(Palette.ink)
-                Text(body).font(Fonts.ui(12.5, .semibold)).foregroundStyle(Palette.inkSoft).lineSpacing(2)
+                Text(loc: title).font(Fonts.ui(15, .heavy)).foregroundStyle(Palette.ink)
+                Text(loc: body).font(Fonts.ui(12.5, .semibold)).foregroundStyle(Palette.inkSoft).lineSpacing(2)
                     .fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: 0)
@@ -559,8 +564,8 @@ private struct OnbRitualTeachView: View {
                         glyph(step.kind)
                             .frame(width: 52, height: 52)
                         VStack(alignment: .leading, spacing: 3) {
-                            Text(step.title).font(Fonts.ui(16, .heavy)).foregroundStyle(Palette.ink)
-                            Text(step.body).font(Fonts.ui(13.5, .semibold)).foregroundStyle(Palette.inkSoft)
+                            Text(loc: step.title).font(Fonts.ui(16, .heavy)).foregroundStyle(Palette.ink)
+                            Text(loc: step.body).font(Fonts.ui(13.5, .semibold)).foregroundStyle(Palette.inkSoft)
                                 .lineSpacing(2).fixedSize(horizontal: false, vertical: true)
                         }
                         Spacer(minLength: 0)
@@ -625,9 +630,9 @@ private struct OnbSocialProofView: View {
 
             if sp.quotes.isEmpty {
                 VStack(spacing: 11) {
-                    quoteCard("Meet yourself before the world logs on.",
+                    quoteCard("“Meet yourself before the world logs on.”",
                               "You're about to join people who reclaimed their mornings — one quiet page at a time.")
-                    quoteCard("The first ten minutes that are finally mine.",
+                    quoteCard("“The first ten minutes that are finally mine.”",
                               "The apps stay asleep until I've written — so the morning feels calm again.")
                 }
             } else {
@@ -652,10 +657,10 @@ private struct OnbSocialProofView: View {
 
     private func quoteCard(_ quote: String, _ sub: String) -> some View {
         VStack(alignment: .leading, spacing: 9) {
-            Text("“\(quote)”")
+            Text(loc: quote)
                 .font(Fonts.display(16, .semibold)).foregroundStyle(Palette.ink)
                 .lineSpacing(3).fixedSize(horizontal: false, vertical: true)
-            Text(sub)
+            Text(loc: sub)
                 .font(Fonts.ui(13, .semibold)).foregroundStyle(Palette.inkSoft)
                 .lineSpacing(3).fixedSize(horizontal: false, vertical: true)
         }

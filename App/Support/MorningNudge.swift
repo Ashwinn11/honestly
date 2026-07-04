@@ -12,8 +12,9 @@ enum MorningNudge {
 
     static func schedule() {
         let content = UNMutableNotificationContent()
-        content.title = "Honestly"
-        content.body = "Good morning. Your page is waiting — the world can hold on a minute."
+        content.title = "Honestly"   // brand name — not localized
+        content.body = String(localized: "Good morning. Your page is waiting — the world can hold on a minute.",
+                              locale: Locale(identifier: SharedState.language))
         content.sound = .default
 
         var when = DateComponents(); when.hour = 6; when.minute = 45
