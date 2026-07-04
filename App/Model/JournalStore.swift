@@ -19,7 +19,20 @@ final class JournalStore {
 
     func reload() {
         let desc = FetchDescriptor<JournalEntry>(sortBy: [SortDescriptor(\.createdAt, order: .reverse)])
-        entries = (try? context.fetch(desc)) ?? []
+        let all = (try? context.fetch(desc)) ?? []
+        // Invariant: strictly one page per day. The list is newest-first, so the first entry seen
+        // for a day is the one we keep; any older same-day pages (e.g. from a restore) are deleted.
+        var seenDays = Set<String>()
+        var kept: [JournalEntry] = []
+        var duplicates: [JournalEntry] = []
+        for e in all {
+            if seenDays.insert(e.dayKey).inserted { kept.append(e) } else { duplicates.append(e) }
+        }
+        if !duplicates.isEmpty {
+            duplicates.forEach(context.delete)
+            try? context.save()
+        }
+        entries = kept
     }
 
     // MARK: Today
@@ -122,15 +135,15 @@ final class JournalStore {
         if let existing = todayEntry {
             entry = existing
         } else {
-            entry = JournalEntry(content: content, mood: face.storageKey, gratitude: grat,
+            entry = JournalEntry(content: content, gratitude: grat, mood: face.storageKey,
                                  wordCount: JournalEntry.wordCount(of: content), createdAt: Date())
             context.insert(entry)
         }
         entry.content = content
-        entry.mood = face.storageKey
         entry.gratitude = grat
+        entry.mood = face.storageKey
         entry.wordCount = JournalEntry.wordCount(of: content)
-        entry.prompt = prompt          // persisted in CD_intention (empty in all prod data)
+        entry.promptText = prompt      // in-memory only (no production column for the prompt)
 
         try? context.save()
         reload()
@@ -167,10 +180,10 @@ final class JournalStore {
     private func makeBackupData() -> Data {
         let snaps = entries.map {
             EntrySnapshot(id: $0.id, content: $0.content, mood: $0.mood, gratitude: $0.gratitude,
-                          wordCount: $0.wordCount, createdAt: $0.createdAt,
-                          intention: $0.intention, tasks: $0.tasks)
+                          wordCount: $0.wordCount, createdAt: $0.createdAt)
         }
-        return (try? JSONEncoder().encode(BackupPayload(exportedAt: Date(), entries: snaps))) ?? Data()
+        // Bare JSON array — the exact shape the production app reads/writes.
+        return (try? JSONEncoder().encode(snaps)) ?? Data()
     }
 
     /// Upload a snapshot of every page to iCloud. Returns false if CloudKit is unreachable.
@@ -185,13 +198,26 @@ final class JournalStore {
     func restoreFromCloud() async -> Int? {
         let data: Data?
         do { data = try await CloudBackup.latestPayload() } catch { return nil }
-        guard let data, let payload = try? JSONDecoder().decode(BackupPayload.self, from: data) else { return nil }
-        let existing = Set(entries.map(\.id))
+        guard let data else { return nil }
+        // Tolerant decode: the production format is a bare array; older new-app builds wrote a
+        // `{ version, exportedAt, entries }` wrapper — accept either.
+        let snaps: [EntrySnapshot]
+        if let arr = try? JSONDecoder().decode([EntrySnapshot].self, from: data) {
+            snaps = arr
+        } else if let payload = try? JSONDecoder().decode(BackupPayload.self, from: data) {
+            snaps = payload.entries
+        } else {
+            return nil
+        }
+        let existingIds = Set(entries.map(\.id))
+        var filledDays = Set(entries.map(\.dayKey))   // days that already have a page — never duplicate
         var added = 0
-        for snap in payload.entries where !existing.contains(snap.id) {
-            context.insert(JournalEntry(id: snap.id, content: snap.content, mood: snap.mood,
-                                        gratitude: snap.gratitude, wordCount: snap.wordCount,
-                                        createdAt: snap.createdAt, intention: snap.intention, tasks: snap.tasks))
+        for snap in snaps {
+            let day = SharedState.dayKey(for: snap.createdAt)
+            guard !existingIds.contains(snap.id), !filledDays.contains(day) else { continue }
+            context.insert(JournalEntry(content: snap.content, gratitude: snap.gratitude, mood: snap.mood,
+                                        wordCount: snap.wordCount, createdAt: snap.createdAt, id: snap.id))
+            filledDays.insert(day)
             added += 1
         }
         try? context.save()

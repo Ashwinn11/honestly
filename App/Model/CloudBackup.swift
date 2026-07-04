@@ -1,15 +1,16 @@
 import Foundation
 import CloudKit
 
-/// Manual iCloud snapshot backup — uses the **production `JournalBackup` record type**
-/// (`payload` BYTES · `entryCount` INT64 · `backedUpAt` TIMESTAMP) in the app's private CloudKit
-/// database. Separate from the automatic SwiftData sync; this is the explicit "back up / restore"
-/// the design offers on the iCloud row.
+/// Manual iCloud snapshot backup — wire-compatible with the **live production app** so backups
+/// round-trip between the old and new versions. Uses the production `JournalBackup` record type
+/// (`payload` BYTES · `entryCount` INT64 · `backedUpAt` TIMESTAMP) in the private database's
+/// default zone, under the **same record name (`morning-journal-backup`)** the production app uses.
+/// Separate from the automatic SwiftData sync; the explicit "back up / restore" on the iCloud row.
 enum CloudBackup {
     private static let container = CKContainer(identifier: AppConfig.iCloudContainerID)
     private static var db: CKDatabase { container.privateCloudDatabase }
     private static let recordType = "JournalBackup"
-    private static let recordID = CKRecord.ID(recordName: "primary-backup")
+    private static let recordID = CKRecord.ID(recordName: "morning-journal-backup")  // must match production
 
     /// Write (or overwrite) the single backup record.
     static func upload(payload: Data, entryCount: Int) async throws {

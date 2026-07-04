@@ -1,36 +1,36 @@
 import Foundation
 import SwiftData
 
-/// One morning page. **Maps 1:1 onto the live production CloudKit schema** (`CD_JournalEntry`):
-/// same entity name and attribute names, so the redesign reads/writes existing users' data
-/// without a schema mismatch. Every attribute has a default and there are no unique constraints —
-/// required for CloudKit. The UI talks to this through the computed bridges at the bottom.
+/// One morning page. **Exactly matches the live production Core Data model** (verified by decoding a
+/// real `default.store` entry), so the new SwiftData app *adopts* the existing store with zero
+/// migration — every local entry loads, and CloudKit sync continues from the store's own state.
+/// Six fields only, `id` is a `UUID`, `mood` is a Capitalized label ("Sad"). No `intention`/`tasks`.
 @Model
 final class JournalEntry {
-    var id: String = UUID().uuidString   // CD_id
-    var content: String = ""             // CD_content   — the journal text
-    var mood: String = ""                // CD_mood      — stored mood key ("happy"…"cry")
-    var gratitude: String = ""           // CD_gratitude — one string (old: single note; new: 5, newline-joined)
-    var wordCount: Int = 0               // CD_wordCount
-    var createdAt: Date = Date()         // CD_createdAt
-    var intention: String = ""           // CD_intention — always empty in prod → reused for the daily prompt
-    var tasks: String = ""               // CD_tasks     — always empty in prod → left empty
+    var content: String = ""       // the journal text
+    var gratitude: String = ""     // one free-text string (old = 1 note; redesign packs its 5, newline-joined)
+    var mood: String = ""          // Capitalized label, e.g. "Sad"
+    var wordCount: Int = 0
+    var createdAt: Date = Date()
+    var id: UUID = UUID()
 
-    init(id: String = UUID().uuidString, content: String, mood: String, gratitude: String,
-         wordCount: Int, createdAt: Date = Date(), intention: String = "", tasks: String = "") {
-        self.id = id
+    /// The daily prompt has no column in production — kept in memory only (shown on the just-written
+    /// entry; not persisted or synced), so the model stays a byte-for-byte match to the old store.
+    @Transient var promptText: String = ""
+
+    init(content: String, gratitude: String, mood: String, wordCount: Int,
+         createdAt: Date = Date(), id: UUID = UUID()) {
         self.content = content
-        self.mood = mood
         self.gratitude = gratitude
+        self.mood = mood
         self.wordCount = wordCount
         self.createdAt = createdAt
-        self.intention = intention
-        self.tasks = tasks
+        self.id = id
     }
 
-    // MARK: - UI bridges (so the screens read the same shape as before)
+    // MARK: - UI bridges (keep the screens reading the same shape)
     var journal: String { content }
-    var prompt: String { get { intention } set { intention = newValue } }   // stored in CD_intention
+    var prompt: String { promptText }
     var date: Date { createdAt }
     var dayKey: String { SharedState.dayKey(for: createdAt) }
     var moodValue: Mood { Mood(stored: mood) }
@@ -38,7 +38,7 @@ final class JournalEntry {
     var gratitudes: [String] { JournalEntry.unpackGratitude(gratitude) }
     var gratitudeCount: Int { gratitudes.count }
 
-    // MARK: - Encoding helpers (the pack/unpack the whole app shares)
+    // MARK: - Encoding helpers
     static func unpackGratitude(_ s: String) -> [String] {
         s.split(separator: "\n", omittingEmptySubsequences: true)
             .map { $0.trimmingCharacters(in: .whitespaces) }
@@ -53,21 +53,20 @@ final class JournalEntry {
 }
 
 extension Mood {
-    /// Map a stored/production mood string to a face. Tolerant: a number `0–4`, or a key/label —
-    /// including the old **"okay"** which the redesign shows as **"confused"** (same slot). Anything
-    /// unrecognized falls back to a neutral face; the caller preserves the original string.
+    /// Map a stored/production mood string to a face. Tolerant: a number `0–4` or a label
+    /// (production stores Capitalized, e.g. "Sad"); unknown → neutral face, original string kept.
     init(stored raw: String) {
         let t = raw.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         if let n = Int(t), let m = Mood(rawValue: n) { self = m; return }
         switch t {
-        case "happy":                     self = .happy
-        case "okay", "ok", "confused", "meh": self = .confused
-        case "sad":                       self = .sad
-        case "awful", "terrible", "bad":  self = .awful
-        case "cry", "crying":             self = .cry
-        default:                          self = .sad
+        case "happy":                         self = .happy
+        case "confused", "okay", "ok", "meh": self = .confused
+        case "sad":                           self = .sad
+        case "awful", "terrible", "bad":      self = .awful
+        case "cry", "crying":                 self = .cry
+        default:                              self = .sad
         }
     }
-    /// The canonical lowercase key the redesign writes for each face.
-    var storageKey: String { ["happy", "confused", "sad", "awful", "cry"][rawValue] }
+    /// The string written to `mood` — the Capitalized label, matching production ("Sad").
+    var storageKey: String { label }
 }
