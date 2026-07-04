@@ -26,7 +26,7 @@ struct CalendarView: View {
                 weekdayHeader
                 grid
                 countCard.padding(.top, 18)
-                legend.padding(.top, 16)
+                moodsCard.padding(.top, 16)
             }
         }
     }
@@ -72,30 +72,41 @@ struct CalendarView: View {
     }
 
     @ViewBuilder
-    private func dayCell(day: Int, entry: Entry?, key: String, isToday: Bool, isFuture: Bool) -> some View {
-        let content = VStack(spacing: 1) {
-            if let entry { MoodFace(mood: entry.moodRaw, size: 25) }
-            Text("\(day)")
-                .font(Fonts.ui(10, .bold))
-                .foregroundStyle(entry != nil ? Palette.inkSoft : (isFuture ? Palette.dashFuture : Palette.inkSofter))
-        }
-        .frame(maxWidth: .infinity)
-        .aspectRatio(1, contentMode: .fit)
-        .background(cellBG(entry: entry, isToday: isToday), in: RoundedRectangle(cornerRadius: 13, style: .continuous))
-        .overlay {
-            if isToday {
-                RoundedRectangle(cornerRadius: 13, style: .continuous).stroke(Palette.amber, lineWidth: 2)
+    private func dayCell(day: Int, entry: JournalEntry?, key: String, isToday: Bool, isFuture: Bool) -> some View {
+        // Color.clear + aspectRatio pins each cell to a perfect square of the column width, so the
+        // today ring reads as a rounded square (not a stretched pill) and faces never crowd.
+        let cell = Color.clear
+            .aspectRatio(1, contentMode: .fit)
+            .overlay {
+                GeometryReader { g in
+                    let s = g.size.width
+                    ZStack {
+                        RoundedRectangle(cornerRadius: s * 0.28, style: .continuous)
+                            .fill(cellBG(entry: entry, isToday: isToday))
+                        if isToday {
+                            RoundedRectangle(cornerRadius: s * 0.28, style: .continuous)
+                                .stroke(Palette.amber, lineWidth: 2)
+                        }
+                        VStack(spacing: 1) {
+                            if let entry { MoodFace(mood: entry.moodRaw, size: s * 0.56) }
+                            Text("\(day)")
+                                .font(Fonts.ui(min(s * 0.24, 11), .bold))
+                                .foregroundStyle(entry != nil ? Palette.inkSoft
+                                                 : (isFuture ? Palette.dashFuture : Palette.inkSofter))
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    }
+                }
             }
-        }
 
         if entry != nil {
-            NavigationLink(value: key) { content }.buttonStyle(PressableStyle())
+            NavigationLink(value: key) { cell }.buttonStyle(PressableStyle())
         } else {
-            content
+            cell
         }
     }
 
-    private func cellBG(entry: Entry?, isToday: Bool) -> Color {
+    private func cellBG(entry: JournalEntry?, isToday: Bool) -> Color {
         if entry != nil { return .white.opacity(0.65) }
         if isToday { return Palette.amber.opacity(0.08) }
         return .clear
@@ -112,17 +123,39 @@ struct CalendarView: View {
         .softCard(padding: 16, radius: 20)
     }
 
-    private var legend: some View {
-        HStack {
-            ForEach(0..<5, id: \.self) { i in
-                VStack(spacing: 6) {
-                    MoodFace(mood: i, size: 27)
-                    Text(Mood(rawValue: i)!.label).font(Fonts.ui(10, .bold)).foregroundStyle(Palette.inkSofter)
+    /// "Your moods, all told" — moved here from the You tab (this is where it makes most sense).
+    /// Merges the distribution bar with the mood legend (face · count · label).
+    private var moodsCard: some View {
+        let counts = store.distribution
+        let total = max(counts.reduce(0, +), 1)
+        return VStack(alignment: .leading, spacing: 14) {
+            Text("Your moods, all told").font(Fonts.display(19, .bold)).foregroundStyle(Palette.ink)
+            GeometryReader { geo in
+                HStack(spacing: 2) {
+                    ForEach(0..<5, id: \.self) { i in
+                        if counts[i] > 0 {
+                            Palette.mood(i)
+                                .frame(width: max(2, (geo.size.width - 8) * CGFloat(counts[i]) / CGFloat(total)))
+                        }
+                    }
+                    if counts.allSatisfy({ $0 == 0 }) { Palette.ink.opacity(0.06) }
                 }
-                .frame(maxWidth: .infinity)
+                .frame(height: 16)
+                .clipShape(Capsule())
+            }
+            .frame(height: 16)
+            HStack {
+                ForEach(0..<5, id: \.self) { i in
+                    VStack(spacing: 5) {
+                        MoodFace(mood: i, size: 26)
+                        Text("\(counts[i])").font(Fonts.ui(12, .heavy)).foregroundStyle(Palette.ink)
+                        Text(Mood(rawValue: i)!.label).font(Fonts.ui(10, .bold)).foregroundStyle(Palette.inkSofter)
+                    }
+                    .frame(maxWidth: .infinity)
+                }
             }
         }
-        .padding(.horizontal, 6)
+        .softCard(padding: 18, radius: 22)
     }
 
     private func shift(_ delta: Int) {

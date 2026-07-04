@@ -113,10 +113,11 @@ struct OnboardingView: View {
     // MARK: Actions
     private func primaryTapped() {
         if slide.kind == .quiet {
-            // Screen Time slide → ask permission, then let them choose apps to keep asleep.
+            // Screen Time slide → ask permission. Only open the app picker if they granted it;
+            // if they tap "Don't Allow", just move on (never show the picker unauthorized).
             Task {
                 await screenTime.requestAuthorization()
-                showPicker = true
+                if screenTime.authorized { showPicker = true } else { advance() }
             }
             return
         }

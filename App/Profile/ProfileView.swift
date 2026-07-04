@@ -1,8 +1,8 @@
 import SwiftUI
 import FamilyControls
 
-/// You — the stats hero, the mood distribution, and grouped settings/account/about rows.
-/// Matches `Honestly.dc.html` lines 484–563 ("Honestly Premium" per the app's naming).
+/// You — the stats hero and grouped settings/account/about rows. (The mood distribution moved to
+/// the Calendar tab.) Matches `Honestly.dc.html` lines 484–563.
 struct ProfileView: View {
     @Environment(JournalStore.self) private var store
     @Environment(ScreenTimeManager.self) private var screenTime
@@ -11,6 +11,9 @@ struct ProfileView: View {
     @AppStorage("morningNudgeOn", store: SharedState.defaults) private var nudgeOn = true
     @State private var showPicker = false
     @State private var confirmDelete = false
+    @State private var showICloud = false
+    @State private var cloudBusy = false
+    @State private var cloudMessage: String?
 
     var body: some View {
         @Bindable var st = screenTime
@@ -21,7 +24,6 @@ struct ProfileView: View {
                     .font(Fonts.ui(14, .semibold)).foregroundStyle(Palette.inkSoft).padding(.top, 5)
 
                 heroCard.padding(.top, 16)
-                distributionCard.padding(.top, 16)
                 settingsCard.padding(.top, 16)
 
                 sectionEyebrow("Account")
@@ -33,11 +35,43 @@ struct ProfileView: View {
         }
         .familyActivityPicker(isPresented: $showPicker, selection: $st.selection)
         .alert("Delete all data?", isPresented: $confirmDelete) {
-            Button("Delete", role: .destructive) { store.deleteAll(); Haptics.rigid() }
+            Button("Delete everything", role: .destructive) {
+                store.deleteAll(); screenTime.wipe(); Haptics.rigid()
+            }
             Button("Cancel", role: .cancel) { }
         } message: {
-            Text("This erases every page and resets your streak. It can't be undone.")
+            Text("This erases every page, your streak, and your app selection, and returns you to the start. It can't be undone.")
         }
+        .confirmationDialog("iCloud backup", isPresented: $showICloud, titleVisibility: .visible) {
+            Button("Back up to iCloud now") {
+                Task {
+                    cloudBusy = true
+                    let ok = await store.backupToCloud()
+                    cloudBusy = false
+                    if ok { Haptics.success() }
+                    cloudMessage = ok ? "Backed up \(store.totalMornings) page\(store.totalMornings == 1 ? "" : "s") to iCloud."
+                                      : "Couldn't reach iCloud. Check you're signed in and try again."
+                }
+            }
+            Button("Restore from iCloud") {
+                Task {
+                    cloudBusy = true
+                    let n = await store.restoreFromCloud()
+                    cloudBusy = false
+                    if let n { Haptics.success(); cloudMessage = "Restored \(n) page\(n == 1 ? "" : "s") from your iCloud backup." }
+                    else { cloudMessage = "No iCloud backup found." }
+                }
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("Save a snapshot of your pages to iCloud, or restore your latest one.")
+        }
+        .alert("iCloud", isPresented: Binding(get: { cloudMessage != nil },
+                                              set: { if !$0 { cloudMessage = nil } })) {
+            Button("OK", role: .cancel) { cloudMessage = nil }
+        } message: { Text(cloudMessage ?? "") }
+        .overlay { if cloudBusy { ProgressView().controlSize(.large).tint(Palette.amber)
+            .frame(maxWidth: .infinity, maxHeight: .infinity).background(.black.opacity(0.06)) } }
         .onChange(of: nudgeOn) { _, on in
             if on { Task { if await MorningNudge.requestAuthorization() { MorningNudge.schedule() } } }
             else { MorningNudge.cancel() }
@@ -58,6 +92,7 @@ struct ProfileView: View {
                 }
                 .padding(.top, 18)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(22)
         .background(Palette.amberGradient, in: RoundedRectangle(cornerRadius: 26, style: .continuous))
@@ -69,41 +104,6 @@ struct ProfileView: View {
             Text(value).font(Fonts.display(24, .heavy)).foregroundStyle(.white)
             Text(label).font(Fonts.ui(11, .bold)).foregroundStyle(.white.opacity(0.9))
         }
-    }
-
-    // MARK: Mood distribution
-    private var distributionCard: some View {
-        let counts = store.distribution
-        let total = max(counts.reduce(0, +), 1)
-        return VStack(alignment: .leading, spacing: 14) {
-            Text("Your moods, all told").font(Fonts.display(19, .bold)).foregroundStyle(Palette.ink)
-            GeometryReader { geo in
-                HStack(spacing: 2) {
-                    ForEach(0..<5, id: \.self) { i in
-                        if counts[i] > 0 {
-                            Palette.mood(i)
-                                .frame(width: max(2, (geo.size.width - 8) * CGFloat(counts[i]) / CGFloat(total)))
-                        }
-                    }
-                    if counts.allSatisfy({ $0 == 0 }) {
-                        Palette.ink.opacity(0.06)
-                    }
-                }
-                .frame(height: 16)
-                .clipShape(Capsule())
-            }
-            .frame(height: 16)
-            HStack {
-                ForEach(0..<5, id: \.self) { i in
-                    VStack(spacing: 5) {
-                        MoodFace(mood: i, size: 24)
-                        Text("\(counts[i])").font(Fonts.ui(12, .heavy)).foregroundStyle(Palette.ink)
-                    }
-                    .frame(maxWidth: .infinity)
-                }
-            }
-        }
-        .softCard(padding: 18, radius: 22)
     }
 
     // MARK: Settings
@@ -125,7 +125,7 @@ struct ProfileView: View {
                 settingRow {
                     rowText("Apps on hold", "Managed by Screen Time")
                 } trailing: {
-                    Text(screenTime.selectedCount == 1 ? "1 app" : "\(screenTime.selectedCount) apps")
+                    Text(screenTime.selectionSummary)
                         .font(Fonts.ui(14, .bold)).foregroundStyle(Palette.amber)
                 }
             }
@@ -138,24 +138,22 @@ struct ProfileView: View {
     // MARK: Account
     private var accountCard: some View {
         VStack(spacing: 0) {
-            settingRow {
-                rowText("iCloud sync", "Your pages, backed up privately")
-            } trailing: {
-                HStack(spacing: 9) {
-                    Text("On").font(Fonts.ui(14, .bold)).foregroundStyle(Palette.success)
-                    chevron
+            Button { showICloud = true } label: {
+                settingRow {
+                    rowText("iCloud sync", "Back up or restore your pages")
+                } trailing: {
+                    HStack(spacing: 9) {
+                        Text("On").font(Fonts.ui(14, .bold)).foregroundStyle(Palette.success)
+                        chevron
+                    }
                 }
             }
+            .buttonStyle(RowPressStyle())
             divider
             Button { flow.showPaywall() } label: {
                 settingRow {
                     rowText("Manage subscription", nil)
-                } trailing: {
-                    HStack(spacing: 9) {
-                        Text("Honestly Premium").font(Fonts.ui(14, .bold)).foregroundStyle(Palette.amber)
-                        chevron
-                    }
-                }
+                } trailing: { chevron }
             }
             .buttonStyle(RowPressStyle())
         }

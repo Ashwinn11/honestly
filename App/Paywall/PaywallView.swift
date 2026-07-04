@@ -1,8 +1,9 @@
 import SwiftUI
 
-/// "Honestly Plus" — the lifetime unlock, styled in the app's own language (paper, amber, Shantell).
-/// Not part of the prototype's screens, so it's built from the design system to feel native to it.
+/// "Honestly Premium" — the lifetime unlock, styled in the app's own language (paper, amber,
+/// Shantell). In `gate` mode it's the hard paywall shown after onboarding (premium-only app).
 struct PaywallView: View {
+    var gate: Bool = false
     var onClose: () -> Void
     @Environment(PremiumManager.self) private var premium
     @State private var restoring = false
@@ -20,8 +21,13 @@ struct PaywallView: View {
             VStack(spacing: 0) {
                 HStack {
                     Spacer()
-                    SoftCircleButton(icon: "xmark") { onClose() }
+                    // Hard paywall: no dismiss in gate mode. The X only exists when opened from
+                    // Settings ("Manage subscription"), not as the premium-only onboarding gate.
+                    if !gate {
+                        SoftCircleButton(icon: "xmark") { onClose() }
+                    }
                 }
+                .frame(height: 38)
                 .padding(.horizontal, 20)
                 .padding(.top, 8)
 

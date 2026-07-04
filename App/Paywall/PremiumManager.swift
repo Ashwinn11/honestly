@@ -11,11 +11,6 @@ final class PremiumManager {
     var offerings: Offerings? = nil
     var purchasing = false
 
-    /// Hard-paywall escape for the current launch only (also covers dev/App-Review + a store that
-    /// can't reach RevenueCat). Resets every launch, so the paywall returns until Premium is bought.
-    var sessionBypass = false
-    var isUnlocked: Bool { isPremium || sessionBypass }
-
     /// Call once at launch, before any other Purchases use.
     func configure() {
         Purchases.logLevel = .warn

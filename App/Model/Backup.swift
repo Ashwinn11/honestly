@@ -1,33 +1,21 @@
-import SwiftUI
-import UniformTypeIdentifiers
+import Foundation
 
-/// A single entry serialized for backup (SwiftData `Entry` is not itself Codable).
+/// A single entry serialized for the backup payload (mirrors the production fields; `JournalEntry`
+/// isn't itself Codable).
 struct EntrySnapshot: Codable {
-    var dayKey: String
-    var date: Date
-    var moodRaw: Int
-    var journal: String
-    var gratitudes: [String]
-    var prompt: String
+    var id: String
+    var content: String
+    var mood: String
+    var gratitude: String
+    var wordCount: Int
     var createdAt: Date
+    var intention: String
+    var tasks: String
 }
 
-/// The JSON payload written to / read from a `.json` backup file (Files or iCloud Drive).
+/// The JSON payload stored in the `JournalBackup` CloudKit record's `payload` (BYTES) field.
 struct BackupPayload: Codable {
     var version = 1
     var exportedAt: Date
     var entries: [EntrySnapshot]
-}
-
-/// Wraps the backup JSON so SwiftUI's `.fileExporter` can save it through the system picker.
-struct BackupFile: FileDocument {
-    static var readableContentTypes: [UTType] { [.json] }
-    var data: Data
-    init(data: Data) { self.data = data }
-    init(configuration: ReadConfiguration) throws {
-        data = configuration.file.regularFileContents ?? Data()
-    }
-    func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
-        FileWrapper(regularFileWithContents: data)
-    }
 }

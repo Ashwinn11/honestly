@@ -15,7 +15,7 @@ struct MainTabView: View {
             tab(HistoryView(),  "History",  "clock",    .history)
             tab(ProfileView(),  "You",      "person",   .profile)
         }
-        .tint(Palette.amber)
+        .tint(Palette.ink)
     }
 
     private func tab<Screen: View>(_ screen: Screen, _ title: String,

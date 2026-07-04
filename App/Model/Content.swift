@@ -4,20 +4,79 @@ import Foundation
 /// journal prompts, gratitude placeholders, and the ten onboarding slides.
 enum AppContent {
 
-    // MARK: Ritual prompts (shuffle pool)
-    static let prompts: [String] = [
-        "What's sitting on your chest this morning?",
-        "If today went well, what happened?",
-        "What are you avoiding — and why?",
-        "What do you need to hear right now?",
-        "Who or what is taking up space in your head?",
-        "What would 'enough' look like today?",
-        "What's one honest thing you haven't said out loud?",
-        "How do you actually feel, before the coffee kicks in?",
-    ]
+    // MARK: Ritual prompts — a distinct pool per mood (index 0…4) so writing never feels repetitive.
+    static func prompts(for mood: Int) -> [String] {
+        let i = min(max(mood, 0), 4)
+        return promptsByMood[i]
+    }
 
-    /// The prompt the ritual opens on (prototype starts at index 2).
-    static let defaultPromptIndex = 2
+    static let promptsByMood: [[String]] = [
+        // 0 · Happy
+        [
+            "What's making this morning feel good?",
+            "What do I want to carry into the rest of today?",
+            "What's one thing I'm genuinely looking forward to?",
+            "Who would I love to share this feeling with?",
+            "What went right lately that I haven't fully savored?",
+            "What does my best version of today look like?",
+            "What's a small win I can build on?",
+            "What am I grateful for right now, honestly?",
+            "How can I protect this good mood today?",
+            "What am I quietly proud of lately?",
+        ],
+        // 1 · Confused
+        [
+            "What am I trying to figure out?",
+            "What feels unclear right now — and why?",
+            "If I already knew the answer, what would it be?",
+            "What decision am I avoiding?",
+            "What question is really underneath this one?",
+            "What do I actually want, before I talk myself out of it?",
+            "What would make today feel a little clearer?",
+            "What am I overthinking?",
+            "Whose opinion am I letting cloud my own?",
+            "What's one small thing I can decide today?",
+        ],
+        // 2 · Sad
+        [
+            "What's weighing on me this morning?",
+            "What do I need to hear right now?",
+            "Where do I feel this sadness in my body?",
+            "What would I say to a friend who felt like this?",
+            "What's one small kindness I can give myself today?",
+            "What am I grieving, even quietly?",
+            "What would 'gentle' look like for me today?",
+            "What do I wish someone understood?",
+            "What's still okay, even now?",
+            "What can I let myself feel without trying to fix it?",
+        ],
+        // 3 · Awful
+        [
+            "What's making today feel like too much?",
+            "What's the one thing I truly have to do — and what can wait?",
+            "What do I need just to get through the next hour?",
+            "What am I carrying that isn't mine to carry?",
+            "Where can I lower the bar today?",
+            "What would help, even 1%?",
+            "Who could I ask for help?",
+            "What's the kindest thing I could do for myself right now?",
+            "What do I want to let go of before the day starts?",
+            "If today is just about getting through, what does that look like?",
+        ],
+        // 4 · Cry
+        [
+            "What do I need to let out this morning?",
+            "What's really hurting right now?",
+            "What have I been holding in?",
+            "What would it feel like to be fully honest here?",
+            "Who or what do I miss?",
+            "What do I need to forgive myself for?",
+            "What's the truest thing I can write right now?",
+            "What would actually comfort me today?",
+            "What am I not saying out loud?",
+            "What do I need to grieve before I can move?",
+        ],
+    ]
 
     // MARK: Journal
     static let journalPlaceholder = "Start anywhere. No one reads this but you."

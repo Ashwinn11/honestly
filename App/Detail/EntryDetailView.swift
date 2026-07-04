@@ -8,7 +8,7 @@ struct EntryDetailView: View {
     @Environment(JournalStore.self) private var store
     @Environment(\.dismiss) private var dismiss
 
-    private var entry: Entry? { store.entry(for: dayKey) }
+    private var entry: JournalEntry? { store.entry(for: dayKey) }
 
     var body: some View {
         ZStack(alignment: .top) {
@@ -28,25 +28,25 @@ struct EntryDetailView: View {
         }
     }
 
-    private func header(_ entry: Entry) -> some View {
+    private func header(_ entry: JournalEntry) -> some View {
         let isToday = HDate.isToday(entry.date)
         return ZStack(alignment: .topLeading) {
-            Circle().fill(entry.mood.soft.opacity(0.55)).frame(width: 150, height: 150)
+            Circle().fill(entry.moodValue.soft.opacity(0.55)).frame(width: 150, height: 150)
                 .offset(x: 220, y: -36)
             VStack(alignment: .leading, spacing: 16) {
                 SoftCircleButton(icon: "chevron.left", iconSize: 15) { dismiss() }
                 HStack(spacing: 15) {
                     MoodFace(mood: entry.moodRaw, size: 56)
                         .padding(9)
-                        .background(entry.mood.soft, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+                        .background(entry.moodValue.soft, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
                     VStack(alignment: .leading, spacing: 4) {
                         Eyebrow(text: isToday ? "Today" : HDate.weekdayFull(entry.date), size: 11.5)
-                        Text(isToday ? "This morning" : HDate.longDate(entry.date))
+                        Text(HDate.longDate(entry.date))
                             .font(Fonts.display(26, .bold)).foregroundStyle(Palette.ink)
-                        Text(entry.mood.label)
+                        Text(entry.moodValue.label)
                             .font(Fonts.ui(12, .heavy)).foregroundStyle(Palette.ink)
                             .padding(.horizontal, 12).padding(.vertical, 3)
-                            .background(entry.mood.soft, in: Capsule())
+                            .background(entry.moodValue.soft, in: Capsule())
                     }
                     Spacer(minLength: 0)
                 }
@@ -59,17 +59,22 @@ struct EntryDetailView: View {
         .clipped()
     }
 
-    private func body(_ entry: Entry) -> some View {
+    private func body(_ entry: JournalEntry) -> some View {
         VStack(alignment: .leading, spacing: 0) {
-            sectionLabel("The prompt")
-            Text(entry.prompt.isEmpty ? "A quiet morning." : entry.prompt)
-                .font(Fonts.display(19, .semibold)).foregroundStyle(Palette.ink)
-                .lineSpacing(4).padding(.bottom, 22)
+            if !entry.prompt.isEmpty {
+                Text(entry.prompt)
+                    .font(Fonts.display(20, .semibold)).foregroundStyle(Palette.inkSoft)
+                    .lineSpacing(4).padding(.bottom, 16)
+            }
 
-            sectionLabel("What I wrote")
-            Text(entry.journal)
-                .font(Fonts.ui(16, .medium)).foregroundStyle(Palette.inkBody)
-                .lineSpacing(7).padding(.bottom, 24)
+            RuledPaper {
+                Text(entry.journal)
+                    .font(Fonts.ui(16, .semibold)).foregroundStyle(Palette.ink)
+                    .lineSpacing(12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(EdgeInsets(top: 6, leading: 16, bottom: 14, trailing: 16))
+            }
+            .padding(.bottom, 24)
 
             if !entry.gratitudes.isEmpty {
                 sectionLabel("Grateful for")

@@ -11,26 +11,39 @@ struct RitualView: View {
     @State private var mood: Int? = nil
     @State private var journal = ""
     @State private var gratitudes = ["", "", "", "", ""]
-    @State private var promptIdx = AppContent.defaultPromptIndex
+    @State private var promptIdx = 0
     @FocusState private var journalFocused: Bool
 
-    private var prompt: String { AppContent.prompts[promptIdx % AppContent.prompts.count] }
+    /// Prompts for the mood the user picked (falls back to Sad's pool before a pick).
+    private var moodPrompts: [String] { AppContent.prompts(for: mood ?? 2) }
+    private var prompt: String { let p = moodPrompts; return p[promptIdx % p.count] }
     private var wordCount: Int {
         journal.split(whereSeparator: { $0.isWhitespace || $0.isNewline }).count
     }
     private var gratCount: Int { gratitudes.filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }.count }
 
     var body: some View {
-        ZStack {
-            if step == 3 {
-                CelebrationView(mood: mood ?? 2, streak: store.streak,
-                                summary: summary, onStart: onClose)
-            } else {
-                PaperBackground()
-                VStack(spacing: 0) {
-                    chrome
-                    stepContent
+        if step == 3 {
+            CelebrationView(mood: mood ?? 2, streak: store.streak, summary: summary, onStart: onClose)
+        } else {
+            VStack(spacing: 0) {
+                header
+                ScrollView {
+                    stepBody
+                        .padding(.horizontal, 22)
+                        .padding(.top, 6)
+                        .padding(.bottom, 8)
                 }
+                .scrollDismissesKeyboard(.interactively)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .background(PaperBackground())
+            .safeAreaInset(edge: .bottom) {
+                footer
+                    .padding(.horizontal, 22)
+                    .padding(.top, 8)
+                    .padding(.bottom, 14)
+                    .background(Palette.paper)
             }
         }
     }
@@ -41,49 +54,61 @@ struct RitualView: View {
         return "Mood: \(m)  ·  \(wordCount) words  ·  \(g)"
     }
 
-    // MARK: Chrome (close + pips)
-    private var chrome: some View {
+    // MARK: Header (close + progress) — pinned at the top
+    private var header: some View {
         HStack(spacing: 14) {
             SoftCircleButton(icon: "xmark") { onClose() }
             RitualPips(step: step)
-            Color.clear.frame(width: 38)
+            Color.clear.frame(width: 38, height: 38)   // balances the close button (fixed height!)
         }
-        .padding(.top, 58)
         .padding(.horizontal, 20)
-        .padding(.bottom, 8)
+        .padding(.top, 8)
+        .padding(.bottom, 10)
     }
 
-    @ViewBuilder private var stepContent: some View {
+    // MARK: Scrollable content per step
+    @ViewBuilder private var stepBody: some View {
         switch step {
-        case 0: moodStep
-        case 1: journalStep
-        default: gratitudeStep
+        case 0: moodBody
+        case 1: journalBody
+        default: gratitudeBody
+        }
+    }
+
+    // MARK: Footer CTA per step — pinned at the bottom, floats above the keyboard
+    @ViewBuilder private var footer: some View {
+        switch step {
+        case 0:
+            PrimaryButton(title: mood != nil ? "That's my morning →" : "Tap how you feel",
+                          enabled: mood != nil) {
+                promptIdx = Int.random(in: 0..<moodPrompts.count)
+                withAnimation(Motion.gentle) { step = 1 }
+            }
+        case 1:
+            PrimaryButton(title: "Almost there →",
+                          enabled: !journal.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) {
+                journalFocused = false
+                withAnimation(Motion.gentle) { step = 2 }
+            }
+        default:
+            PrimaryButton(title: gratCount >= 1 ? "Unlock my morning →" : "Add at least one",
+                          enabled: gratCount >= 1) { finish() }
         }
     }
 
     // MARK: Step 0 — mood
-    private var moodStep: some View {
+    private var moodBody: some View {
         VStack(alignment: .leading, spacing: 0) {
-            VStack(alignment: .leading, spacing: 8) {
-                Text("How are you, really?").font(Fonts.display(31, .bold)).foregroundStyle(Palette.ink)
-                Text("Before the day has an opinion. Tap what fits.")
-                    .font(Fonts.ui(15, .semibold)).foregroundStyle(Palette.inkSoft)
-            }
-            .padding(.top, 14)
-
-            Spacer(minLength: 20)
+            Text("How are you, really?").font(Fonts.display(31, .bold)).foregroundStyle(Palette.ink)
+            Text("Before the day has an opinion. Tap what fits.")
+                .font(Fonts.ui(15, .semibold)).foregroundStyle(Palette.inkSoft).padding(.top, 8)
             HStack(spacing: 4) {
                 ForEach(0..<5, id: \.self) { i in moodChoice(i) }
             }
             .frame(maxWidth: .infinity)
-            Spacer(minLength: 20)
-
-            PrimaryButton(title: mood != nil ? "That's my morning →" : "Tap how you feel",
-                          enabled: mood != nil) {
-                withAnimation(Motion.gentle) { step = 1 }
-            }
+            .padding(.top, 44)
         }
-        .padding(EdgeInsets(top: 12, leading: 24, bottom: 26, trailing: 24))
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func moodChoice(_ i: Int) -> some View {
@@ -109,7 +134,7 @@ struct RitualView: View {
     }
 
     // MARK: Step 1 — journal
-    private var journalStep: some View {
+    private var journalBody: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .top, spacing: 12) {
                 VStack(alignment: .leading, spacing: 5) {
@@ -130,47 +155,31 @@ struct RitualView: View {
                 }
                 .buttonStyle(PressableStyle())
             }
-            .padding(.top, 12)
+            .padding(.top, 6)
 
             RuledTextEditor(text: $journal, placeholder: AppContent.journalPlaceholder)
-                .frame(minHeight: 190)
                 .focused($journalFocused)
                 .padding(.top, 14)
 
             Text(AppContent.journalHint(wordCount: wordCount))
                 .font(Fonts.ui(12.5, .semibold)).foregroundStyle(Palette.inkSofter)
                 .padding(.top, 12).padding(.horizontal, 2)
-
-            PrimaryButton(title: "Almost there →",
-                          enabled: !journal.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) {
-                journalFocused = false
-                withAnimation(Motion.gentle) { step = 2 }
-            }
-            .padding(.top, 12)
         }
-        .padding(EdgeInsets(top: 12, leading: 22, bottom: 24, trailing: 22))
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     // MARK: Step 2 — gratitude
-    private var gratitudeStep: some View {
+    private var gratitudeBody: some View {
         VStack(alignment: .leading, spacing: 0) {
-            VStack(alignment: .leading, spacing: 7) {
-                Text("Five small good things").font(Fonts.display(29, .bold)).foregroundStyle(Palette.ink)
-                Text("The tinier and truer, the better.")
-                    .font(Fonts.ui(15, .semibold)).foregroundStyle(Palette.inkSoft)
-            }
-            .padding(.top, 12)
-
-            Spacer(minLength: 18)
+            Text("Five small good things").font(Fonts.display(29, .bold)).foregroundStyle(Palette.ink)
+            Text("The tinier and truer, the better.")
+                .font(Fonts.ui(15, .semibold)).foregroundStyle(Palette.inkSoft).padding(.top, 7)
             VStack(spacing: 10) {
                 ForEach(0..<5, id: \.self) { i in gratitudeRow(i) }
             }
-            Spacer(minLength: 18)
-
-            PrimaryButton(title: gratCount >= 1 ? "Unlock my morning →" : "Add at least one",
-                          enabled: gratCount >= 1) { finish() }
+            .padding(.top, 22)
         }
-        .padding(EdgeInsets(top: 12, leading: 22, bottom: 24, trailing: 22))
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func gratitudeRow(_ i: Int) -> some View {
@@ -198,40 +207,24 @@ struct RitualView: View {
     }
 }
 
-// MARK: - Ruled journal editor (paper lines behind the text)
+// MARK: - Ruled journal editor — the editable form of the shared `RuledPaper`
 
 private struct RuledTextEditor: View {
     @Binding var text: String
     let placeholder: String
-    private let lineHeight: CGFloat = 32
+    static let lineHeight: CGFloat = 32
 
     var body: some View {
-        ZStack(alignment: .topLeading) {
-            RoundedRectangle(cornerRadius: 20, style: .continuous).fill(.white)
-            Canvas { ctx, size in
-                var y = lineHeight
-                while y < size.height {
-                    var p = Path()
-                    p.move(to: CGPoint(x: 0, y: y)); p.addLine(to: CGPoint(x: size.width, y: y))
-                    ctx.stroke(p, with: .color(Palette.ink.opacity(0.07)), lineWidth: 1)
-                    y += lineHeight
-                }
-            }
-            TextEditor(text: $text)
+        RuledPaper(lineHeight: Self.lineHeight) {
+            TextField(placeholder, text: $text, axis: .vertical)
                 .font(Fonts.ui(16, .semibold))
                 .foregroundStyle(Palette.ink)
-                .lineSpacing(lineHeight - 20)
-                .scrollContentBackground(.hidden)
-                .padding(.horizontal, 11)
-                .padding(.top, 5)
-            if text.isEmpty {
-                Text(placeholder)
-                    .font(Fonts.ui(16, .medium)).foregroundStyle(Palette.inkMuted)
-                    .padding(.horizontal, 16).padding(.top, 13)
-                    .allowsHitTesting(false)
-            }
+                .lineSpacing(Self.lineHeight - 20)
+                .tint(Palette.amber)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .frame(minHeight: 176, alignment: .topLeading)
         }
-        .shadow(color: Color(hex: "78501E").opacity(0.07), radius: 11, y: 8)
     }
 }
 

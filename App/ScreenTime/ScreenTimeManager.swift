@@ -74,6 +74,7 @@ final class ScreenTimeManager {
         BlockingCodec.save(new)
         SharedState.hasEverConfiguredBlocking = true
         SharedState.blockingEnabled = hasSelection
+        guard authorized else { return }   // never touch DeviceActivity / ManagedSettings unauthorized
         armSchedule()
         // Reflect immediately: inside the morning window with the page unwritten → shield now.
         if hasSelection, isWithinMorningWindow(), !SharedState.ritualCompleted() {
@@ -92,8 +93,10 @@ final class ScreenTimeManager {
 
     // MARK: DeviceActivity schedule
 
-    /// Arm (or re-arm) the daily block window the monitor extension responds to.
+    /// Arm (or re-arm) the daily block window the monitor extension responds to. No-op until the
+    /// user has granted Family Controls — calling DeviceActivity unauthorized throws/logs an error.
     func armSchedule() {
+        guard authorized else { return }
         let name = DeviceActivityName(AppConfig.morningScheduleName)
         center.stopMonitoring([name])
         guard hasSelection else { return }
@@ -105,7 +108,7 @@ final class ScreenTimeManager {
     }
 
     func stopMonitoring() {
-        center.stopMonitoring([DeviceActivityName(AppConfig.morningScheduleName)])
+        if authorized { center.stopMonitoring([DeviceActivityName(AppConfig.morningScheduleName)]) }
         Shielding.clear()
     }
 

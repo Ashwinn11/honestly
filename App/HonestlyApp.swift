@@ -10,17 +10,20 @@ struct HonestlyApp: App {
     private let container: ModelContainer
 
     init() {
-        // Persist into the shared app-group container so data lives alongside extension state.
+        // App-group store, mirrored to the existing production CloudKit container so live users'
+        // pages sync into the redesign. (`JournalEntry` maps to the deployed `CD_JournalEntry`.)
         let made: ModelContainer
         do {
-            let config = ModelConfiguration(groupContainer: .identifier(AppConfig.appGroupID))
-            made = try ModelContainer(for: Entry.self, configurations: config)
+            let config = ModelConfiguration(groupContainer: .identifier(AppConfig.appGroupID),
+                                            cloudKitDatabase: .automatic)
+            made = try ModelContainer(for: JournalEntry.self, configurations: config)
         } catch {
-            // Never fail to launch — fall back to a private on-disk store, then in-memory.
-            if let disk = try? ModelContainer(for: Entry.self) {
+            // Never fail to launch — fall back to a local store if CloudKit can't init.
+            if let disk = try? ModelContainer(for: JournalEntry.self,
+                                              configurations: ModelConfiguration(groupContainer: .identifier(AppConfig.appGroupID))) {
                 made = disk
             } else {
-                made = try! ModelContainer(for: Entry.self,
+                made = try! ModelContainer(for: JournalEntry.self,
                                            configurations: ModelConfiguration(isStoredInMemoryOnly: true))
             }
         }
@@ -36,7 +39,6 @@ struct HonestlyApp: App {
                 .environment(screenTime)
                 .environment(flow)
                 .modelContainer(container)
-                .tint(Palette.amber)
                 .preferredColorScheme(.light)
                 .task {
                     premium.configure()

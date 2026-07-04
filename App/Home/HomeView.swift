@@ -88,7 +88,7 @@ struct HomeView: View {
             }
     }
 
-    private func doneCard(_ entry: Entry) -> some View {
+    private func doneCard(_ entry: JournalEntry) -> some View {
         ZStack(alignment: .topTrailing) {
             Circle().fill(.white.opacity(0.4)).frame(width: 120, height: 120).offset(x: 30, y: -30)
             HStack(spacing: 15) {
@@ -183,9 +183,21 @@ struct HomeView: View {
                 emptyRecent
             } else {
                 ForEach(Array(store.recent.enumerated()), id: \.element.dayKey) { i, e in
-                    NavigationLink(value: e.dayKey) { RecentRow(entry: e) }
-                        .buttonStyle(PressableStyle(scale: 0.98))
-                        .staggeredAppear(index: i + 2)
+                    NavigationLink(value: e.dayKey) {
+                        EntryRow(entry: e) {
+                            VStack(spacing: 1) {
+                                Text("\(e.gratitudeCount)").font(Fonts.display(17, .bold)).foregroundStyle(Palette.amber)
+                                Eyebrow(text: "grateful", color: Palette.inkSofter, tracking: 0.4, size: 8.5)
+                            }
+                        }
+                    }
+                    .buttonStyle(PressableStyle(scale: 0.98))
+                    .contextMenu {
+                        Button(role: .destructive) {
+                            withAnimation(Motion.snappy) { store.delete(e) }
+                        } label: { Label("Delete page", systemImage: "trash") }
+                    }
+                    .staggeredAppear(index: i + 2)
                 }
             }
         }
@@ -202,25 +214,3 @@ struct HomeView: View {
     }
 }
 
-/// A single recent-page row (mood face · date + snippet · gratitude count).
-private struct RecentRow: View {
-    let entry: Entry
-    var body: some View {
-        HStack(spacing: 13) {
-            MoodFace(mood: entry.moodRaw, size: 42)
-            VStack(alignment: .leading, spacing: 2) {
-                Text(HDate.rowDate(entry.date)).font(Fonts.ui(13, .heavy)).foregroundStyle(Palette.ink)
-                Text(entry.journal).font(Fonts.ui(13, .medium)).foregroundStyle(Palette.inkSoft)
-                    .lineLimit(2).multilineTextAlignment(.leading).lineSpacing(1)
-            }
-            Spacer(minLength: 6)
-            VStack(spacing: 1) {
-                Text("\(entry.gratitudeCount)").font(Fonts.display(17, .bold)).foregroundStyle(Palette.amber)
-                Eyebrow(text: "grateful", color: Palette.inkSofter, tracking: 0.4, size: 8.5)
-            }
-        }
-        .padding(14)
-        .background(.white, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-        .shadow(color: Color(hex: "78501E").opacity(0.07), radius: 11, y: 8)
-    }
-}

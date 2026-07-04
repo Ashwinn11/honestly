@@ -10,7 +10,7 @@ import Observation
 @Observable
 final class JournalStore {
     private let context: ModelContext
-    private(set) var entries: [Entry] = []       // newest first
+    private(set) var entries: [JournalEntry] = []       // newest first
 
     init(context: ModelContext) {
         self.context = context
@@ -18,20 +18,20 @@ final class JournalStore {
     }
 
     func reload() {
-        let desc = FetchDescriptor<Entry>(sortBy: [SortDescriptor(\.date, order: .reverse)])
+        let desc = FetchDescriptor<JournalEntry>(sortBy: [SortDescriptor(\.createdAt, order: .reverse)])
         entries = (try? context.fetch(desc)) ?? []
     }
 
     // MARK: Today
     var todayKey: String { SharedState.dayKey() }
-    var todayEntry: Entry? { entries.first { $0.dayKey == todayKey } }
+    var todayEntry: JournalEntry? { entries.first { $0.dayKey == todayKey } }
     var ritualDoneToday: Bool { todayEntry != nil }
 
-    func entry(for key: String) -> Entry? { entries.first { $0.dayKey == key } }
+    func entry(for key: String) -> JournalEntry? { entries.first { $0.dayKey == key } }
 
     // MARK: Aggregate stats
     var totalMornings: Int { entries.count }
-    var recent: [Entry] { Array(entries.prefix(3)) }
+    var recent: [JournalEntry] { Array(entries.prefix(3)) }
 
     /// Current run of consecutive days ending today (or yesterday, if today isn't done yet).
     var streak: Int {
@@ -81,7 +81,7 @@ final class JournalStore {
         let id: String
         let date: Date
         let letter: String        // single-letter weekday
-        let entry: Entry?
+        let entry: JournalEntry?
         let isToday: Bool
         var filled: Bool { entry != nil }
     }
@@ -98,7 +98,7 @@ final class JournalStore {
     }
 
     // MARK: Calendar
-    func entries(inYear year: Int, month: Int) -> [Entry] {
+    func entries(inYear year: Int, month: Int) -> [JournalEntry] {
         let cal = Calendar.current
         return entries.filter {
             let c = cal.dateComponents([.year, .month], from: $0.date)
@@ -112,37 +112,37 @@ final class JournalStore {
 
     /// Create or update today's page, then sync completion out to the app group + shield.
     @discardableResult
-    func saveRitual(mood: Int, journal: String, gratitudes: [String], prompt: String) -> Entry {
-        let key = todayKey
-        let cal = Calendar.current
-        let trimmedJournal = journal.trimmingCharacters(in: .whitespacesAndNewlines)
-        let grats = gratitudes.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
+    func saveRitual(mood: Int, journal: String, gratitudes: [String], prompt: String) -> JournalEntry {
+        let face = Mood(rawValue: mood) ?? .sad
+        let trimmed = journal.trimmingCharacters(in: .whitespacesAndNewlines)
+        let content = trimmed.isEmpty ? AppContent.emptyJournalFallback : trimmed
+        let grat = JournalEntry.packGratitude(gratitudes)
 
-        let entry: Entry
+        let entry: JournalEntry
         if let existing = todayEntry {
             entry = existing
         } else {
-            entry = Entry(dayKey: key, date: cal.startOfDay(for: Date()),
-                          mood: mood, journal: "", gratitudes: [], prompt: prompt)
+            entry = JournalEntry(content: content, mood: face.storageKey, gratitude: grat,
+                                 wordCount: JournalEntry.wordCount(of: content), createdAt: Date())
             context.insert(entry)
         }
-        entry.moodRaw = mood
-        entry.journal = trimmedJournal.isEmpty ? AppContent.emptyJournalFallback : trimmedJournal
-        entry.gratitudes = grats
-        entry.prompt = prompt
-        entry.createdAt = Date()
+        entry.content = content
+        entry.mood = face.storageKey
+        entry.gratitude = grat
+        entry.wordCount = JournalEntry.wordCount(of: content)
+        entry.prompt = prompt          // persisted in CD_intention (empty in all prod data)
 
         try? context.save()
         reload()
 
         // Bridge to the extensions: mark done, publish streak, and lift the shield now.
-        SharedState.markRitualComplete(mood: String(mood))
+        SharedState.markRitualComplete(mood: face.storageKey)
         SharedState.streak = streak
         Shielding.clear()
         return entry
     }
 
-    func delete(_ entry: Entry) {
+    func delete(_ entry: JournalEntry) {
         context.delete(entry)
         try? context.save()
         reload()
@@ -162,34 +162,41 @@ final class JournalStore {
         Shielding.clear()
     }
 
-    // MARK: Backup / restore (JSON, saved via the Files/iCloud picker)
+    // MARK: iCloud snapshot backup / restore (CloudKit `JournalBackup` record)
 
-    func makeBackupData() -> Data {
+    private func makeBackupData() -> Data {
         let snaps = entries.map {
-            EntrySnapshot(dayKey: $0.dayKey, date: $0.date, moodRaw: $0.moodRaw,
-                          journal: $0.journal, gratitudes: $0.gratitudes, prompt: $0.prompt, createdAt: $0.createdAt)
+            EntrySnapshot(id: $0.id, content: $0.content, mood: $0.mood, gratitude: $0.gratitude,
+                          wordCount: $0.wordCount, createdAt: $0.createdAt,
+                          intention: $0.intention, tasks: $0.tasks)
         }
         return (try? JSONEncoder().encode(BackupPayload(exportedAt: Date(), entries: snaps))) ?? Data()
     }
 
-    /// Merge a backup file into the store (upsert by day). Existing days are updated in place.
-    func restore(from url: URL) {
-        let scoped = url.startAccessingSecurityScopedResource()
-        defer { if scoped { url.stopAccessingSecurityScopedResource() } }
-        guard let data = try? Data(contentsOf: url),
-              let payload = try? JSONDecoder().decode(BackupPayload.self, from: data) else { return }
-        for snap in payload.entries {
-            if let e = entry(for: snap.dayKey) {
-                e.moodRaw = snap.moodRaw; e.journal = snap.journal
-                e.gratitudes = snap.gratitudes; e.prompt = snap.prompt
-            } else {
-                context.insert(Entry(dayKey: snap.dayKey, date: snap.date, mood: snap.moodRaw,
-                                     journal: snap.journal, gratitudes: snap.gratitudes,
-                                     prompt: snap.prompt, createdAt: snap.createdAt))
-            }
+    /// Upload a snapshot of every page to iCloud. Returns false if CloudKit is unreachable.
+    @discardableResult
+    func backupToCloud() async -> Bool {
+        do { try await CloudBackup.upload(payload: makeBackupData(), entryCount: entries.count); return true }
+        catch { return false }
+    }
+
+    /// Restore from the latest iCloud snapshot. Returns the number of pages added, or nil if no
+    /// backup was found / CloudKit was unreachable.
+    func restoreFromCloud() async -> Int? {
+        let data: Data?
+        do { data = try await CloudBackup.latestPayload() } catch { return nil }
+        guard let data, let payload = try? JSONDecoder().decode(BackupPayload.self, from: data) else { return nil }
+        let existing = Set(entries.map(\.id))
+        var added = 0
+        for snap in payload.entries where !existing.contains(snap.id) {
+            context.insert(JournalEntry(id: snap.id, content: snap.content, mood: snap.mood,
+                                        gratitude: snap.gratitude, wordCount: snap.wordCount,
+                                        createdAt: snap.createdAt, intention: snap.intention, tasks: snap.tasks))
+            added += 1
         }
         try? context.save()
         reload()
+        return added
     }
 
     // MARK: Helpers
