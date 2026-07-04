@@ -4,8 +4,8 @@ import FamilyControls
 struct ProfileView: View {
     @Environment(JournalStore.self) private var store
     @Environment(ScreenTimeManager.self) private var screenTime
-    @Environment(AppFlow.self) private var flow
     @Environment(\.openURL) private var openURL
+    @Environment(\.requestReview) private var requestReview
 
     @AppStorage("morningNudgeOn", store: SharedState.defaults) private var nudgeOn = true
     @State private var showPicker = false
@@ -162,7 +162,10 @@ struct ProfileView: View {
             }
             .buttonStyle(RowPressStyle())
             divider
-            Button { flow.showPaywall() } label: {
+            Button {
+                Haptics.tap()
+                openURL(URL(string: "https://apps.apple.com/account/subscriptions")!)
+            } label: {
                 settingRow {
                     rowText("Manage subscription", nil)
                 } trailing: { chevron }
@@ -178,7 +181,8 @@ struct ProfileView: View {
     private var aboutCard: some View {
         VStack(spacing: 0) {
             Button {
-                if let url = ReviewPrompt.writeReviewURL { Haptics.tap(); openURL(url) }
+                Haptics.tap()
+                ReviewPrompt.rate(requestReview) { openURL($0) }
             } label: {
                 settingRow {
                     rowText("Rate Honestly")

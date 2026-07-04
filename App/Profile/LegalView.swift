@@ -24,7 +24,7 @@ enum LegalDoc: Identifiable {
         ("Your control",
          "You can delete every page and reset your history at any time from the You tab (\"Delete all data\"). Deleting the app removes all local data; disabling iCloud sync for Honestly removes the backup from your iCloud account."),
         ("Contact",
-         "Questions about your privacy? Email privacy@honestly.app and a human will answer."),
+         "Questions about your privacy? Email ashwinnanbazhagan@gmail.com and a human will answer."),
     ]
 
     static let termsSections: [(heading: String, body: String)] = [
