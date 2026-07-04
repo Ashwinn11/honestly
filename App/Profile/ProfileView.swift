@@ -19,6 +19,8 @@ struct ProfileView: View {
         ScreenScaffold {
             VStack(alignment: .leading, spacing: 0) {
                 Text("You").font(Fonts.display(30, .bold)).foregroundStyle(Palette.ink)
+                    .fixedSize()
+                    .underlineSquiggle(Palette.sunDisc, weight: 4, height: 9)
                 Text("Little rituals, big mornings.")
                     .font(Fonts.ui(14, .semibold)).foregroundStyle(Palette.inkSoft).padding(.top, 5)
 
@@ -80,27 +82,33 @@ struct ProfileView: View {
     // MARK: Hero
     private var heroCard: some View {
         ZStack(alignment: .topTrailing) {
-            SunMark(size: 120, stroke: .white.opacity(0.3), fill: .white.opacity(0.3))
-                .spin(period: 30).offset(x: 28, y: -28)
+            SunMark(size: 54, tint: Color(hex: "FFF4E0"))
+                .rotationEffect(.degrees(-8)).offset(x: -2, y: 14).floaty(period: 6)
             VStack(alignment: .leading, spacing: 0) {
-                Text("\(store.streak)").font(Fonts.display(54, .heavy)).foregroundStyle(.white)
-                Eyebrow(text: "day streak", color: .white.opacity(0.92), tracking: 1, size: 13)
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text("\(store.streak)").font(Fonts.display(44, .heavy)).foregroundStyle(.white)
+                    Text("day streak").font(Fonts.ui(16, .heavy)).foregroundStyle(.white)
+                }
+                Text("Longest yet — keep the sun rising.")
+                    .font(Fonts.ui(13, .semibold)).foregroundStyle(.white.opacity(0.92)).padding(.top, 4)
+                Rectangle().fill(.white.opacity(0.35)).frame(height: 1.5).padding(.top, 14)
                 HStack(spacing: 26) {
                     stat("\(store.totalMornings)", "total mornings")
                     stat("\(store.bestStreak)", "best streak")
                 }
-                .padding(.top, 18)
+                .padding(.top, 14)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(22)
-        .background(Palette.amberGradient, in: RoundedRectangle(cornerRadius: 26, style: .continuous))
-        .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
-        .shadow(color: Palette.amber.opacity(0.3), radius: 18, y: 12)
+        .padding(20)
+        .background(Palette.amber, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).stroke(Palette.ink, lineWidth: 2))
+        .tactile(6, cornerRadius: 22)
     }
     private func stat(_ value: String, _ label: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text(value).font(Fonts.display(24, .heavy)).foregroundStyle(.white)
+            Text(value).font(Fonts.display(20, .heavy)).foregroundStyle(.white)
             Text(label).font(Fonts.ui(11, .bold)).foregroundStyle(.white.opacity(0.9))
         }
     }
@@ -127,12 +135,13 @@ struct ProfileView: View {
                     rowText("Apps on hold", "Managed by Screen Time")
                 } trailing: {
                     Text(screenTime.selectionSummary)
-                        .font(Fonts.ui(14, .bold)).foregroundStyle(Palette.amber)
+                        .font(Fonts.ui(14, .bold)).foregroundStyle(Palette.amberDeep)
                 }
             }
             .buttonStyle(RowPressStyle())
         }
-        .background(.white, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .background(Palette.cream, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).stroke(Palette.outlineSoft, lineWidth: 1.5))
         .shadow(color: Color(hex: "78501E").opacity(0.08), radius: 13, y: 10)
     }
 
@@ -158,7 +167,8 @@ struct ProfileView: View {
             }
             .buttonStyle(RowPressStyle())
         }
-        .background(.white, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .background(Palette.cream, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).stroke(Palette.outlineSoft, lineWidth: 1.5))
         .shadow(color: Color(hex: "78501E").opacity(0.08), radius: 13, y: 10)
     }
 
@@ -169,10 +179,10 @@ struct ProfileView: View {
                 if let url = ReviewPrompt.writeReviewURL { Haptics.tap(); openURL(url) }
             } label: {
                 settingRow {
-                    rowText("Rate Honestly", "A minute of your morning, if it's helped")
+                    rowText("Rate Honestly")
                 } trailing: {
                     HStack(spacing: 9) {
-                        Image(systemName: "star.fill").font(.system(size: 13, weight: .bold)).foregroundStyle(Palette.amber)
+                        InkGlyph(kind: .star, size: 15, fill: Palette.amber, lineWidth: 1.2)
                         chevron
                     }
                 }
@@ -183,7 +193,8 @@ struct ProfileView: View {
             divider
             legalRow("Privacy Policy", .privacy)
         }
-        .background(.white, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .background(Palette.cream, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).stroke(Palette.outlineSoft, lineWidth: 1.5))
         .shadow(color: Color(hex: "78501E").opacity(0.08), radius: 13, y: 10)
     }
     private func legalRow(_ title: String, _ doc: LegalDoc) -> some View {
@@ -200,11 +211,15 @@ struct ProfileView: View {
 
     private var deleteCard: some View {
         Button { confirmDelete = true } label: {
-            Text("Delete all data").font(Fonts.ui(15, .heavy)).foregroundStyle(Palette.danger)
-                .frame(maxWidth: .infinity).padding(.vertical, 16)
+            HStack(spacing: 8) {
+                Image(systemName: "trash").font(.system(size: 14, weight: .bold)).foregroundStyle(Palette.danger)
+                Text("Delete all data").font(Fonts.ui(15, .heavy)).foregroundStyle(Palette.danger)
+            }
+            .frame(maxWidth: .infinity).padding(.vertical, 16)
         }
         .buttonStyle(RowPressStyle())
-        .background(.white, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .background(Palette.cream, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).stroke(Palette.outlineSoft, lineWidth: 1.5))
         .shadow(color: Color(hex: "78501E").opacity(0.08), radius: 13, y: 10)
     }
 
@@ -222,7 +237,7 @@ struct ProfileView: View {
         }
         .padding(.horizontal, 18).padding(.vertical, 15)
     }
-    private func rowText(_ title: String, _ subtitle: String?) -> some View {
+    private func rowText(_ title: String, _ subtitle: String? = nil) -> some View {
         VStack(alignment: .leading, spacing: 1) {
             Text(title).font(Fonts.ui(15, .bold)).foregroundStyle(Palette.ink)
             if let subtitle {

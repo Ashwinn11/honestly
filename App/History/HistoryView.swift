@@ -20,13 +20,13 @@ struct HistoryView: View {
     }
 
     var body: some View {
-        if filtered.isEmpty {
-            emptyLayout
-        } else {
-            ScreenScaffold {
-                VStack(alignment: .leading, spacing: 0) {
-                    titleBlock
-                    filterChips.padding(.top, 16)
+        ScreenScaffold {
+            VStack(alignment: .leading, spacing: 0) {
+                titleBlock
+                filterChips.padding(.top, 16)
+                if filtered.isEmpty {
+                    emptyState.padding(.top, 80)
+                } else {
                     list
                 }
             }
@@ -36,8 +36,10 @@ struct HistoryView: View {
     private var titleBlock: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text("Your pages").font(Fonts.display(30, .bold)).foregroundStyle(Palette.ink)
-            Text("\(store.totalMornings) mornings and counting.")
-                .font(Fonts.ui(14, .semibold)).foregroundStyle(Palette.inkSoft).padding(.top, 5)
+                .fixedSize()
+                .underlineSquiggle(Palette.sunDisc, weight: 4, height: 9)
+            Text("\(store.totalMornings) mornings, and counting.")
+                .font(Fonts.ui(14, .semibold)).foregroundStyle(Palette.inkSoft).padding(.top, 12)
         }
     }
 
@@ -47,10 +49,7 @@ struct HistoryView: View {
                 .padding(.top, 18).padding(.bottom, 9)
             ForEach(group.items, id: \.dayKey) { e in
                 NavigationLink(value: e.dayKey) {
-                    EntryRow(entry: e) {
-                        Image(systemName: "chevron.right").font(.system(size: 12, weight: .bold))
-                            .foregroundStyle(Palette.hairline)
-                    }
+                    EntryRow(entry: e) { EntryScore(count: e.gratitudeCount) }
                 }
                 .buttonStyle(PressableStyle(scale: 0.98))
                 .contextMenu {
@@ -63,60 +62,39 @@ struct HistoryView: View {
         }
     }
 
-    // MARK: Filter row — All + five moods, stretched end-to-end across the width
+    // MARK: Filter row — an "All" pill + five mood tiles, spread across the full width
     private var filterChips: some View {
         HStack(spacing: 8) {
-            chip(selected: filter == nil, fill: filter == nil ? Palette.ink : .white) { toggle(nil) } label: {
+            Button { toggle(nil) } label: {
                 Text("All").font(Fonts.ui(13, .heavy))
-                    .foregroundStyle(filter == nil ? Palette.paper : Palette.inkSoft)
+                    .foregroundStyle(filter == nil ? Palette.paper : Palette.ink)
+                    .padding(.horizontal, 16).padding(.vertical, 10)
+                    .background(filter == nil ? Palette.ink : Palette.cream, in: Capsule())
+                    .overlay(Capsule().stroke(Palette.ink, lineWidth: 2))
             }
+            .buttonStyle(PressableStyle())
+
             ForEach(0..<5, id: \.self) { i in
-                chip(selected: filter == i, fill: filter == i ? Palette.mood(i) : .white) { toggle(i) } label: {
+                Button { toggle(i) } label: {
                     MoodFace(mood: i, size: 26)
+                        .frame(width: 40, height: 40)
+                        .background(filter == i ? Palette.moodSoft(i) : Palette.cream,
+                                    in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
+                            .stroke(filter == i ? Palette.mood(i) : Palette.ink.opacity(0.22),
+                                    lineWidth: filter == i ? 2.5 : 2))
+                        .frame(maxWidth: .infinity)          // spread evenly across the width
                 }
+                .buttonStyle(PressableStyle())
             }
         }
-    }
-
-    private func chip<L: View>(selected: Bool, fill: Color, action: @escaping () -> Void,
-                               @ViewBuilder label: () -> L) -> some View {
-        Button(action: action) {
-            label()
-                .frame(maxWidth: .infinity)
-                .frame(height: 44)
-                .background(fill, in: RoundedRectangle(cornerRadius: 13, style: .continuous))
-                .shadow(color: Color(hex: "78501E").opacity(0.07), radius: 6, y: 4)
-        }
-        .buttonStyle(PressableStyle())
-    }
-
-    // MARK: Empty state — header + filters at top, component centered in the space below
-    private var emptyLayout: some View {
-        ZStack(alignment: .top) {
-            PaperBackground()
-            VStack(spacing: 0) {
-                VStack(alignment: .leading, spacing: 0) {
-                    titleBlock
-                    filterChips.padding(.top, 16)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 20)
-                .padding(.top, 60)
-                .capWidth(Metrics.maxContentWidth)
-
-                Spacer()
-                emptyState
-                Spacer()
-            }
-        }
-        .ignoresSafeArea(.container, edges: .top)
     }
 
     private var emptyState: some View {
         VStack(spacing: 18) {
             ZStack {
-                Circle().fill(Palette.amber.opacity(0.10)).frame(width: 104, height: 104)
-                SunMark(size: 58, stroke: Palette.amber, fill: Palette.amberLight).floaty(period: 5)
+                SoftGlow(color: Palette.sunDisc, opacity: 0.2, size: 180)
+                SunMark(size: 58).floaty(period: 5)
             }
             VStack(spacing: 7) {
                 Text(filter == nil ? "No pages yet" : "None with this mood")

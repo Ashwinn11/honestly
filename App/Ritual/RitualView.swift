@@ -54,7 +54,7 @@ struct RitualView: View {
     // MARK: Header (close + progress) — pinned at the top
     private var header: some View {
         HStack(spacing: 14) {
-            SoftCircleButton(icon: "xmark") { onClose() }
+            IconTileButton(icon: "xmark", size: 38, iconSize: 13) { onClose() }
             RitualPips(step: step)
             Color.clear.frame(width: 38, height: 38)   // balances the close button (fixed height!)
         }
@@ -116,12 +116,12 @@ struct RitualView: View {
             withAnimation(Motion.pop) { mood = i }
         } label: {
             VStack(spacing: 9) {
-                MoodFace(mood: i, size: 52)
+                MoodFace(mood: i, size: 52, expressive: true)
                     .scaleEffect(scale)
-                    .opacity(mood == nil || selected ? 1 : 0.4)
+                    .opacity(mood == nil || selected ? 1 : 0.42)
                 Text(Mood(rawValue: i)!.label)
                     .font(Fonts.ui(12, selected ? .heavy : .semibold))
-                    .foregroundStyle(selected ? Palette.mood(i) : Palette.inkSofter)
+                    .foregroundStyle(selected ? Palette.amberDeep : Palette.inkSofter)
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 8)
@@ -135,22 +135,16 @@ struct RitualView: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .top, spacing: 12) {
                 VStack(alignment: .leading, spacing: 5) {
-                    Eyebrow(text: "Today's prompt", color: Palette.amber, tracking: 1.3, size: 11)
+                    Eyebrow(text: "Today's prompt", color: Palette.amberDeep, tracking: 1.3, size: 11)
                     Text(prompt).font(Fonts.display(21, .semibold)).foregroundStyle(Palette.ink)
                         .lineSpacing(3).fixedSize(horizontal: false, vertical: true)
                         .contentTransition(.opacity)
                 }
                 Spacer(minLength: 0)
-                Button {
-                    Haptics.tap()
+                IconTileButton(icon: "arrow.triangle.2.circlepath", size: 40, iconSize: 16,
+                               iconColor: Palette.amberDeep, fill: Palette.iconTile) {
                     withAnimation(Motion.snappy) { promptIdx += 1 }
-                } label: {
-                    Image(systemName: "arrow.triangle.2.circlepath")
-                        .font(.system(size: 16, weight: .bold)).foregroundStyle(Palette.amber)
-                        .frame(width: 40, height: 40)
-                        .background(Palette.amber.opacity(0.13), in: Circle())
                 }
-                .buttonStyle(PressableStyle())
             }
             .padding(.top, 6)
 
@@ -182,18 +176,17 @@ struct RitualView: View {
     private func gratitudeRow(_ i: Int) -> some View {
         let lit = !gratitudes[i].trimmingCharacters(in: .whitespaces).isEmpty
         return HStack(spacing: 12) {
-            SunMark(size: 26,
-                    stroke: lit ? Palette.amber : Color(hex: "E4D9C4"),
-                    fill: lit ? Palette.amberLight : nil)
-                .scaleEffect(lit ? 1.12 : 1)
+            SunMark(size: 26, muted: !lit)
+                .scaleEffect(lit ? 1.08 : 1)
                 .animation(Motion.pop, value: lit)
             TextField(AppContent.gratitudePlaceholder(i), text: $gratitudes[i])
                 .font(Fonts.ui(15, .semibold)).foregroundStyle(Palette.ink)
                 .submitLabel(.next)
         }
-        .padding(EdgeInsets(top: 11, leading: 14, bottom: 11, trailing: 14))
-        .background(.white, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .shadow(color: Color(hex: "78501E").opacity(0.06), radius: 8, y: 6)
+        .padding(EdgeInsets(top: 12, leading: 14, bottom: 12, trailing: 14))
+        .background(lit ? Palette.cream : .white, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
+            .stroke(lit ? Palette.outlineSoft : Palette.ink.opacity(0.12), lineWidth: 1.5))
     }
 
     // MARK: Finish
@@ -250,57 +243,50 @@ private struct CelebrationView: View {
 
     var body: some View {
         ZStack {
-            LinearGradient(colors: [Palette.amber, Color(hex: "F0611A"), Color(hex: "E4551A")],
-                           startPoint: .topLeading, endPoint: .bottomTrailing)
-                .ignoresSafeArea()
+            Palette.celebrationGradient.ignoresSafeArea()
             ConfettiBurst()
+            celebrationDecor
 
             VStack(spacing: 0) {
                 ZStack {
                     RingPulse()
-                    SunMark(size: 126, stroke: .white.opacity(0.55), fill: .white.opacity(0.55)).spin(period: 18)
-                    MoodFace(mood: mood, size: 72)
-                        .padding(10)
-                        .background(.white, in: Circle())
-                        .shadow(color: .black.opacity(0.2), radius: 14, y: 8)
+                    SunMark(size: 116, disc: false).spin(period: 18)   // black rays only
+                    MoodFace(mood: mood, size: 72, expressive: true)
+                        .shadow(color: .black.opacity(0.18), radius: 12, y: 6)
                         .popIn(delay: 0.05)
                 }
                 .frame(height: 170)
 
                 Text("Your apps are awake")
                     .font(Fonts.display(34, .heavy)).foregroundStyle(.white)
-                    .multilineTextAlignment(.center).padding(.top, 16)
+                    .multilineTextAlignment(.center)
+                    .shadow(color: Color(hex: "78280A").opacity(0.3), radius: 14, y: 2)
+                    .padding(.top, 12)
                 Text("You showed up before the world did. That's the whole thing.")
-                    .font(Fonts.ui(15.5, .semibold)).foregroundStyle(.white.opacity(0.92))
+                    .font(Fonts.ui(15.5, .semibold)).foregroundStyle(.white.opacity(0.94))
                     .multilineTextAlignment(.center).lineSpacing(2)
-                    .frame(maxWidth: 290).padding(.top, 9)
+                    .frame(maxWidth: 290).padding(.top, 10)
 
-                HStack(spacing: 14) {
-                    Text("\(streak)").font(Fonts.display(40, .heavy)).foregroundStyle(.white)
+                HStack(spacing: 13) {
+                    Text("\(streak)").font(Fonts.display(38, .heavy)).foregroundStyle(Palette.ink)
                     VStack(alignment: .leading, spacing: 0) {
-                        Text("day streak").font(Fonts.ui(14, .heavy)).foregroundStyle(.white)
-                        Text("+1 this morning").font(Fonts.ui(12, .semibold)).foregroundStyle(.white.opacity(0.85))
+                        Text("day streak").font(Fonts.ui(14, .heavy)).foregroundStyle(Palette.ink)
+                        Text("+1 this morning").font(Fonts.ui(12, .bold)).foregroundStyle(Palette.amberDeep)
                     }
                 }
-                .padding(.horizontal, 22).padding(.vertical, 12)
-                .background(.white.opacity(0.15), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).stroke(.white.opacity(0.25), lineWidth: 1))
+                .padding(.horizontal, 20).padding(.vertical, 12)
+                .background(Palette.onAmber, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(Palette.ink, lineWidth: 2))
+                .tactile(6, cornerRadius: 16)
                 .padding(.top, 22)
                 .popIn(delay: 0.35)
 
-                Text(summary).font(Fonts.ui(12.5, .bold)).foregroundStyle(.white.opacity(0.85))
-                    .padding(.top, 16)
+                Text(summary).font(Fonts.ui(12.5, .bold)).foregroundStyle(.white.opacity(0.9))
+                    .padding(.top, 18)
 
-                Button { onStart() } label: {
-                    Text("Start my day")
-                        .font(Fonts.ui(16.5, .heavy)).foregroundStyle(Palette.amber)
-                        .frame(maxWidth: .infinity).padding(.vertical, 16)
-                        .background(.white, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-                        .shadow(color: .black.opacity(0.2), radius: 12, y: 10)
-                }
-                .buttonStyle(PressableStyle())
-                .frame(maxWidth: 320)
-                .padding(.top, 26)
+                CreamButton(title: "Start my day") { onStart() }
+                    .frame(maxWidth: 300)
+                    .padding(.top, 22)
             }
             .padding(.horizontal, 28)
             .capWidth(Metrics.maxContentWidth)   // centered column; gradient stays full-bleed
@@ -309,6 +295,23 @@ private struct CelebrationView: View {
             try? await Task.sleep(for: .seconds(1.2))
             ReviewPrompt.maybeAsk(streak: streak, requestReview)
         }
+    }
+
+    // Static floating decor, layered under the content (ConfettiBurst handles the motion).
+    private var celebrationDecor: some View {
+        ZStack {
+            InkGlyph(kind: .sparkle, size: 26, fill: Color(hex: "F6C33F"))
+                .rotationEffect(.degrees(-12)).offset(x: -118, y: -228).floaty(period: 4)
+            InkGlyph(kind: .heart, size: 22, fill: Color(hex: "F19DA6"))
+                .offset(x: 112, y: -248).floaty(period: 5, delay: 0.3)
+            InkGlyph(kind: .sparkle, size: 18, fill: Color(hex: "8FB6E0"))
+                .offset(x: -104, y: 118).floaty(period: 4.5, delay: 0.2)
+            Circle().fill(.white.opacity(0.85)).frame(width: 7, height: 7).offset(x: -72, y: -176)
+            Circle().fill(Color(hex: "FFF3D6")).frame(width: 6, height: 6).offset(x: -118, y: 158)
+            Circle().fill(.white.opacity(0.8)).frame(width: 6, height: 6).offset(x: 92, y: -138)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .allowsHitTesting(false)
     }
 }
 

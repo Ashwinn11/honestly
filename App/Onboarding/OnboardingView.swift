@@ -94,7 +94,7 @@ struct OnboardingView: View {
         case .apps:
             chrome(primary: .init(title: "Choose apps to quiet") { chooseApps() },
                    secondary: .init(title: "Not now") { advance() }) {
-                appsQuestion
+                narrative(.quiet, title: AppContent.onbQuietTitle, body: AppContent.onbQuietBody)
             }
 
         case .commitment:
@@ -171,28 +171,23 @@ struct OnboardingView: View {
                 ctaButton(primary)
             }
             if let secondary {
-                Button { Haptics.tap(); secondary.action() } label: {
-                    Text(secondary.title)
-                        .font(Fonts.ui(14.5, .bold)).foregroundStyle(Palette.inkSofter)
-                        .frame(maxWidth: .infinity).padding(.vertical, 2)
+                HStack(spacing: 12) {
+                    // Mirror the back button's gutter so the link centers under the CTA, not the footer.
+                    if canGoBack { Color.clear.frame(width: DesignScale.s(56), height: 1) }
+                    Button { Haptics.tap(); secondary.action() } label: {
+                        Text(secondary.title)
+                            .font(Fonts.ui(14.5, .bold)).foregroundStyle(Palette.inkSofter)
+                            .frame(maxWidth: .infinity).padding(.vertical, 2)
+                    }
+                    .buttonStyle(PressableStyle(scale: 0.98))
                 }
-                .buttonStyle(PressableStyle(scale: 0.98))
             }
         }
     }
 
     private var backButton: some View {
-        Button { Haptics.tap(); back() } label: {
-            Image(systemName: "chevron.left")
-                .font(.system(size: DesignScale.s(16), weight: .bold))
-                .foregroundStyle(Palette.inkSoft)
-                .frame(width: DesignScale.s(56), height: DesignScale.s(56))
-                .background(Palette.ink.opacity(0.05),
-                            in: RoundedRectangle(cornerRadius: DesignScale.s(17), style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: DesignScale.s(17), style: .continuous)
-                    .stroke(Palette.hairline, lineWidth: 1.3))
-        }
-        .buttonStyle(PressableStyle())
+        IconTileButton(icon: "chevron.left", size: 56, iconSize: 16,
+                       iconColor: Palette.ink, fill: Palette.cream, radius: 17) { back() }
     }
 
     private func ctaButton(_ b: FooterButton) -> some View {
@@ -204,10 +199,11 @@ struct OnboardingView: View {
                 .font(Fonts.ui(16.5, .heavy))
                 .foregroundStyle(b.enabled ? .white : Palette.inkSofter)
                 .frame(maxWidth: .infinity, minHeight: DesignScale.s(56))
-                .background(b.enabled ? AnyShapeStyle(Palette.amber) : AnyShapeStyle(Palette.ink.opacity(0.08)),
+                .background(b.enabled ? AnyShapeStyle(Palette.amber) : AnyShapeStyle(Palette.ink.opacity(0.06)),
                             in: RoundedRectangle(cornerRadius: DesignScale.s(17), style: .continuous))
-                .shadow(color: b.enabled ? Palette.amber.opacity(0.32) : .clear,
-                        radius: DesignScale.s(11), y: DesignScale.s(9))
+                .overlay(RoundedRectangle(cornerRadius: DesignScale.s(17), style: .continuous)
+                    .stroke(Palette.ink, lineWidth: b.enabled ? 2 : 0))
+                .tactile(b.enabled ? 4 : 0, cornerRadius: DesignScale.s(17))
         }
         .buttonStyle(PressableStyle())
         .disabled(!b.enabled)
@@ -267,6 +263,10 @@ struct OnboardingView: View {
             Text("\(answers.painHours)")
                 .font(Fonts.display(96, .heavy)).foregroundStyle(Palette.amber)
                 .padding(.top, 8)
+                .overlay(alignment: .topTrailing) {
+                    InkGlyph(kind: .sparkle, size: 26, fill: Color(hex: "F6C33F"))
+                        .offset(x: 26, y: 6).floaty(period: 4)
+                }
             Text("hours a month")
                 .font(Fonts.display(26, .bold)).foregroundStyle(Palette.ink)
             Text("handed to the scroll — gone before\nyou're even awake.")
@@ -274,6 +274,7 @@ struct OnboardingView: View {
                 .multilineTextAlignment(.center).lineSpacing(4)
                 .padding(.top, 16)
         }
+        .background { SoftGlow(color: Palette.amber, opacity: 0.14, size: 320) }
     }
 
     private var appsQuestion: some View {
@@ -389,10 +390,10 @@ private struct OnbOptionRow: View {
                 Spacer(minLength: 8)
             }
             .padding(15)
-            .background(selected ? Palette.amber.opacity(0.08) : .white,
+            .background(selected ? Color(hex: "FFF6E7") : Palette.cream,
                         in: RoundedRectangle(cornerRadius: 18, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(selected ? Palette.amber : Palette.hairline, lineWidth: selected ? 2 : 1.2))
+                .stroke(selected ? Palette.amber : Palette.ink.opacity(0.18), lineWidth: selected ? 2 : 1.5))
         }
         .buttonStyle(PressableStyle(scale: 0.98))
     }
@@ -400,16 +401,18 @@ private struct OnbOptionRow: View {
     @ViewBuilder private var indicator: some View {
         ZStack {
             if multi {
-                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                // Checkbox: amber fill + black ink outline when checked
+                RoundedRectangle(cornerRadius: 7, style: .continuous)
                     .fill(selected ? Palette.amber : .clear)
-                RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .stroke(selected ? Palette.amber : Palette.hairline, lineWidth: 2)
+                RoundedRectangle(cornerRadius: 7, style: .continuous)
+                    .stroke(selected ? Palette.ink : Palette.ink.opacity(0.3), lineWidth: 2)
                 if selected {
                     Image(systemName: "checkmark").font(.system(size: 12, weight: .heavy)).foregroundStyle(.white)
                 }
             } else {
-                Circle().stroke(selected ? Palette.amber : Palette.hairline, lineWidth: 2)
-                if selected { Circle().fill(Palette.amber).frame(width: 12, height: 12) }
+                // Radio: amber ring + amber dot when selected
+                Circle().stroke(selected ? Palette.amber : Palette.ink.opacity(0.3), lineWidth: 2)
+                if selected { Circle().fill(Palette.amber).frame(width: 11, height: 11) }
             }
         }
         .frame(width: 22, height: 22)
@@ -431,7 +434,7 @@ private struct OnbBuildingView: View {
             Spacer()
             VStack(spacing: 26) {
                 ZStack {
-                    Circle().fill(Palette.amber.opacity(0.14)).frame(width: 150, height: 150)
+                    SoftGlow(color: Palette.sunDisc, opacity: 0.18, size: 240)
                     SunMark(size: 104).spin(period: 22)
                 }
                 .offset(y: rise ? 0 : 26)
@@ -446,8 +449,10 @@ private struct OnbBuildingView: View {
                     ForEach(Array(AppContent.buildingTicks.enumerated()), id: \.offset) { i, t in
                         HStack(spacing: 11) {
                             ZStack {
-                                Circle().fill(i < visibleTicks ? Palette.amber : Palette.ink.opacity(0.08))
-                                    .frame(width: 24, height: 24)
+                                Circle().fill(i < visibleTicks ? Palette.amber : Color.white)
+                                    .overlay(Circle().stroke(i < visibleTicks ? Palette.ink : Palette.ink.opacity(0.25),
+                                                             lineWidth: 2))
+                                    .frame(width: 26, height: 26)
                                 if i < visibleTicks {
                                     Image(systemName: "checkmark").font(.system(size: 11, weight: .heavy))
                                         .foregroundStyle(.white)
@@ -509,27 +514,25 @@ private struct OnbPlanView: View {
                 .fixedSize(horizontal: false, vertical: true)
                 .padding(.horizontal, 4)
 
-            VStack(spacing: 15) {
-                planRow("sparkles", "The ritual",
+            VStack(spacing: 14) {
+                planRow(SunMark(size: 20), "The ritual",
                         "Mood → a 2-minute write → 5 gratitudes  ·  ~3 min")
-                planRow("moon.zzz.fill", "The quiet",
-                        "\(answers.appsPhrase) stay asleep until you've written")
-                planRow("flame.fill", "The goal",
+                planRow(InkGlyph(kind: .moon, size: 20, fill: Palette.sunDisc, lineWidth: 1.6), "The quiet",
+                        "Instagram, TikTok & X stay asleep until you've written")
+                planRow(InkGlyph(kind: .flame, size: 19, fill: Palette.sunDisc, lineWidth: 1.6), "The goal",
                         "\(answers.weeklyGoal) mornings a week · a 30-day streak to make it stick")
             }
-            .softCard(padding: 18)
+            .softCard(padding: 16, radius: 22, emphasized: true)
         }
+        .background(alignment: .top) { SoftGlow(color: Palette.amber, opacity: 0.13, size: 300).offset(y: -10) }
     }
 
-    private func planRow(_ icon: String, _ title: String, _ body: String) -> some View {
-        HStack(alignment: .top, spacing: 13) {
-            Image(systemName: icon)
-                .font(.system(size: 15, weight: .bold)).foregroundStyle(Palette.amber)
-                .frame(width: 38, height: 38)
-                .background(Palette.amber.opacity(0.12), in: Circle())
+    private func planRow<G: View>(_ glyph: G, _ title: String, _ body: String) -> some View {
+        HStack(alignment: .top, spacing: 12) {
+            IconTile(size: 38, fill: Palette.iconTile) { glyph }
             VStack(alignment: .leading, spacing: 3) {
-                Text(title).font(Fonts.ui(15.5, .heavy)).foregroundStyle(Palette.ink)
-                Text(body).font(Fonts.ui(13.5, .semibold)).foregroundStyle(Palette.inkSoft).lineSpacing(2)
+                Text(title).font(Fonts.ui(15, .heavy)).foregroundStyle(Palette.ink)
+                Text(body).font(Fonts.ui(12.5, .semibold)).foregroundStyle(Palette.inkSoft).lineSpacing(2)
                     .fixedSize(horizontal: false, vertical: true)
             }
             Spacer(minLength: 0)
@@ -543,7 +546,7 @@ private struct OnbRitualTeachView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             VStack(alignment: .leading, spacing: 9) {
-                Text("Your 3-minute ritual")
+                Text("Your 3-minute\nritual")
                     .font(Fonts.display(27, .bold)).foregroundStyle(Palette.ink)
                 Text("Three small steps, every morning.")
                     .font(Fonts.ui(14.5, .semibold)).foregroundStyle(Palette.inkSoft)
@@ -562,9 +565,7 @@ private struct OnbRitualTeachView: View {
                         }
                         Spacer(minLength: 0)
                     }
-                    .padding(14)
-                    .background(.white, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).stroke(Palette.hairline, lineWidth: 1))
+                    .softCard(padding: 15, radius: 20)
                     .staggeredAppear(index: i)
                 }
             }
@@ -576,24 +577,25 @@ private struct OnbRitualTeachView: View {
         case .moods:
             MoodFace(mood: 0, size: 48)
         case .write:
-            VStack(spacing: 5) {
-                lineCap(0.9, Palette.amberLight)
-                lineCap(1.0, Palette.ink.opacity(0.14))
+            VStack(alignment: .leading, spacing: 8) {
+                lineCap(0.95, Color(hex: "FFE0B4"))
+                lineCap(1.0, Palette.ink.opacity(0.2))
                 lineCap(0.6, Palette.amber)
             }
-            .padding(9)
-            .frame(width: 48, height: 48)
-            .background(.white, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(Palette.hairline, lineWidth: 1))
+            .frame(width: 46)
         case .grat:
-            SunMark(size: 44, stroke: Palette.amber, fill: Palette.amberLight)
+            SunMark(size: 44)
         default:
             SunMark(size: 44)
         }
     }
     private func lineCap(_ frac: CGFloat, _ c: Color) -> some View {
-        GeometryReader { g in Capsule().fill(c).frame(width: g.size.width * frac, height: 5) }
-            .frame(height: 5)
+        GeometryReader { g in
+            Capsule().fill(c)
+                .overlay(Capsule().stroke(Palette.ink, lineWidth: 1.5))
+                .frame(width: g.size.width * frac, height: 8)
+        }
+        .frame(height: 8)
     }
 }
 
@@ -603,10 +605,10 @@ private struct OnbSocialProofView: View {
     private var sp: SocialProof { AppContent.socialProof }
 
     var body: some View {
-        VStack(spacing: 20) {
-            HStack(spacing: 6) {
+        VStack(spacing: 16) {
+            HStack(spacing: 5) {
                 ForEach(0..<5, id: \.self) { _ in
-                    Image(systemName: "star.fill").font(.system(size: 22)).foregroundStyle(Palette.amber)
+                    InkGlyph(kind: .star, size: 28, fill: Color(hex: "F6C33F"), lineWidth: 1.4)
                 }
             }
             if sp.hasStats {
@@ -617,20 +619,17 @@ private struct OnbSocialProofView: View {
                     }
                 }
             } else {
-                Text("Loved at first light")
-                    .font(Fonts.display(28, .bold)).foregroundStyle(Palette.ink)
+                Text("Loved at\nfirst light")
+                    .font(Fonts.display(27, .bold)).foregroundStyle(Palette.ink)
             }
 
             if sp.quotes.isEmpty {
-                VStack(spacing: 12) {
-                    Text("“Meet yourself before the world logs on.”")
-                        .font(Fonts.display(20, .bold)).foregroundStyle(Palette.ink)
-                        .multilineTextAlignment(.center).lineSpacing(3)
-                    Text("You're about to join people who reclaimed their mornings.")
-                        .font(Fonts.ui(14.5, .semibold)).foregroundStyle(Palette.inkSoft)
-                        .multilineTextAlignment(.center).lineSpacing(3)
+                VStack(spacing: 11) {
+                    quoteCard("Meet yourself before the world logs on.",
+                              "You're about to join people who reclaimed their mornings — one quiet page at a time.")
+                    quoteCard("The first ten minutes that are finally mine.",
+                              "The apps stay asleep until I've written — so the morning feels calm again.")
                 }
-                .padding(.horizontal, 8)
             } else {
                 VStack(spacing: 12) {
                     ForEach(sp.quotes) { q in
@@ -647,6 +646,21 @@ private struct OnbSocialProofView: View {
                 }
             }
         }
+        // Glow anchored near the top (behind the stars/heading), so it stays put as the cards grow.
+        .background(alignment: .top) { SoftGlow(color: Palette.sunDisc, opacity: 0.16, size: 300).offset(y: 40) }
+    }
+
+    private func quoteCard(_ quote: String, _ sub: String) -> some View {
+        VStack(alignment: .leading, spacing: 9) {
+            Text("“\(quote)”")
+                .font(Fonts.display(16, .semibold)).foregroundStyle(Palette.ink)
+                .lineSpacing(3).fixedSize(horizontal: false, vertical: true)
+            Text(sub)
+                .font(Fonts.ui(13, .semibold)).foregroundStyle(Palette.inkSoft)
+                .lineSpacing(3).fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .softCard(padding: 16, radius: 20, emphasized: true)
     }
 }
 
@@ -673,16 +687,21 @@ private struct OnbIllustration: View {
     private var brand: some View {
         VStack(spacing: 0) {
             ZStack {
-                Circle().fill(Color(hex: "FFB13C").opacity(0.18)).frame(width: 154, height: 154)
+                SoftGlow(color: Palette.sunDisc, opacity: 0.22, size: 280)
                 SunMark(size: 118).spin(period: 26)
+                InkGlyph(kind: .sparkle, size: 24, fill: Color(hex: "F6C33F"))
+                    .offset(x: -74, y: -60).floaty(period: 4)
+                InkGlyph(kind: .heart, size: 20, fill: Color(hex: "F19DA6"))
+                    .offset(x: 76, y: -44).floaty(period: 5, delay: 0.4)
             }
             .floaty(period: 6)
             .padding(.bottom, 22)
             Text("Honestly").font(Fonts.display(52, .heavy)).foregroundStyle(Palette.ink)
+                .underlineSquiggle(Palette.amber, weight: 5, height: 12)
             Text("The quiet part of the morning — before the world logs on.")
                 .font(Fonts.ui(16, .semibold)).foregroundStyle(Palette.inkSoft)
                 .multilineTextAlignment(.center).lineSpacing(3)
-                .frame(maxWidth: 280).padding(.top, 14)
+                .frame(maxWidth: 280).padding(.top, 18)
         }
     }
 
@@ -703,7 +722,8 @@ private struct OnbIllustration: View {
     private func bar(_ c: Color, w: CGFloat) -> some View {
         RoundedRectangle(cornerRadius: 13, style: .continuous)
             .fill(c).frame(width: w, height: 26)
-            .shadow(color: c.opacity(0.4), radius: 8, y: 4)
+            .overlay(RoundedRectangle(cornerRadius: 13, style: .continuous).stroke(Palette.ink, lineWidth: 2.5))
+            .tactile(5, cornerRadius: 13, color: Palette.ink.opacity(0.15))
     }
 
     private var page: some View {
@@ -765,19 +785,20 @@ private struct OnbIllustration: View {
     }
 
     private var quiet: some View {
-        HStack(alignment: .center, spacing: 14) {
-            SleepingAppTile(brand: .instagram, size: 58).floaty(period: 3.4)
-            SleepingAppTile(brand: .snapchat, size: 58).floaty(period: 3.0, delay: 0.2)
-            SleepingAppTile(brand: .x, size: 58).floaty(period: 3.6, delay: 0.4)
-            SleepingAppTile(brand: .whatsapp, size: 58).floaty(period: 3.2, delay: 0.1)
+        HStack(alignment: .center, spacing: 12) {
+            SleepingAppTile(brand: .instagram, size: 58, tilt: -8).floaty(period: 3.4)
+            SleepingAppTile(brand: .snapchat, size: 58, tilt: 5).floaty(period: 3.0, delay: 0.2)
+            SleepingAppTile(brand: .x, size: 58, tilt: -4).floaty(period: 3.6, delay: 0.4)
+            SleepingAppTile(brand: .whatsapp, size: 58, tilt: 8).floaty(period: 3.2, delay: 0.1)
         }
+        .background { SoftGlow(color: Palette.sunDisc, opacity: 0.16, size: 300) }
     }
 
     private var streak: some View {
         VStack(spacing: 0) {
             HStack(alignment: .bottom, spacing: 8) {
                 sun(26, 0.4); sun(34, 0.55); sun(44, 0.7); sun(56, 0.85)
-                SunMark(size: 72, stroke: Palette.amberLight, fill: Palette.amber).floaty(period: 3)
+                SunMark(size: 72).floaty(period: 3)
             }
             .padding(.bottom, 20)
             Text("12").font(Fonts.display(60, .heavy)).foregroundStyle(Palette.amber)
@@ -787,34 +808,36 @@ private struct OnbIllustration: View {
     private func sun(_ s: CGFloat, _ op: Double) -> some View { SunMark(size: s).opacity(op) }
 
     private var notif: some View {
-        HStack(spacing: 12) {
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(Palette.amberLight).frame(width: 38, height: 38)
-                .overlay(SunMark(size: 24, stroke: .white, fill: .white))
-                .shadow(color: Palette.amber.opacity(0.4), radius: 6, y: 4)
-            VStack(alignment: .leading, spacing: 2) {
+        HStack(alignment: .top, spacing: 12) {
+            Image("app-mark").resizable().scaledToFill()
+                .frame(width: 42, height: 42)
+                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(Palette.ink.opacity(0.12), lineWidth: 1))
+            VStack(alignment: .leading, spacing: 3) {
                 HStack {
-                    Text("Honestly").font(Fonts.ui(13, .heavy)).foregroundStyle(Palette.ink)
+                    Text("Honestly").font(Fonts.ui(14, .heavy)).foregroundStyle(Palette.ink)
                     Spacer()
-                    Text("now").font(Fonts.ui(11, .semibold)).foregroundStyle(Palette.inkSofter)
+                    Text("now").font(Fonts.ui(12, .semibold)).foregroundStyle(Palette.inkSofter)
                 }
                 Text("Good morning. Your page is waiting — the world can hold on a minute.")
-                    .font(Fonts.ui(13, .semibold)).foregroundStyle(Color(hex: "5A4A38")).lineSpacing(2)
+                    .font(Fonts.ui(13.5, .semibold)).foregroundStyle(Color(hex: "5A4A38"))
+                    .lineSpacing(2).fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
-        .padding(EdgeInsets(top: 14, leading: 15, bottom: 14, trailing: 15))
-        .frame(width: 250)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-        .background(.white.opacity(0.5), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-        .shadow(color: Color(hex: "78501E").opacity(0.16), radius: 17, y: 9)
+        .padding(EdgeInsets(top: 15, leading: 15, bottom: 15, trailing: 16))
+        .frame(width: 330)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).stroke(Palette.ink, lineWidth: 2))
+        .shadow(color: Color(hex: "78501E").opacity(0.14), radius: 16, y: 9)
         .floaty(period: 5)
     }
 
     private var ready: some View {
         ZStack {
-            SunMark(size: 24, stroke: Palette.amber, fill: Palette.amber).offset(x: -70, y: -50).floaty(period: 4)
-            SunMark(size: 18, stroke: Palette.amber, fill: Palette.amber).offset(x: 74, y: -14).floaty(period: 5, delay: 0.4)
-            SunMark(size: 130, stroke: Palette.amberLight, fill: Palette.amberLight).spin(period: 24).floaty(period: 6)
+            SunMark(size: 24).offset(x: -70, y: -50).floaty(period: 4)
+            SunMark(size: 18).offset(x: 74, y: -14).floaty(period: 5, delay: 0.4)
+            SunMark(size: 130).spin(period: 24).floaty(period: 6)
         }
         .frame(height: 180)
     }

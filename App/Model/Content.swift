@@ -88,8 +88,12 @@ enum AppContent {
     // MARK: - Onboarding funnel
 
     static let onbBrandTagline  = "The quiet part of the morning — before the world logs on."
-    static let onbProblemTitle  = "The first thing you touch each morning runs the whole day."
-    static let onbProblemBody   = "Reach for the phone and a hundred other voices get there before yours does."
+    static let onbProblemTitle  = "The scroll gets\nthere first."
+    static let onbProblemBody   = "A hundred voices, before yours."
+
+    // MARK: Quiet your apps (o6 — illustration + single action, no quiz)
+    static let onbQuietTitle    = "Put the noisy\napps to sleep"
+    static let onbQuietBody     = "They stay quiet each morning until your page is written."
 
     // MARK: Quiz — goal (multi-select, up to 2)
     static let goalQuestion = "What do you want your mornings to give you?"

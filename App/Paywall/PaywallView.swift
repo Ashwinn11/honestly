@@ -12,30 +12,15 @@ struct PaywallView: View {
     @State private var showRestoreAlert = false
     @State private var legal: LegalDoc? = nil
 
-    private var benefits: [(String, String)] {
-        let all: [(String, String)] = [
-            ("sunrise.fill", "Reclaim your mornings from the scroll"),
-            ("leaf.fill",    "Start every day calmer and clearer"),
-            ("flame.fill",   "Become someone who shows up — daily"),
-            ("lock.fill",    "A private record of who you're becoming"),
-        ]
-        guard let lead = goal?.leadBenefit,
-              let i = all.firstIndex(where: { $0.0 == lead }) else { return all }
-        var arr = all
-        arr.insert(arr.remove(at: i), at: 0)
-        return arr
-    }
+    private let benefits = [
+        "Every mood prompt, personalized to you",
+        "Your apps, quieted till you write",
+        "Streaks, full history & cloud backup",
+    ]
 
     private var goal: OnbGoal? { OnbGoal(rawValue: SharedState.onboardingGoal) }
     private var heroTitle: String { goal?.paywallHero ?? "Take your mornings back" }
-    private var heroSub: String {
-        let mins = SharedState.scrollMinutes
-        if mins > 0 {
-            let h = AppContent.reclaimedHours(scrollMin: mins, morningsPerWeek: SharedState.weeklyGoal)
-            return "Unlock the ritual and take back ~\(h) hours a month from the scroll."
-        }
-        return "Reflect honestly each morning — and become who you're writing toward."
-    }
+    private var heroSub: String { "Everything you need to keep the ritual." }
 
     var body: some View {
         ZStack {
@@ -82,34 +67,32 @@ struct PaywallView: View {
 
     // MARK: Hero
     private var hero: some View {
-        VStack(spacing: 12) {
-            SunMark(size: 68, stroke: Palette.amber, fill: Palette.amberLight).floaty()
+        VStack(spacing: 10) {
+            SunMark(size: 60).floaty()
+                .background { SoftGlow(color: Palette.amber, opacity: 0.15, size: 210) }
             Text(heroTitle)
-                .display(32, .heavy)
+                .display(27, .bold)
                 .multilineTextAlignment(.center)
             Text(heroSub)
-                .ui(15, .semibold, color: Palette.inkSoft)
+                .ui(13.5, .semibold, color: Palette.inkSoft)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
         }
     }
 
-    // MARK: Benefits
+    // MARK: Benefits — sun-disc bullets, no card
     private var benefitsCard: some View {
-        VStack(spacing: 11) {
-            ForEach(Array(benefits.enumerated()), id: \.offset) { _, b in
-                HStack(spacing: 14) {
-                    Image(systemName: b.0)
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundStyle(Palette.amber)
-                        .frame(width: 38, height: 38)
-                        .background(Palette.amber.opacity(0.12), in: Circle())
-                    Text(b.1).ui(15, .bold)
-                    Spacer()
+        VStack(alignment: .leading, spacing: 12) {
+            ForEach(benefits, id: \.self) { b in
+                HStack(spacing: 11) {
+                    SunMark(size: 22, rays: false)
+                    Text(b).ui(14.5, .semibold)
+                    Spacer(minLength: 0)
                 }
             }
         }
-        .softCard(padding: 16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 4)
     }
 
     // MARK: Plan picker — Lifetime (best value) + Monthly (optional)
@@ -158,10 +141,10 @@ struct PaywallView: View {
                 }
             }
             .padding(15)
-            .background(isSel ? Palette.amber.opacity(0.08) : .white,
-                        in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(isSel ? Palette.amber : Palette.hairline, lineWidth: isSel ? 2 : 1.2))
+            .background(isSel ? Color(hex: "FFF6E7") : Palette.cream,
+                        in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(isSel ? Palette.amber : Palette.ink.opacity(0.18), lineWidth: isSel ? 2 : 1.5))
         }
         .buttonStyle(PressableStyle(scale: 0.98))
     }

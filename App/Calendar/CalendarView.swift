@@ -17,13 +17,20 @@ struct CalendarView: View {
         ScreenScaffold {
             VStack(alignment: .leading, spacing: 0) {
                 Text("Your mornings").font(Fonts.display(30, .bold)).foregroundStyle(Palette.ink)
-                Text("A dot of color for every page you wrote.")
-                    .font(Fonts.ui(14, .semibold)).foregroundStyle(Palette.inkSoft).padding(.top, 5)
+                    .fixedSize()
+                    .underlineSquiggle(Palette.sunDisc, weight: 4, height: 9)
+                Text("A month at a glance.")
+                    .font(Fonts.ui(14, .semibold)).foregroundStyle(Palette.inkSoft).padding(.top, 12)
 
-                monthNav.padding(.top, 20).padding(.bottom, 10)
-                weekdayHeader
-                grid
-                countCard.padding(.top, 18)
+                VStack(spacing: 0) {
+                    monthNav.padding(.bottom, 12)
+                    weekdayHeader
+                    grid
+                }
+                .softCard(padding: 15, radius: 22, emphasized: true)
+                .padding(.top, 18)
+
+                countCard.padding(.top, 16)
                 moodsCard.padding(.top, 16)
             }
         }
@@ -31,12 +38,12 @@ struct CalendarView: View {
 
     private var monthNav: some View {
         HStack {
-            SoftCircleButton(icon: "chevron.left", diameter: 36, iconSize: 13, shadow: true) { shift(-1) }
+            IconTileButton(icon: "chevron.left", size: 34, iconSize: 12, fill: Palette.iconTile) { shift(-1) }
             Spacer()
-            Text(HDate.monthTitle(monthAnchor)).font(Fonts.display(21, .bold)).foregroundStyle(Palette.ink)
+            Text(HDate.monthTitle(monthAnchor)).font(Fonts.display(20, .bold)).foregroundStyle(Palette.ink)
                 .contentTransition(.numericText())
             Spacer()
-            SoftCircleButton(icon: "chevron.right", diameter: 36, iconSize: 13, shadow: true) { shift(1) }
+            IconTileButton(icon: "chevron.right", size: 34, iconSize: 12, fill: Palette.iconTile) { shift(1) }
         }
     }
 
@@ -77,21 +84,20 @@ struct CalendarView: View {
                 GeometryReader { g in
                     let s = g.size.width
                     ZStack {
-                        RoundedRectangle(cornerRadius: s * 0.28, style: .continuous)
-                            .fill(cellBG(entry: entry, isToday: isToday))
-                        if isToday {
-                            RoundedRectangle(cornerRadius: s * 0.28, style: .continuous)
-                                .stroke(Palette.amber, lineWidth: 2)
+                        if let entry {
+                            // A written morning shows just its mood face — no numeral.
+                            MoodFace(mood: entry.moodRaw, size: s * 0.74)
+                        } else if isToday {
+                            Circle().stroke(Palette.amber, lineWidth: 2)
+                                .frame(width: s * 0.72, height: s * 0.72)
+                            Text("\(day)").font(Fonts.ui(min(s * 0.26, 14), .heavy))
+                                .foregroundStyle(Palette.amberDeep)
+                        } else {
+                            Text("\(day)").font(Fonts.ui(min(s * 0.24, 13.5), .bold))
+                                .foregroundStyle(isFuture ? Palette.dashFuture : Palette.inkMuted)
                         }
-                        VStack(spacing: 1) {
-                            if let entry { MoodFace(mood: entry.moodRaw, size: s * 0.56) }
-                            Text("\(day)")
-                                .font(Fonts.ui(min(s * 0.24, 11), .bold))
-                                .foregroundStyle(entry != nil ? Palette.inkSoft
-                                                 : (isFuture ? Palette.dashFuture : Palette.inkSofter))
-                        }
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
                     }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
             }
 
@@ -100,12 +106,6 @@ struct CalendarView: View {
         } else {
             cell
         }
-    }
-
-    private func cellBG(entry: JournalEntry?, isToday: Bool) -> Color {
-        if entry != nil { return .white.opacity(0.65) }
-        if isToday { return Palette.amber.opacity(0.08) }
-        return .clear
     }
 
     private var countCard: some View {
@@ -122,28 +122,37 @@ struct CalendarView: View {
     private var moodsCard: some View {
         let counts = store.distribution
         let total = max(counts.reduce(0, +), 1)
+        let visible = counts.filter { $0 > 0 }.count
         return VStack(alignment: .leading, spacing: 14) {
-            Text("Your moods, all told").font(Fonts.display(19, .bold)).foregroundStyle(Palette.ink)
+            Text("Your moods, all told").font(Fonts.display(18, .bold)).foregroundStyle(Palette.ink)
             GeometryReader { geo in
-                HStack(spacing: 2) {
-                    ForEach(0..<5, id: \.self) { i in
-                        if counts[i] > 0 {
-                            Palette.mood(i)
-                                .frame(width: max(2, (geo.size.width - 8) * CGFloat(counts[i]) / CGFloat(total)))
+                let gaps = CGFloat(max(visible - 1, 0)) * 1.5
+                let avail = geo.size.width - gaps
+                HStack(spacing: 1.5) {
+                    if visible == 0 {
+                        Color(hex: "F2EADB")                 // empty: soft grey, not black
+                    } else {
+                        ForEach(0..<5, id: \.self) { i in
+                            if counts[i] > 0 {
+                                Palette.mood(i)
+                                    .frame(width: max(2, avail * CGFloat(counts[i]) / CGFloat(total)))
+                            }
                         }
                     }
-                    if counts.allSatisfy({ $0 == 0 }) { Palette.ink.opacity(0.06) }
                 }
                 .frame(height: 16)
-                .clipShape(Capsule())
+                .background(visible >= 2 ? Palette.ink : Color.clear)   // ink only shows in the 1.5px gaps
+                .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(Palette.ink, lineWidth: 2))
             }
             .frame(height: 16)
             HStack {
                 ForEach(0..<5, id: \.self) { i in
                     VStack(spacing: 5) {
-                        MoodFace(mood: i, size: 26)
-                        Text("\(counts[i])").font(Fonts.ui(12, .heavy)).foregroundStyle(Palette.ink)
-                        Text(Mood(rawValue: i)!.label).font(Fonts.ui(10, .bold)).foregroundStyle(Palette.inkSofter)
+                        MoodFace(mood: i, size: 34)
+                        Text("\(counts[i])").font(Fonts.ui(13, .heavy)).foregroundStyle(Palette.ink)
+                        Text(i == 4 ? "Crying" : Mood(rawValue: i)!.label)
+                            .font(Fonts.ui(10, .bold)).foregroundStyle(Palette.inkSofter)
                     }
                     .frame(maxWidth: .infinity)
                 }

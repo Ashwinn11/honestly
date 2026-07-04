@@ -129,10 +129,14 @@ struct SleepingAppTile: View {
     var size: CGFloat = 60
     var asleep: Bool = true
 
+    var tilt: Double = 0
+
     var body: some View {
         BrandIcon(brand: brand, size: size)
-            .grayscale(asleep ? 0.55 : 0)
-            .opacity(asleep ? 0.72 : 1)
+            .grayscale(asleep ? 0.5 : 0)
+            .opacity(asleep ? 0.85 : 1)
+            .overlay(RoundedRectangle(cornerRadius: size * 0.23, style: .continuous)
+                .stroke(Palette.ink, lineWidth: 2.5))
             .overlay(alignment: .bottomTrailing) {
                 if asleep {
                     ZStack {
@@ -140,10 +144,11 @@ struct SleepingAppTile: View {
                         Text("z").font(Fonts.display(size * 0.24, .heavy)).foregroundStyle(.white)
                     }
                     .frame(width: size * 0.42, height: size * 0.42)
-                    .overlay(Circle().stroke(Palette.paper, lineWidth: 2))
+                    .overlay(Circle().stroke(Palette.ink, lineWidth: 2))
                     .offset(x: size * 0.12, y: size * 0.12)
                 }
             }
-            .shadow(color: Palette.ink.opacity(0.12), radius: 6, y: 4)
+            .rotationEffect(.degrees(tilt))
+            .tactile(6, cornerRadius: size * 0.23, color: Palette.ink.opacity(0.14))
     }
 }

@@ -22,8 +22,21 @@ struct EntryRow<Trailing: View>: View {
             Spacer(minLength: 6)
             trailing()
         }
-        .padding(14)
-        .background(.white, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .padding(13)
+        .background(Palette.cream, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).stroke(Palette.outlineSoft, lineWidth: 1.5))
         .shadow(color: Color(hex: "78501E").opacity(0.07), radius: 11, y: 8)
+    }
+}
+
+/// The gratitude-count flourish on the right of a page card — a small gold sun disc + the count.
+struct EntryScore: View {
+    let count: Int
+    var body: some View {
+        VStack(spacing: 1) {
+            SunMark(size: 20, rays: false)
+            Text("\(count)").font(Fonts.display(13, .bold)).foregroundStyle(Palette.ink)
+        }
+        .frame(minWidth: 24)
     }
 }

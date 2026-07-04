@@ -18,15 +18,18 @@ struct HomeView: View {
 
     // MARK: Header
     private var header: some View {
-        HStack(alignment: .top) {
-            VStack(alignment: .leading, spacing: 4) {
-                Eyebrow(text: HDate.homeHeader(Date()))
-                Text("Good morning").font(Fonts.display(32, .bold)).foregroundStyle(Palette.ink)
-            }
-            Spacer()
-            SunMark(size: 42, stroke: Palette.amberLight, fill: Palette.amberLight).floaty(period: 5)
+        VStack(alignment: .leading, spacing: 0) {
+            Text("Good morning").font(Fonts.display(34, .bold)).foregroundStyle(Palette.ink)
+                .fixedSize()
+                .underlineSquiggle(Palette.amber, weight: 4.5, height: 10)
+            Eyebrow(text: HDate.homeHeader(Date()), color: Palette.inkSoft, tracking: 1.4)
+                .padding(.top, 16)
         }
-        .padding(.bottom, 20)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(alignment: .topLeading) {
+            SoftGlow(color: Palette.sunDisc, opacity: 0.16, size: 240).offset(x: -80, y: -70)
+        }
+        .padding(.bottom, 22)
     }
 
     // MARK: This-morning card
@@ -40,76 +43,74 @@ struct HomeView: View {
 
     private var unwrittenCard: some View {
         let count = screenTime.selectedCount
+        let appsLine = count == 1
+            ? "1 app stays asleep until you write. A few quiet minutes, just for you."
+            : count > 1
+                ? "\(count) apps stay asleep until you write. A few quiet minutes, just for you."
+                : "Your apps stay asleep until you write. A few quiet minutes, just for you."
         return ZStack(alignment: .topTrailing) {
-            Circle().fill(.white.opacity(0.15)).frame(width: 130, height: 130).offset(x: 34, y: -34)
+            Circle().fill(.white.opacity(0.16)).frame(width: 120, height: 120).offset(x: 30, y: -30)
+            SunMark(size: 50, tint: Color(hex: "FFF4E0")).rotationEffect(.degrees(-8))
+                .offset(x: -6, y: 10).floaty(period: 5)
             VStack(alignment: .leading, spacing: 0) {
                 Eyebrow(text: "This morning", color: .white.opacity(0.92))
-                Text("Your page isn't written yet")
-                    .font(Fonts.display(26, .bold)).foregroundStyle(.white)
+                Text("Your page is waiting")
+                    .font(Fonts.display(25, .bold)).foregroundStyle(.white)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.top, 6)
-                Text(count > 0
-                     ? "\(count) apps are still asleep. Write your morning page to wake them up."
-                     : "Write your morning page to start the day on your own terms.")
-                    .font(Fonts.ui(14.5, .semibold)).foregroundStyle(.white.opacity(0.95))
-                    .lineSpacing(2).frame(maxWidth: 250, alignment: .leading)
-                    .padding(.top, 5)
-                HStack(spacing: 10) {
-                    ForEach(0..<min(max(count, 0), 3), id: \.self) { _ in sleepTile }
-                    Spacer(minLength: 0)
-                    if count > 0 {
-                        Text("Screen Time").font(Fonts.ui(12, .bold)).foregroundStyle(.white.opacity(0.9))
-                    }
-                }
-                .padding(.vertical, 17)
-                Button { flow.startRitual() } label: {
-                    Text("Write today's page")
-                        .font(Fonts.ui(16, .heavy)).foregroundStyle(Palette.amberDeep)
-                        .frame(maxWidth: .infinity).padding(.vertical, 15)
-                        .background(.white, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                        .shadow(color: .black.opacity(0.14), radius: 9, y: 8)
-                }
-                .buttonStyle(PressableStyle())
+                Text(appsLine)
+                    .font(Fonts.ui(13.5, .semibold)).foregroundStyle(.white.opacity(0.95))
+                    .lineSpacing(2)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.top, 12)
+                CreamButton(title: "Write today's page") { flow.startRitual() }
+                    .padding(.top, 18)
             }
         }
-        .padding(22)
-        .background(Palette.amberGradient, in: RoundedRectangle(cornerRadius: 26, style: .continuous))
-        .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
-        .shadow(color: Palette.amber.opacity(0.34), radius: 18, y: 14)
+        .padding(20)
+        .background(Palette.heroGradient, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).stroke(Palette.ink, lineWidth: 2))
+        .tactile(6, cornerRadius: 24)
+        .shadow(color: Palette.heroDeep.opacity(0.42), radius: 22, y: 14)
         .staggeredAppear(index: 0)
-    }
-    private var sleepTile: some View {
-        RoundedRectangle(cornerRadius: 13, style: .continuous)
-            .fill(.white.opacity(0.2)).frame(width: 46, height: 46)
-            .overlay(alignment: .topTrailing) {
-                Text("z").font(Fonts.display(13, .heavy)).foregroundStyle(.white)
-                    .padding(.top, 6).padding(.trailing, 8)
-            }
     }
 
     private func doneCard(_ entry: JournalEntry) -> some View {
         ZStack(alignment: .topTrailing) {
-            Circle().fill(.white.opacity(0.4)).frame(width: 120, height: 120).offset(x: 30, y: -30)
+            Circle().fill(.white.opacity(0.25)).frame(width: 120, height: 120).offset(x: 30, y: -34)
             HStack(spacing: 15) {
-                MoodFace(mood: entry.moodRaw, size: 52)
-                    .padding(8)
-                    .background(.white.opacity(0.95), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+                MoodFace(mood: entry.moodRaw, size: 44)
+                    .frame(width: 60, height: 60)
+                    .background(.white, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(Palette.ink, lineWidth: 2))
                 VStack(alignment: .leading, spacing: 3) {
-                    Eyebrow(text: "Today · done", color: Palette.ink.opacity(0.9), size: 11)
+                    Eyebrow(text: "Today · done", color: Palette.ink.opacity(0.85), size: 11)
                     Text("Your apps are awake")
                         .font(Fonts.display(23, .bold)).foregroundStyle(Palette.ink)
                     NavigationLink(value: entry.dayKey) {
-                        Text("Read today's page")
-                            .font(Fonts.ui(13.5, .heavy)).foregroundStyle(Palette.amberDeep)
-                            .underline()
+                        HStack(spacing: 6) {
+                            Text("Read today's page")
+                                .font(Fonts.ui(13.5, .heavy)).foregroundStyle(Palette.amberDeep)
+                            Image(systemName: "arrow.right")
+                                .font(.system(size: 11, weight: .bold)).foregroundStyle(Palette.amberDeep)
+                        }
+                        .overlay(alignment: .bottom) {
+                            Rectangle().fill(Palette.amberDeep.opacity(0.4)).frame(height: 2).offset(y: 2)
+                        }
                     }
+                    .padding(.top, 4)
                 }
                 Spacer(minLength: 0)
             }
         }
         .padding(20)
-        .background(Palette.mood(1), in: RoundedRectangle(cornerRadius: 26, style: .continuous))
-        .clipShape(RoundedRectangle(cornerRadius: 26, style: .continuous))
-        .shadow(color: Palette.mood(1).opacity(0.34), radius: 16, y: 12)
+        .background(Palette.mood(1), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).stroke(Palette.ink, lineWidth: 2))
+        .shadow(color: Color(hex: "3C5A28").opacity(0.4), radius: 20, y: 12)
         .staggeredAppear(index: 0)
     }
 
@@ -117,12 +118,7 @@ struct HomeView: View {
     private var streakCard: some View {
         VStack(spacing: 17) {
             HStack(spacing: 13) {
-                RoundedRectangle(cornerRadius: 17, style: .continuous)
-                    .fill(LinearGradient(colors: [Color(hex: "FFB067"), Palette.amberLight],
-                                         startPoint: .topLeading, endPoint: .bottomTrailing))
-                    .frame(width: 54, height: 54)
-                    .overlay(SunMark(size: 28, stroke: .white, fill: .white))
-                    .shadow(color: Palette.amber.opacity(0.42), radius: 8, y: 6)
+                IconTile(size: 52, fill: Palette.iconTile, radius: 16) { SunMark(size: 28) }
                 VStack(alignment: .leading, spacing: 3) {
                     HStack(alignment: .firstTextBaseline, spacing: 6) {
                         Text("\(store.streak)").font(Fonts.display(30, .heavy)).foregroundStyle(Palette.ink)
@@ -168,11 +164,15 @@ struct HomeView: View {
             Eyebrow(text: "This week", tracking: 1, size: 10.5)
             GeometryReader { g in
                 ZStack(alignment: .leading) {
-                    Capsule().fill(Palette.ink.opacity(0.08))
-                    Capsule().fill(Palette.amber).frame(width: max(6, g.size.width * frac))
+                    Capsule().fill(Color(hex: "F2EADB"))
+                        .overlay(Capsule().stroke(Palette.ink.opacity(0.14), lineWidth: 1.5))
+                    Capsule()
+                        .fill(LinearGradient(colors: [Color(hex: "FFB067"), Palette.amber],
+                                             startPoint: .leading, endPoint: .trailing))
+                        .frame(width: max(6, g.size.width * frac))
                 }
             }
-            .frame(height: 6)
+            .frame(height: 8)
             Text(done >= goal ? "Goal met" : "\(done)/\(goal)")
                 .font(Fonts.ui(12, .heavy))
                 .foregroundStyle(done >= goal ? Palette.success : Palette.inkSoft)
@@ -192,25 +192,22 @@ struct HomeView: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
                 Text("Recent pages").font(Fonts.display(21, .bold)).foregroundStyle(Palette.ink)
+                    .fixedSize()
+                    .underlineSquiggle(Palette.sunDisc, weight: 3.5, height: 8)
                 Spacer()
                 if !store.entries.isEmpty {
                     Button("All") { flow.go(to: .history) }
-                        .font(Fonts.ui(13.5, .heavy)).foregroundStyle(Palette.amber)
+                        .font(Fonts.ui(13.5, .heavy)).foregroundStyle(Palette.amberDeep)
                 }
             }
-            .padding(.bottom, 11)
+            .padding(.bottom, 13)
 
             if store.recent.isEmpty {
                 emptyRecent
             } else {
                 ForEach(Array(store.recent.enumerated()), id: \.element.dayKey) { i, e in
                     NavigationLink(value: e.dayKey) {
-                        EntryRow(entry: e) {
-                            VStack(spacing: 1) {
-                                Text("\(e.gratitudeCount)").font(Fonts.display(17, .bold)).foregroundStyle(Palette.amber)
-                                Eyebrow(text: "grateful", color: Palette.inkSofter, tracking: 0.4, size: 8.5)
-                            }
-                        }
+                        EntryRow(entry: e) { EntryScore(count: e.gratitudeCount) }
                     }
                     .buttonStyle(PressableStyle(scale: 0.98))
                     .contextMenu {
@@ -225,7 +222,7 @@ struct HomeView: View {
     }
     private var emptyRecent: some View {
         VStack(spacing: 8) {
-            SunMark(size: 34, fill: nil).opacity(0.5)
+            SunMark(size: 34, muted: true)
             Text("Your pages will gather here.\nWrite your first one this morning.")
                 .font(Fonts.ui(13.5, .semibold)).foregroundStyle(Palette.inkSofter)
                 .multilineTextAlignment(.center).lineSpacing(2)
