@@ -31,7 +31,6 @@ struct SunMark: View {
                            style: StrokeStyle(lineWidth: lw, lineCap: .round))
             }
 
-            // disc: r=19 centered at (50,50)
             let disc = Path(ellipseIn: CGRect(x: 31 * s, y: 31 * s, width: 38 * s, height: 38 * s))
             if let fill {
                 ctx.fill(disc, with: .color(fill))

@@ -2,8 +2,6 @@ import SwiftUI
 import UIKit
 
 extension Color {
-    /// Create a Color from a hex string. Accepts "RGB", "RRGGBB", or "AARRGGBB",
-    /// with or without a leading '#'. Falls back to clear on a malformed string.
     init(hex: String) {
         let s = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
         var int: UInt64 = 0
@@ -21,7 +19,6 @@ extension Color {
 }
 
 extension UIColor {
-    /// Hex initializer mirroring `Color(hex:)`, for the UIKit-based shield extension.
     convenience init(hex: String) {
         let s = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
         var int: UInt64 = 0

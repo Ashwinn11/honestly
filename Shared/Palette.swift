@@ -1,10 +1,6 @@
 import SwiftUI
 import UIKit
 
-/// The one color vocabulary for Honestly — warm paper, espresso ink, a sunrise-amber
-/// accent, and the five mood hues. Lives in `Shared/` so the app *and* the shield
-/// extension render from identical values. Exposes SwiftUI `Color` for the app and
-/// matching `UIColor` for the UIKit shield.
 enum Palette {
 
     // MARK: Core surfaces & ink
@@ -35,8 +31,6 @@ enum Palette {
     static func mood(_ i: Int) -> Color     { moods[min(max(i, 0), 4)] }
     static func moodSoft(_ i: Int) -> Color { moodSoft[min(max(i, 0), 4)] }
 
-    /// Dark ink used for a mood face's eyes/mouth — a deep, saturated version of the
-    /// hue so features read against the pastel disc (mirrors the reference SVG).
     static let moodInk: [Color] = ["7A2A0C", "3E5B2A", "8A3A34", "5C120D", "26295C"].map { Color(hex: $0) }
     static func moodInk(_ i: Int) -> Color  { moodInk[min(max(i, 0), 4)] }
 
@@ -47,7 +41,6 @@ enum Palette {
     static let amberUI    = UIColor(hex: "FA691E")
 }
 
-/// Mood identity — the ordered set the whole app shares (matches the design's palette order).
 enum Mood: Int, CaseIterable, Identifiable, Codable {
     case happy = 0, confused, sad, awful, cry
     var id: Int { rawValue }

@@ -1,11 +1,10 @@
 import Foundation
 
-/// Cross-target constants and shared state. Pure Foundation so it compiles cleanly
-/// into the app **and** every extension (DeviceActivity monitor + both shields).
 enum AppConfig {
     static let bundleID            = "com.morning-journal.app"
     static let appGroupID          = "group.morning-journal.app"
     static let iCloudContainerID   = "iCloud.com.morning-journal.app"
+    static let appStoreID          = "6759817879"   // Honestly on the App Store — used for the review deep link
 
     static let activityMonitorID   = "com.morning-journal.app.activity-monitor"
     static let shieldConfigID      = "com.morning-journal.app.ShieldConfiguration"
@@ -17,10 +16,8 @@ enum AppConfig {
     static let lifetimePackageID   = "$rc_lifetime"
     static let monthlyPackageID    = "$rc_monthly"
 
-    // DeviceActivity schedule identity (built into DeviceActivityName in app + monitor).
     static let morningScheduleName = "morning.block.window"
 
-    /// The block opens at 04:00 and lifts automatically at 23:59.
     static let blockStartHour   = 4
     static let blockStartMinute = 0
     static let blockEndHour     = 23
@@ -107,19 +104,16 @@ enum SharedState {
 
     // MARK: Onboarding answers (drive the personalized plan, paywall, and weekly goal)
 
-    /// Mornings-per-week the user committed to in onboarding. Defaults to 5 as a sane fallback.
     static var weeklyGoal: Int {
         get { let v = defaults.integer(forKey: Key.weeklyGoal); return v == 0 ? 5 : v }
         set { defaults.set(newValue, forKey: Key.weeklyGoal) }
     }
 
-    /// The primary goal chosen in onboarding (an `OnbGoal` raw key); read by the paywall.
     static var onboardingGoal: String {
         get { defaults.string(forKey: Key.onboardingGoal) ?? "" }
         set { defaults.set(newValue, forKey: Key.onboardingGoal) }
     }
 
-    /// Self-reported minutes spent scrolling first thing — the honest input to reclaimed-time.
     static var scrollMinutes: Int {
         get { defaults.integer(forKey: Key.scrollMinutes) }
         set { defaults.set(newValue, forKey: Key.scrollMinutes) }

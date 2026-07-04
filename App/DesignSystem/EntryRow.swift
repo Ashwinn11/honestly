@@ -1,7 +1,5 @@
 import SwiftUI
 
-/// The one journal-card row — mood face, date + snippet, and a caller-supplied trailing accessory.
-/// Shared by Home's "recent pages" and History (replaces the near-identical RecentRow/HistoryRow).
 struct EntryRow<Trailing: View>: View {
     let entry: JournalEntry
     @ViewBuilder var trailing: () -> Trailing

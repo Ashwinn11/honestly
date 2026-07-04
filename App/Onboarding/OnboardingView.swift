@@ -1,14 +1,6 @@
 import SwiftUI
 import FamilyControls
 
-/// The onboarding is a conversion funnel, not a slideshow: hook → interactive quiz → a plan built
-/// from the user's own answers → trust → the hard paywall. Every quiz answer does something real
-/// (drives the block list, the weekly goal, and the personalized plan/paywall). The one number it
-/// promises — reclaimed hours — is derived from the user's stated scroll time, never invented.
-///
-/// One chrome across every beat: content + footer are grouped and centered (so they never drift
-/// apart on tall screens), dotted progress rides above a `[back]  [Continue]` row where the amber
-/// CTA fills the width left of a square back button.
 struct OnboardingView: View {
     var onFinish: () -> Void
 
@@ -19,14 +11,12 @@ struct OnboardingView: View {
     @State private var forward = true
     @State private var showPicker = false
 
-    /// The ordered funnel. `allCases` follows declaration order.
     private enum Beat: Int, CaseIterable {
         case brand, problem, goal, scroll, pain, apps, commitment, building, plan, ritual, social, notif, paywall
     }
     private let beats = Beat.allCases
     private var beat: Beat { beats[index] }
 
-    /// Total dots = every beat before the paywall.
     private var dotTotal: Int { beats.count - 1 }
     private var canGoBack: Bool { index > 0 && beat != .building }
 
@@ -35,7 +25,6 @@ struct OnboardingView: View {
         ZStack {
             PaperBackground()
             if beat == .paywall {
-                // The paywall IS the last beat — reached only here, unskippable. Unlocking finishes.
                 PaywallView(gate: true, onClose: finish)
                     .transition(.move(edge: .trailing).combined(with: .opacity))
             } else {
@@ -157,9 +146,6 @@ struct OnboardingView: View {
                                  secondary: FooterLink? = nil,
                                  @ViewBuilder content: @escaping () -> C) -> some View {
         VStack(spacing: 0) {
-            // Same strategy as the paywall: content is vertically centered in the space between the
-            // top and the footer, and scrolls only when it's taller than that space — so short beats
-            // sit centered (not pushed to the bottom) and long ones never clip.
             GeometryReader { geo in
                 ScrollView {
                     content()
@@ -195,7 +181,6 @@ struct OnboardingView: View {
         }
     }
 
-    /// Square back container (rounded corners, not a circle), sized to sit beside the CTA.
     private var backButton: some View {
         Button { Haptics.tap(); back() } label: {
             Image(systemName: "chevron.left")
@@ -210,7 +195,6 @@ struct OnboardingView: View {
         .buttonStyle(PressableStyle())
     }
 
-    /// The app's amber CTA — fills the width left of the back button (never edge-to-edge when back shows).
     private func ctaButton(_ b: FooterButton) -> some View {
         Button {
             guard b.enabled else { return }
@@ -240,7 +224,7 @@ struct OnboardingView: View {
         let action: () -> Void
     }
 
-    // MARK: - Content builders (component → title → subcopy rhythm, centered by the chrome)
+    // MARK: - Content builders
 
     private func narrative(_ kind: OnbKind, title: String? = nil, body: String? = nil) -> some View {
         VStack(spacing: 26) {
@@ -477,7 +461,7 @@ private struct OnbBuildingView: View {
                 }
             }
             Spacer()
-            OnbDots(index: dotIndex, total: dotTotal)     // pinned at the bottom like the footer
+            OnbDots(index: dotIndex, total: dotTotal)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(.horizontal, 40)
@@ -836,7 +820,6 @@ private struct OnbIllustration: View {
     }
 }
 
-/// A ruled line that draws itself in left→right on appear (the prototype's `shimmerLine`).
 private struct AnimatedLine: View {
     let frac: CGFloat
     let color: Color

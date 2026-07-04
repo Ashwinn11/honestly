@@ -1,7 +1,5 @@
 import Foundation
 
-/// All the writing content, transcribed verbatim from the prototype (`Honestly.dc.html`):
-/// journal prompts, gratitude placeholders, and the ten onboarding slides.
 enum AppContent {
 
     // MARK: Ritual prompts — a distinct pool per mood (index 0…4) so writing never feels repetitive.
@@ -11,7 +9,6 @@ enum AppContent {
     }
 
     static let promptsByMood: [[String]] = [
-        // 0 · Happy
         [
             "What's making this morning feel good?",
             "What do I want to carry into the rest of today?",
@@ -24,7 +21,6 @@ enum AppContent {
             "How can I protect this good mood today?",
             "What am I quietly proud of lately?",
         ],
-        // 1 · Confused
         [
             "What am I trying to figure out?",
             "What feels unclear right now — and why?",
@@ -37,7 +33,6 @@ enum AppContent {
             "Whose opinion am I letting cloud my own?",
             "What's one small thing I can decide today?",
         ],
-        // 2 · Sad
         [
             "What's weighing on me this morning?",
             "What do I need to hear right now?",
@@ -50,7 +45,6 @@ enum AppContent {
             "What's still okay, even now?",
             "What can I let myself feel without trying to fix it?",
         ],
-        // 3 · Awful
         [
             "What's making today feel like too much?",
             "What's the one thing I truly have to do — and what can wait?",
@@ -63,7 +57,6 @@ enum AppContent {
             "What do I want to let go of before the day starts?",
             "If today is just about getting through, what does that look like?",
         ],
-        // 4 · Cry
         [
             "What do I need to let out this morning?",
             "What's really hurting right now?",
@@ -93,11 +86,7 @@ enum AppContent {
     }
 
     // MARK: - Onboarding funnel
-    // The onboarding is a conversion funnel, not a slideshow: hook → quiz → personalized plan →
-    // trust → paywall. The one number it promises (reclaimed time) is derived honestly from the
-    // user's own answers, never invented.
 
-    /// Copy for the two opening narrative slides (kept from the original deck, reused as the hook).
     static let onbBrandTagline  = "The quiet part of the morning — before the world logs on."
     static let onbProblemTitle  = "The first thing you touch each morning runs the whole day."
     static let onbProblemBody   = "Reach for the phone and a hundred other voices get there before yours does."
@@ -144,19 +133,15 @@ enum AppContent {
 
     // MARK: Reclaimed-time math (honest, derived from the user's own answers)
 
-    /// Hours per month currently handed to the scroll — assumes it happens every day (the pain).
     static func painHours(scrollMin: Int) -> Int {
         max(1, Int((Double(scrollMin) * 30.0 / 60.0).rounded()))
     }
 
-    /// Hours per month taken back — the scroll time redirected on the mornings you actually show up.
     static func reclaimedHours(scrollMin: Int, morningsPerWeek: Int) -> Int {
         max(1, Int((Double(scrollMin) * Double(morningsPerWeek) * 4.345 / 60.0).rounded()))
     }
 
     // MARK: Social proof
-    // Honest by construction: fill `rating`/`ratingsCount`/`quotes` with REAL App Store values when
-    // available. While empty, the screen renders an aspirational form with no fabricated numbers.
     static let socialProof = SocialProof(
         rating: "",          // e.g. "4.8"
         ratingsCount: "",    // e.g. "1,200+ ratings"
@@ -166,12 +151,10 @@ enum AppContent {
 
 // MARK: - Funnel model types
 
-/// The stated goal — drives the plan-reveal empathy line and the personalized paywall.
 enum OnbGoal: String, CaseIterable, Identifiable {
     case clearHead, calmStart, offPhone, momentForMe, feelFeelings
     var id: String { rawValue }
 
-    /// The quiz option label.
     var option: String {
         switch self {
         case .clearHead:    return "A clearer head"
@@ -181,7 +164,6 @@ enum OnbGoal: String, CaseIterable, Identifiable {
         case .feelFeelings: return "To feel what I'm actually feeling"
         }
     }
-    /// Personalized paywall headline.
     var paywallHero: String {
         switch self {
         case .clearHead:    return "A clearer head, every morning"
@@ -191,7 +173,6 @@ enum OnbGoal: String, CaseIterable, Identifiable {
         case .feelFeelings: return "Meet yourself, honestly"
         }
     }
-    /// Empathy line on the plan-reveal, addressed to their "why".
     var planEmpathy: String {
         switch self {
         case .clearHead:    return "Let's clear the morning fog before the world fills it."
@@ -201,7 +182,6 @@ enum OnbGoal: String, CaseIterable, Identifiable {
         case .feelFeelings: return "Let's make space to feel what you're actually feeling."
         }
     }
-    /// SF Symbol of the paywall benefit this goal cares about most (moved to the top of the list).
     var leadBenefit: String {
         switch self {
         case .clearHead, .calmStart: return "leaf.fill"
@@ -246,5 +226,4 @@ struct SocialProof {
     }
 }
 
-/// Illustration identities used by `OnbIllustration` in the onboarding view.
 enum OnbKind { case brand, noise, page, moods, write, grat, quiet, streak, notif, ready }

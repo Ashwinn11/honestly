@@ -1,8 +1,5 @@
 import SwiftUI
 
-/// Two corner "poppers", one Canvas, real ballistic physics + flutter — fired on ritual
-/// completion. Ported from 75her's ConfettiBurst, retinted to Honestly's confetti palette
-/// (the five mood hues + white, matching the prototype's celebration). Pauses under Reduce Motion.
 struct ConfettiBurst: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var start: Date? = nil
@@ -30,7 +27,6 @@ struct ConfettiBurst: View {
         }
     }
 
-    // Deterministic pseudo-random so pieces don't reshuffle between frames.
     private func rnd(_ seed: Int, _ salt: Int) -> CGFloat {
         let x = sin(Double(seed) * 12.9898 + Double(salt) * 78.233) * 43758.5453
         return CGFloat(x - x.rounded(.down))
@@ -42,14 +38,12 @@ struct ConfettiBurst: View {
         let te = CGFloat(t - delay)
         guard te > 0 else { return }
 
-        // Launch up-and-inward from a bottom corner, with spread.
         let origin = CGPoint(x: leftPopper ? size.width * 0.05 : size.width * 0.95, y: size.height + 10)
         let baseAngle: CGFloat = leftPopper ? -1.20 : -1.94        // radians; ±~69° from vertical
         let angle = baseAngle + (rnd(i, 2) - 0.5) * 0.66
         let speed = 950 + rnd(i, 3) * 650
         let vx = cos(angle) * speed, vy = sin(angle) * speed
 
-        // Ballistic + side-to-side flutter as the piece sheds speed.
         let flutter = sin(te * (3 + rnd(i, 4) * 3) + rnd(i, 5) * 6) * 26 * min(te, 1.4)
         let x = origin.x + vx * te + flutter
         let y = origin.y + vy * te + 0.5 * Self.gravity * te * te

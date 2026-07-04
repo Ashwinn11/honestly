@@ -1,15 +1,9 @@
 import SwiftUI
 
-/// The app's one motion vocabulary — every animation routes through these tokens so the
-/// whole app shares a single physical "feel". Mirrors the prototype's spring curves.
 enum Motion {
-    /// Quick, matter-of-fact — selection changes, content swaps.
     static let snappy = Animation.spring(response: 0.32, dampingFraction: 0.86)
-    /// Playful overshoot — buttons releasing, elements landing.
     static let bouncy = Animation.spring(response: 0.42, dampingFraction: 0.68)
-    /// Soft settle — entrances, blurs, ambient moves.
     static let gentle = Animation.spring(response: 0.55, dampingFraction: 0.9)
-    /// Springy appear — faces, badges, swatches popping in (prototype's `popIn`).
     static let pop    = Animation.spring(response: 0.35, dampingFraction: 0.6)
 }
 
@@ -47,7 +41,6 @@ private struct ShimmerOnce: ViewModifier {
 }
 
 extension View {
-    /// A single soft highlight sweep shortly after the view appears — never loops.
     func shimmerOnce(delay: Double = 0.6, strength: CGFloat = 0.35) -> some View {
         modifier(ShimmerOnce(delay: delay, strength: strength))
     }
@@ -87,7 +80,6 @@ private struct FoilOnce: ViewModifier {
 }
 
 extension View {
-    /// One iridescent foil sweep shortly after appear — for celebration / streak cards.
     func foilSweepOnce(delay: Double = 0.4, strength: CGFloat = 0.3) -> some View {
         modifier(FoilOnce(delay: delay, strength: strength))
     }
@@ -125,8 +117,6 @@ private struct RippleOnTap: ViewModifier {
 }
 
 extension View {
-    /// Runs the liquid ripple from `origin` (view's own coordinates) each time `trigger`
-    /// increments. Zero cost while idle; respects Reduce Motion.
     func rippleOnTap(at origin: CGPoint, trigger: Int) -> some View {
         modifier(RippleOnTap(origin: origin, trigger: trigger))
     }
@@ -154,7 +144,6 @@ private struct StaggeredAppear: ViewModifier {
 }
 
 extension View {
-    /// Fade-rise-unblur entrance, staggered by `index`. Fires once per view lifetime.
     func staggeredAppear(index: Int, baseDelay: Double = 0) -> some View {
         modifier(StaggeredAppear(index: index, baseDelay: baseDelay))
     }
@@ -181,12 +170,10 @@ private struct PopIn: ViewModifier {
 }
 
 extension View {
-    /// Springy scale-in entrance after `delay`. Fires once per view lifetime.
     func popIn(delay: Double = 0, from: CGFloat = 0.5) -> some View {
         modifier(PopIn(delay: delay, from: from))
     }
 
-    /// Continuous gentle float (prototype's `floaty`). Pauses under Reduce Motion.
     func floaty(amplitude: CGFloat = 9, period: Double = 6, delay: Double = 0) -> some View {
         modifier(Floaty(amplitude: amplitude, period: period, delay: delay))
     }
@@ -209,7 +196,6 @@ private struct Spin: ViewModifier {
 }
 
 extension View {
-    /// Continuous clockwise rotation (the sun's slow turn). Pauses under Reduce Motion.
     func spin(period: Double = 24) -> some View { modifier(Spin(period: period)) }
 }
 

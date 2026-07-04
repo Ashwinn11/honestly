@@ -10,8 +10,6 @@ struct HonestlyApp: App {
     private let container: ModelContainer
 
     init() {
-        // Responsive scale for the whole UI — 1.0 on iPhone, larger on iPad. Portrait-locked +
-        // full-screen, so the launch width is the stable device width.
         DesignScale.configure(width: UIScreen.main.bounds.width)
 
         // App-group store, mirrored to the existing production CloudKit container so live users'
@@ -22,7 +20,6 @@ struct HonestlyApp: App {
                                             cloudKitDatabase: .automatic)
             made = try ModelContainer(for: JournalEntry.self, configurations: config)
         } catch {
-            // Never fail to launch — fall back to a local store if CloudKit can't init.
             if let disk = try? ModelContainer(for: JournalEntry.self,
                                               configurations: ModelConfiguration(groupContainer: .identifier(AppConfig.appGroupID))) {
                 made = disk
@@ -53,8 +50,6 @@ struct HonestlyApp: App {
         }
     }
 
-    /// On launch, make the live shield agree with today's state: cleared once the page is written,
-    /// applied if we're inside the morning window with apps selected and the page still blank.
     private func reconcileShield() {
         if store.ritualDoneToday {
             Shielding.clear()

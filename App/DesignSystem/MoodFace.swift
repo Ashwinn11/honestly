@@ -1,10 +1,5 @@
 import SwiftUI
 
-/// The five mood faces. Rebuilt as exact SwiftUI paths from `five_mood_icons.svg`'s geometry
-/// (the SVG's *expressions* are correct — its fills were wrong), recolored with the app's real
-/// mood palette. Drawn in a normalized 100×100 space and scaled to `size`.
-///
-/// Order: 0 Happy · 1 Confused · 2 Sad · 3 Awful · 4 Cry.
 struct MoodFace: View {
     let mood: Int
     var size: CGFloat = 44
@@ -28,7 +23,6 @@ struct MoodFace: View {
                            style: StrokeStyle(lineWidth: w * s, lineCap: .round, lineJoin: .round))
             }
 
-            // Disc (inset 1 so the rim stroke stays inside the box).
             let disc = Path(ellipseIn: CGRect(x: 1 * s, y: 1 * s, width: 98 * s, height: 98 * s))
             ctx.fill(disc, with: .color(face))
             ctx.stroke(disc, with: .color(ink.opacity(0.16)), lineWidth: 2 * s)

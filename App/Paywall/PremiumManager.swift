@@ -11,7 +11,6 @@ final class PremiumManager {
     var offerings: Offerings? = nil
     var purchasing = false
 
-    /// Call once at launch, before any other Purchases use.
     func configure() {
         Purchases.logLevel = .warn
         Purchases.configure(withAPIKey: AppConfig.revenueCatAPIKey)
@@ -27,7 +26,6 @@ final class PremiumManager {
         offerings = try? await Purchases.shared.offerings()
     }
 
-    /// The lifetime one-time-purchase package.
     var lifetimePackage: Package? {
         guard let current = offerings?.current else { return nil }
         return current.availablePackages.first { $0.identifier == AppConfig.lifetimePackageID }
@@ -35,7 +33,6 @@ final class PremiumManager {
             ?? current.availablePackages.first { $0.packageType == .lifetime }
     }
 
-    /// The monthly auto-renewing package (optional — only if configured in the offering).
     var monthlyPackage: Package? {
         guard let current = offerings?.current else { return nil }
         return current.availablePackages.first { $0.identifier == AppConfig.monthlyPackageID }

@@ -1,7 +1,5 @@
 import SwiftUI
 
-/// White rounded "paper" with evenly-spaced rule lines behind its content. Shared by the ritual's
-/// journal editor and the entry-detail journal, so writing looks the same when written and read.
 struct RuledPaper<Content: View>: View {
     var lineHeight: CGFloat = 32
     var cornerRadius: CGFloat = 20

@@ -1,7 +1,6 @@
 import Foundation
 import UserNotifications
 
-/// The single gentle morning notification ("Morning nudge" in the design — one push at 6:45 AM).
 enum MorningNudge {
     static let id = "honestly.morning.nudge"
 

@@ -10,16 +10,6 @@ static float hash21(float2 p) {
     return fract(p.x * p.y);
 }
 
-static float vnoise(float2 p) {
-    float2 i = floor(p), f = fract(p);
-    float a = hash21(i);
-    float b = hash21(i + float2(1, 0));
-    float c = hash21(i + float2(0, 1));
-    float d = hash21(i + float2(1, 1));
-    float2 u = f * f * (3.0 - 2.0 * f);
-    return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
-}
-
 // grain — static paper grain (colorEffect) -----------------------------------
 
 [[stitchable]] half4 grain(float2 position, half4 color, float intensity) {

@@ -4,15 +4,10 @@ import DeviceActivity
 import ManagedSettings
 import Observation
 
-/// The app-side controller for Screen Time. Requests Family Controls authorization, arms the
-/// daily DeviceActivity window the monitor extension acts on, and applies/clears the shield for
-/// immediate feedback. Persistence and shield rules live in `Shared/` (`BlockingCodec`,
-/// `Shielding`) so the extensions read identical state.
 @MainActor
 @Observable
 final class ScreenTimeManager {
     var authorized: Bool = false
-    /// Bound to `FamilyActivityPicker`. Assigning commits the selection (see `didSet`).
     var selection: FamilyActivitySelection {
         didSet { commit(selection) }
     }
@@ -29,8 +24,6 @@ final class ScreenTimeManager {
     var selectedCount: Int { BlockingCodec.selectedCount }
     var hasSelection: Bool { BlockingCodec.hasSelection }
 
-    /// Human summary of the current selection ("2 categories, 5 apps") so the UI reflects
-    /// categories instead of miscounting them all as apps.
     var selectionSummary: String {
         let s = BlockingCodec.load()
         var parts: [String] = []
@@ -41,7 +34,6 @@ final class ScreenTimeManager {
         return parts.isEmpty ? "None yet" : parts.joined(separator: ", ")
     }
 
-    /// Full reset: stop the schedule, drop the selection, lift the shield.
     func wipe() {
         stopMonitoring()
         applyingProgrammatically = true
@@ -57,7 +49,6 @@ final class ScreenTimeManager {
         authorized = AuthorizationCenter.shared.authorizationStatus == .approved
     }
 
-    /// Prompt for Screen Time permission. Safe to call repeatedly; no-op once approved.
     func requestAuthorization() async {
         do {
             try await AuthorizationCenter.shared.requestAuthorization(for: .individual)
@@ -67,9 +58,6 @@ final class ScreenTimeManager {
         }
     }
 
-    /// The single gate for opening the app picker: if Family Controls isn't authorized yet, prompt
-    /// for it first and only report success when approved. Both onboarding and Settings call this,
-    /// so the picker never opens without authorization (tapping it while unauthorized asks first).
     func ensureAuthorizedForPicker() async -> Bool {
         if !authorized { await requestAuthorization() }
         return authorized
@@ -84,7 +72,6 @@ final class ScreenTimeManager {
         SharedState.blockingEnabled = hasSelection
         guard authorized else { return }   // never touch DeviceActivity / ManagedSettings unauthorized
         armSchedule()
-        // Reflect immediately: inside the morning window with the page unwritten → shield now.
         if hasSelection, isWithinMorningWindow(), !SharedState.ritualCompleted() {
             Shielding.apply(new)
         } else {
@@ -92,7 +79,6 @@ final class ScreenTimeManager {
         }
     }
 
-    /// Set the selection without re-committing (e.g. loading saved state into a picker binding).
     func setSelectionSilently(_ new: FamilyActivitySelection) {
         applyingProgrammatically = true
         selection = new
@@ -101,8 +87,6 @@ final class ScreenTimeManager {
 
     // MARK: DeviceActivity schedule
 
-    /// Arm (or re-arm) the daily block window the monitor extension responds to. No-op until the
-    /// user has granted Family Controls — calling DeviceActivity unauthorized throws/logs an error.
     func armSchedule() {
         guard authorized else { return }
         let name = DeviceActivityName(AppConfig.morningScheduleName)

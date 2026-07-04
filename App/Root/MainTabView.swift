@@ -1,9 +1,5 @@
 import SwiftUI
 
-/// The four-tab shell (Home · Calendar · History · You) using the native tab bar, amber-tinted.
-/// Selection lives in `AppFlow` so any screen can switch tabs (e.g. Home's "All →" → History).
-/// Each tab owns a NavigationStack so entry detail pushes over its own screen; the ritual and
-/// paywall present above everything from `RootView`.
 struct MainTabView: View {
     @Environment(AppFlow.self) private var flow
 

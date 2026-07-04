@@ -1,8 +1,5 @@
 import SwiftUI
 
-/// A single morning page — the mood header over a soft mood wash, then the prompt, the writing,
-/// and the gratitudes. Matches `Honestly.dc.html` lines 453–482. Resolved from `dayKey` so it can
-/// be pushed by value from Home, Calendar, and History.
 struct EntryDetailView: View {
     let dayKey: String
     @Environment(JournalStore.self) private var store

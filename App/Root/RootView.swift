@@ -1,7 +1,5 @@
 import SwiftUI
 
-/// The top of the tree. Flow: onboarding → hard paywall (premium-only) → main tabs. The ritual and
-/// an optional (re-)paywall present over everything.
 struct RootView: View {
     @Environment(AppFlow.self) private var flow
     @Environment(PremiumManager.self) private var premium
@@ -14,7 +12,6 @@ struct RootView: View {
             if !onboarded {
                 OnboardingView(onFinish: { onboarded = true })
             } else if !premium.isPremium {
-                // Hard paywall — premium-only. No dismiss; unlock only via purchase or restore.
                 PaywallView(gate: true, onClose: {})
             } else {
                 MainTabView()

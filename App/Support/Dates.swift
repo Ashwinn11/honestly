@@ -1,7 +1,5 @@
 import Foundation
 
-/// Shared date formatting so every screen labels days identically (matches the prototype's
-/// "Sat · Jul 4", "Jul 4", "July 2026" formats).
 enum HDate {
     private static func fmt(_ pattern: String) -> DateFormatter {
         let f = DateFormatter(); f.locale = Locale(identifier: "en_US_POSIX"); f.dateFormat = pattern; return f
@@ -26,6 +24,5 @@ enum HDate {
 
     static func isToday(_ d: Date) -> Bool { Calendar.current.isDateInToday(d) }
 
-    /// Relative label used in list rows: "Today" for today, otherwise "Sat, Jul 4".
     static func rowDate(_ d: Date) -> String { isToday(d) ? "Today" : shortLabel(d) }
 }

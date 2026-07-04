@@ -1,9 +1,6 @@
 import SwiftUI
 import UIKit
 
-/// Well-known app icons, used illustratively on the Screen Time onboarding slide to show "the apps
-/// we keep asleep." Uses the real bundled icon asset ("brand-instagram", …) when present; the drawn
-/// SwiftUI rendition (ported from PrayerLock) is only a fallback for brands without an asset.
 enum Brand: String, CaseIterable, Identifiable {
     case instagram, tiktok, youtube, snapchat, x, whatsapp
     var id: String { rawValue }
@@ -92,7 +89,6 @@ private struct Triangle: Shape {
     }
 }
 
-/// Snapchat-style ghost: rounded head, scalloped bottom.
 private struct Ghost: Shape {
     func path(in r: CGRect) -> Path {
         var p = Path()
@@ -115,7 +111,6 @@ private struct Ghost: Shape {
     }
 }
 
-/// WhatsApp-style speech bubble (round body + tail at the bottom-left).
 private struct WhatsAppBubble: Shape {
     func path(in r: CGRect) -> Path {
         var p = Path()
@@ -129,8 +124,6 @@ private struct WhatsAppBubble: Shape {
     }
 }
 
-/// An app icon shown "asleep" — dimmed, with a small amber "z" badge (Honestly's rest metaphor,
-/// in place of PrayerLock's lock). Used on the Screen Time onboarding slide and the Home card.
 struct SleepingAppTile: View {
     let brand: Brand
     var size: CGFloat = 60

@@ -1,7 +1,5 @@
 import SwiftUI
 
-/// Calendar — a month grid with a mood face on every written day, month navigation, a count card,
-/// and the mood legend. Matches `Honestly.dc.html` lines 373–419.
 struct CalendarView: View {
     @Environment(JournalStore.self) private var store
     @State private var monthAnchor = Calendar.current.startOfDay(
@@ -73,8 +71,6 @@ struct CalendarView: View {
 
     @ViewBuilder
     private func dayCell(day: Int, entry: JournalEntry?, key: String, isToday: Bool, isFuture: Bool) -> some View {
-        // Color.clear + aspectRatio pins each cell to a perfect square of the column width, so the
-        // today ring reads as a rounded square (not a stretched pill) and faces never crowd.
         let cell = Color.clear
             .aspectRatio(1, contentMode: .fit)
             .overlay {
@@ -123,8 +119,6 @@ struct CalendarView: View {
         .softCard(padding: 16, radius: 20)
     }
 
-    /// "Your moods, all told" — moved here from the You tab (this is where it makes most sense).
-    /// Merges the distribution bar with the mood legend (face · count · label).
     private var moodsCard: some View {
         let counts = store.distribution
         let total = max(counts.reduce(0, +), 1)

@@ -31,7 +31,6 @@ struct PrimaryButton: View {
     }
 }
 
-/// Full-width secondary/ghost button ("Maybe later", "Skip"-style at the bottom).
 struct GhostButton: View {
     let title: String
     var color: Color = Palette.inkSofter
@@ -102,7 +101,6 @@ struct SoftCircleButton: View {
 
 // MARK: - Progress indicators
 
-/// The three-segment progress bar at the top of the ritual (mood → journal → gratitude).
 struct RitualPips: View {
     let step: Int          // 0…2 are lit as reached
     var body: some View {
@@ -118,7 +116,6 @@ struct RitualPips: View {
     }
 }
 
-/// Onboarding pager dots — the current one stretches into an amber lozenge.
 struct PagerDots: View {
     let count: Int
     let index: Int

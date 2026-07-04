@@ -1,9 +1,5 @@
 import SwiftUI
 
-/// "Honestly Premium" — the unlock, with selectable **Lifetime / Monthly** plans styled in the
-/// app's language (paper, amber, Shantell). In `gate` mode it's the hard paywall shown as the last
-/// step of onboarding (no dismiss); opened from Settings it gets a close button. The CTA and the
-/// reassurance line beneath it change with the selected plan.
 struct PaywallView: View {
     var gate: Bool = false
     var onClose: () -> Void
@@ -16,8 +12,6 @@ struct PaywallView: View {
     @State private var showRestoreAlert = false
     @State private var legal: LegalDoc? = nil
 
-    // Sell the vision, not the feature list — each line is the *impact* / who you become. The order
-    // is personalized: the benefit matching the user's stated onboarding goal is floated to the top.
     private var benefits: [(String, String)] {
         let all: [(String, String)] = [
             ("sunrise.fill", "Reclaim your mornings from the scroll"),
@@ -32,7 +26,6 @@ struct PaywallView: View {
         return arr
     }
 
-    // The user's stated goal + scroll time, captured in onboarding — used to personalize the pitch.
     private var goal: OnbGoal? { OnbGoal(rawValue: SharedState.onboardingGoal) }
     private var heroTitle: String { goal?.paywallHero ?? "Take your mornings back" }
     private var heroSub: String {
@@ -212,8 +205,6 @@ struct PaywallView: View {
     }
 
     // MARK: Actions
-    /// Keep the selection on an available plan (prefer lifetime). Runs on appear and when the
-    /// offering loads/changes; never overrides a still-valid user choice.
     private func syncSelection() {
         var available: [Plan] = []
         if premium.hasLifetime { available.append(.lifetime) }

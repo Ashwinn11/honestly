@@ -1,7 +1,5 @@
 import SwiftUI
 
-/// In-app Terms of Service and Privacy Policy — real content, pushed from the Profile "About"
-/// rows (no external links). Styled in the app's language: paper, Shantell headings, Nunito body.
 enum LegalDoc: Identifiable {
     case terms, privacy
 

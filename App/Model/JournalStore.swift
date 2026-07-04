@@ -20,8 +20,6 @@ final class JournalStore {
     func reload() {
         let desc = FetchDescriptor<JournalEntry>(sortBy: [SortDescriptor(\.createdAt, order: .reverse)])
         let all = (try? context.fetch(desc)) ?? []
-        // Invariant: strictly one page per day. The list is newest-first, so the first entry seen
-        // for a day is the one we keep; any older same-day pages (e.g. from a restore) are deleted.
         var seenDays = Set<String>()
         var kept: [JournalEntry] = []
         var duplicates: [JournalEntry] = []
@@ -46,7 +44,6 @@ final class JournalStore {
     var totalMornings: Int { entries.count }
     var recent: [JournalEntry] { Array(entries.prefix(3)) }
 
-    /// Current run of consecutive days ending today (or yesterday, if today isn't done yet).
     var streak: Int {
         let cal = Calendar.current
         let keys = Set(entries.map(\.dayKey))
@@ -64,7 +61,6 @@ final class JournalStore {
         return count
     }
 
-    /// Longest consecutive run in the whole history.
     var bestStreak: Int {
         let cal = Calendar.current
         let days = entries.map { cal.startOfDay(for: $0.date) }.sorted()
@@ -82,7 +78,6 @@ final class JournalStore {
         return best
     }
 
-    /// Count of pages per mood, index 0…4.
     var distribution: [Int] {
         var c = [0, 0, 0, 0, 0]
         for e in entries where (0...4).contains(e.moodRaw) { c[e.moodRaw] += 1 }
@@ -148,7 +143,6 @@ final class JournalStore {
         try? context.save()
         reload()
 
-        // Bridge to the extensions: mark done, publish streak, and lift the shield now.
         SharedState.markRitualComplete(mood: face.storageKey)
         SharedState.streak = streak
         Shielding.clear()
@@ -161,8 +155,6 @@ final class JournalStore {
         reload()
     }
 
-    /// Erase everything and return the user to onboarding (the caller also wipes the Screen Time
-    /// selection). Resets journal, streak, mood, the onboarding flag, and the morning nudge.
     func deleteAll() {
         for e in entries { context.delete(e) }
         try? context.save()
@@ -189,15 +181,12 @@ final class JournalStore {
         return (try? JSONEncoder().encode(snaps)) ?? Data()
     }
 
-    /// Upload a snapshot of every page to iCloud. Returns false if CloudKit is unreachable.
     @discardableResult
     func backupToCloud() async -> Bool {
         do { try await CloudBackup.upload(payload: makeBackupData(), entryCount: entries.count); return true }
         catch { return false }
     }
 
-    /// Restore from the latest iCloud snapshot. Returns the number of pages added, or nil if no
-    /// backup was found / CloudKit was unreachable.
     func restoreFromCloud() async -> Int? {
         let data: Data?
         do { data = try await CloudBackup.latestPayload() } catch { return nil }

@@ -11,7 +11,6 @@ struct EntrySnapshot: Codable {
     var createdAt: Date
 }
 
-/// The JSON payload stored in the `JournalBackup` CloudKit record's `payload` (BYTES) field.
 struct BackupPayload: Codable {
     var version = 1
     var exportedAt: Date

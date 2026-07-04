@@ -1,12 +1,11 @@
 import SwiftUI
 import FamilyControls
 
-/// You — the stats hero and grouped settings/account/about rows. (The mood distribution moved to
-/// the Calendar tab.) Matches `Honestly.dc.html` lines 484–563.
 struct ProfileView: View {
     @Environment(JournalStore.self) private var store
     @Environment(ScreenTimeManager.self) private var screenTime
     @Environment(AppFlow.self) private var flow
+    @Environment(\.openURL) private var openURL
 
     @AppStorage("morningNudgeOn", store: SharedState.defaults) private var nudgeOn = true
     @State private var showPicker = false
@@ -116,9 +115,9 @@ struct ProfileView: View {
             }
             divider
             settingRow {
-                rowText("Morning window", nil)
+                rowText("Morning window", "Apps stay asleep until your page is done")
             } trailing: {
-                Text("6:00 – 9:00 AM").font(Fonts.ui(14, .bold)).foregroundStyle(Palette.inkSoft)
+                Text("From 4:00 AM").font(Fonts.ui(14, .bold)).foregroundStyle(Palette.inkSoft)
             }
             divider
             Button {
@@ -166,6 +165,20 @@ struct ProfileView: View {
     // MARK: About
     private var aboutCard: some View {
         VStack(spacing: 0) {
+            Button {
+                if let url = ReviewPrompt.writeReviewURL { Haptics.tap(); openURL(url) }
+            } label: {
+                settingRow {
+                    rowText("Rate Honestly", "A minute of your morning, if it's helped")
+                } trailing: {
+                    HStack(spacing: 9) {
+                        Image(systemName: "star.fill").font(.system(size: 13, weight: .bold)).foregroundStyle(Palette.amber)
+                        chevron
+                    }
+                }
+            }
+            .buttonStyle(RowPressStyle())
+            divider
             legalRow("Terms of Service", .terms)
             divider
             legalRow("Privacy Policy", .privacy)
@@ -224,7 +237,6 @@ struct ProfileView: View {
     }
 }
 
-/// Row-press highlight (subtle paper wash) for the tappable list rows.
 private struct RowPressStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label

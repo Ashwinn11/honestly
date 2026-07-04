@@ -10,7 +10,6 @@ enum BlockingCodec {
             let data = try JSONEncoder().encode(selection)
             SharedState.defaults.set(data, forKey: SharedState.Key.selectionData)
         } catch {
-            // A malformed selection should never crash the ritual; drop it silently.
         }
     }
 

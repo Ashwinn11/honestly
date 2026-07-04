@@ -1,7 +1,5 @@
 import SwiftUI
 
-/// Home — greeting header, the "this morning" card (unwritten → amber; done → green), the streak
-/// card with its seven-day strip, and recent pages. Matches `Honestly.dc.html` lines 197–282.
 struct HomeView: View {
     @Environment(JournalStore.self) private var store
     @Environment(AppFlow.self) private var flow
@@ -161,7 +159,6 @@ struct HomeView: View {
         .staggeredAppear(index: 1)
     }
 
-    /// The weekly commitment the user made in onboarding, made visible: mornings shown up vs goal.
     private var morningsThisWeek: Int { store.weekStrip.filter { $0.entry != nil }.count }
     private var weeklyGoalRow: some View {
         let goal = max(SharedState.weeklyGoal, 1)
@@ -237,4 +234,3 @@ struct HomeView: View {
         .padding(.vertical, 28)
     }
 }
-

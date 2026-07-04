@@ -1,8 +1,5 @@
 import SwiftUI
 
-/// The morning ritual: mood → journal (with a shuffled prompt) → five gratitudes → celebration.
-/// Matches `Honestly.dc.html` lines 284–371 and the finish/confetti logic. On finish it writes the
-/// page through `JournalStore` (which lifts the shield) and shows the amber celebration.
 struct RitualView: View {
     var onClose: () -> Void
     @Environment(JournalStore.self) private var store
@@ -14,7 +11,6 @@ struct RitualView: View {
     @State private var promptIdx = 0
     @FocusState private var journalFocused: Bool
 
-    /// Prompts for the mood the user picked (falls back to Sad's pool before a pick).
     private var moodPrompts: [String] { AppContent.prompts(for: mood ?? 2) }
     private var prompt: String { let p = moodPrompts; return p[promptIdx % p.count] }
     private var wordCount: Int {
@@ -250,6 +246,8 @@ private struct CelebrationView: View {
     let summary: String
     var onStart: () -> Void
 
+    @Environment(\.requestReview) private var requestReview
+
     var body: some View {
         ZStack {
             LinearGradient(colors: [Palette.amber, Color(hex: "F0611A"), Color(hex: "E4551A")],
@@ -306,6 +304,10 @@ private struct CelebrationView: View {
             }
             .padding(.horizontal, 28)
             .capWidth(Metrics.maxContentWidth)   // centered column; gradient stays full-bleed
+        }
+        .task {
+            try? await Task.sleep(for: .seconds(1.2))
+            ReviewPrompt.maybeAsk(streak: streak, requestReview)
         }
     }
 }
