@@ -79,19 +79,19 @@ struct RitualView: View {
     @ViewBuilder private var footer: some View {
         switch step {
         case 0:
-            PrimaryButton(title: mood != nil ? "That's my morning →" : "Tap how you feel",
+            PrimaryButton(title: mood != nil ? "That's my morning" : "Tap how you feel",
                           enabled: mood != nil) {
                 promptIdx = Int.random(in: 0..<moodPrompts.count)
                 withAnimation(Motion.gentle) { step = 1 }
             }
         case 1:
-            PrimaryButton(title: "Almost there →",
+            PrimaryButton(title: "Almost there",
                           enabled: !journal.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) {
                 journalFocused = false
                 withAnimation(Motion.gentle) { step = 2 }
             }
         default:
-            PrimaryButton(title: gratCount >= 1 ? "Unlock my morning →" : "Add at least one",
+            PrimaryButton(title: gratCount >= 1 ? "Unlock my morning" : "Add at least one",
                           enabled: gratCount >= 1) { finish() }
         }
     }
@@ -213,17 +213,30 @@ private struct RuledTextEditor: View {
     @Binding var text: String
     let placeholder: String
     static let lineHeight: CGFloat = 32
+    static let height: CGFloat = 176      // fixed — the field scrolls internally instead of growing
 
     var body: some View {
         RuledPaper(lineHeight: Self.lineHeight) {
-            TextField(placeholder, text: $text, axis: .vertical)
-                .font(Fonts.ui(16, .semibold))
-                .foregroundStyle(Palette.ink)
-                .lineSpacing(Self.lineHeight - 20)
-                .tint(Palette.amber)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 8)
-                .frame(minHeight: 176, alignment: .topLeading)
+            ZStack(alignment: .topLeading) {
+                TextEditor(text: $text)
+                    .font(Fonts.ui(16, .semibold))
+                    .foregroundStyle(Palette.ink)
+                    .lineSpacing(Self.lineHeight - 20)
+                    .tint(Palette.amber)
+                    .scrollContentBackground(.hidden)   // let the ruled paper show through
+                    .padding(.horizontal, 11)           // + TextEditor's 5pt fragment inset ≈ 16
+                    .padding(.vertical, 8)
+                    .frame(height: Self.height)
+
+                if text.isEmpty {
+                    Text(placeholder)
+                        .font(Fonts.ui(16, .semibold))
+                        .foregroundStyle(Palette.inkSofter)
+                        .padding(.horizontal, 16)
+                        .padding(.top, 16)
+                        .allowsHitTesting(false)
+                }
+            }
         }
     }
 }
@@ -280,7 +293,7 @@ private struct CelebrationView: View {
                     .padding(.top, 16)
 
                 Button { onStart() } label: {
-                    Text("Start my day →")
+                    Text("Start my day")
                         .font(Fonts.ui(16.5, .heavy)).foregroundStyle(Palette.amber)
                         .frame(maxWidth: .infinity).padding(.vertical, 16)
                         .background(.white, in: RoundedRectangle(cornerRadius: 18, style: .continuous))

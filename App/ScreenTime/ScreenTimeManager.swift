@@ -67,6 +67,14 @@ final class ScreenTimeManager {
         }
     }
 
+    /// The single gate for opening the app picker: if Family Controls isn't authorized yet, prompt
+    /// for it first and only report success when approved. Both onboarding and Settings call this,
+    /// so the picker never opens without authorization (tapping it while unauthorized asks first).
+    func ensureAuthorizedForPicker() async -> Bool {
+        if !authorized { await requestAuthorization() }
+        return authorized
+    }
+
     // MARK: Selection
 
     private func commit(_ new: FamilyActivitySelection) {

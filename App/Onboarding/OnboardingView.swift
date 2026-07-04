@@ -12,6 +12,7 @@ struct OnboardingView: View {
     @State private var step = 0
     @State private var showPicker = false
     @State private var dragX: CGFloat = 0
+    @State private var atPaywall = false        // final step — the hard paywall, can't be skipped
 
     private var slides: [OnbSlide] { AppContent.onboarding }
     private var slide: OnbSlide { slides[step] }
@@ -20,18 +21,28 @@ struct OnboardingView: View {
 
     var body: some View {
         @Bindable var st = screenTime
-        ZStack {
-            PaperBackground()
-            VStack(spacing: 0) {
-                header
-                pager
-                controls
+        Group {
+            if atPaywall {
+                // The paywall IS the last step of onboarding — reached only after the final slide,
+                // never via Skip. Unlocking (purchase or restore) finishes onboarding.
+                PaywallView(gate: true, onClose: { finish() })
+                    .transition(.move(edge: .trailing).combined(with: .opacity))
+            } else {
+                ZStack {
+                    PaperBackground()
+                    VStack(spacing: 0) {
+                        header
+                        pager
+                        controls
+                    }
+                }
+                .familyActivityPicker(isPresented: $showPicker, selection: $st.selection)
+                .onChange(of: showPicker) { _, presented in
+                    if !presented { advance() }        // picking done → move on
+                }
             }
         }
-        .familyActivityPicker(isPresented: $showPicker, selection: $st.selection)
-        .onChange(of: showPicker) { _, presented in
-            if !presented { advance() }        // picking done → move on
-        }
+        .animation(Motion.gentle, value: atPaywall)
     }
 
     // MARK: Header (Skip)
@@ -39,7 +50,8 @@ struct OnboardingView: View {
         HStack {
             Spacer()
             if showSkip {
-                Button("Skip") { finish() }
+                // Skip jumps to the LAST slide, not into the app — so the paywall after it can't be skipped.
+                Button("Skip") { withAnimation(Motion.gentle) { step = slides.count - 1 } }
                     .font(Fonts.ui(14, .bold))
                     .foregroundStyle(Palette.inkSofter)
                     .padding(6)
@@ -104,8 +116,8 @@ struct OnboardingView: View {
 
     private var ctaLabel: String {
         switch slide.kind {
-        case .brand: return "Good morning →"
-        case .ready: return "Enter Honestly →"
+        case .brand: return "Good morning"
+        case .ready: return "Enter Honestly"
         default:     return "Continue"
         }
     }
@@ -113,11 +125,10 @@ struct OnboardingView: View {
     // MARK: Actions
     private func primaryTapped() {
         if slide.kind == .quiet {
-            // Screen Time slide → ask permission. Only open the app picker if they granted it;
-            // if they tap "Don't Allow", just move on (never show the picker unauthorized).
+            // Screen Time slide → same centralized gate as Settings: ask permission first, and only
+            // open the app picker if granted; on "Don't Allow", just move on (never picker unauthorized).
             Task {
-                await screenTime.requestAuthorization()
-                if screenTime.authorized { showPicker = true } else { advance() }
+                if await screenTime.ensureAuthorizedForPicker() { showPicker = true } else { advance() }
             }
             return
         }
@@ -125,7 +136,7 @@ struct OnboardingView: View {
     }
 
     private func advance() {
-        if isLast { finish() }
+        if isLast { atPaywall = true }         // end of slides → the paywall step
         else { withAnimation(Motion.gentle) { step += 1 } }
     }
 

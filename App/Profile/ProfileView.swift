@@ -121,7 +121,9 @@ struct ProfileView: View {
                 Text("6:00 – 9:00 AM").font(Fonts.ui(14, .bold)).foregroundStyle(Palette.inkSoft)
             }
             divider
-            Button { showPicker = true } label: {
+            Button {
+                Task { if await screenTime.ensureAuthorizedForPicker() { showPicker = true } }
+            } label: {
                 settingRow {
                     rowText("Apps on hold", "Managed by Screen Time")
                 } trailing: {

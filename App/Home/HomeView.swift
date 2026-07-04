@@ -64,7 +64,7 @@ struct HomeView: View {
                 }
                 .padding(.vertical, 17)
                 Button { flow.startRitual() } label: {
-                    Text("Write today's page →")
+                    Text("Write today's page")
                         .font(Fonts.ui(16, .heavy)).foregroundStyle(Palette.amberDeep)
                         .frame(maxWidth: .infinity).padding(.vertical, 15)
                         .background(.white, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
@@ -100,7 +100,7 @@ struct HomeView: View {
                     Text("Your apps are awake")
                         .font(Fonts.display(23, .bold)).foregroundStyle(Palette.ink)
                     NavigationLink(value: entry.dayKey) {
-                        Text("Read today's page →")
+                        Text("Read today's page")
                             .font(Fonts.ui(13.5, .heavy)).foregroundStyle(Palette.amberDeep)
                             .underline()
                     }
@@ -173,7 +173,7 @@ struct HomeView: View {
                 Text("Recent pages").font(Fonts.display(21, .bold)).foregroundStyle(Palette.ink)
                 Spacer()
                 if !store.entries.isEmpty {
-                    Button("All →") { flow.go(to: .history) }
+                    Button("All") { flow.go(to: .history) }
                         .font(Fonts.ui(13.5, .heavy)).foregroundStyle(Palette.amber)
                 }
             }

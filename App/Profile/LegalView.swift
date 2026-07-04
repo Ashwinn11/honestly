@@ -2,9 +2,10 @@ import SwiftUI
 
 /// In-app Terms of Service and Privacy Policy — real content, pushed from the Profile "About"
 /// rows (no external links). Styled in the app's language: paper, Shantell headings, Nunito body.
-enum LegalDoc {
+enum LegalDoc: Identifiable {
     case terms, privacy
 
+    var id: String { title }
     var title: String { self == .terms ? "Terms of Service" : "Privacy Policy" }
     var effective: String { "Effective July 2026" }
     var sections: [(heading: String, body: String)] { self == .terms ? Self.termsSections : Self.privacySections }
