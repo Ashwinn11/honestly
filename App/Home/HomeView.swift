@@ -56,6 +56,7 @@ struct HomeView: View {
                     .font(Fonts.display(25, .bold)).foregroundStyle(.white)
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.trailing, 52)          // clear the floating sun in the corner
                     .padding(.top, 6)
                 appsLine
                     .font(Fonts.ui(13.5, .semibold)).foregroundStyle(.white.opacity(0.95))

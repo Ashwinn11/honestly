@@ -17,19 +17,37 @@ struct PrimaryButton: View {
             Text(loc: title)
                 .font(Fonts.ui(16.5, .heavy))
                 .foregroundStyle(enabled ? textColor : Palette.inkSofter)
-                .frame(maxWidth: Metrics.maxButtonWidth)          // capped, fluid below — never full-column
+                .frame(maxWidth: .infinity)
                 .padding(.vertical, DesignScale.s(16))
-                .background(
-                    enabled ? AnyShapeStyle(color) : AnyShapeStyle(Palette.ink.opacity(0.06)),
-                    in: RoundedRectangle(cornerRadius: DesignScale.s(17), style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: DesignScale.s(17), style: .continuous)
-                    .stroke(Palette.ink, lineWidth: enabled ? 2 : 0))
-                .tactile(enabled ? 4 : 0, cornerRadius: DesignScale.s(17))   // hard ink ledge — the "drawn" look
-                .frame(maxWidth: .infinity)                       // center the capped pill in its parent
         }
-        .buttonStyle(PressableStyle())
+        .buttonStyle(TactileButtonStyle(
+            fill: enabled ? AnyShapeStyle(color) : AnyShapeStyle(Palette.ink.opacity(0.06)),
+            cornerRadius: DesignScale.s(17), ledge: enabled ? 4 : 0, bordered: enabled))
+        .frame(maxWidth: Metrics.maxButtonWidth)          // capped on iPad…
+        .frame(maxWidth: .infinity)                       // …centered in its parent
         .disabled(!enabled)
         .animation(Motion.snappy, value: enabled)
+    }
+}
+
+/// Key-press physics: the fill sinks toward its fixed ink ledge on touch (the gap closes), with a
+/// hair of scale. The interactive replacement for the static `.tactile()` on CTAs.
+struct TactileButtonStyle: ButtonStyle {
+    var fill: AnyShapeStyle
+    var cornerRadius: CGFloat
+    var ledge: CGFloat = 4
+    var bordered: Bool = true
+
+    func makeBody(configuration: Configuration) -> some View {
+        let pressed = configuration.isPressed
+        let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+        return configuration.label
+            .background(fill, in: shape)
+            .overlay(shape.stroke(Palette.ink, lineWidth: bordered ? 2 : 0))
+            .scaleEffect(pressed ? 0.99 : 1)
+            .offset(y: pressed ? max(ledge - 1, 0) : 0)                 // sink onto the ledge
+            .background(shape.fill(ledge > 0 ? Palette.ink : Color.clear).offset(y: ledge))
+            .animation(Motion.press, value: pressed)
     }
 }
 
@@ -53,12 +71,9 @@ struct CreamButton: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, DesignScale.s(15))
-            .background(fill, in: RoundedRectangle(cornerRadius: DesignScale.s(16), style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: DesignScale.s(16), style: .continuous)
-                .stroke(Palette.ink, lineWidth: 2))
-            .tactile(4, cornerRadius: DesignScale.s(16))
         }
-        .buttonStyle(PressableStyle())
+        .buttonStyle(TactileButtonStyle(fill: AnyShapeStyle(fill),
+                                        cornerRadius: DesignScale.s(16), ledge: 4, bordered: true))
     }
 }
 

@@ -5,6 +5,8 @@ enum Motion {
     static let bouncy = Animation.spring(response: 0.42, dampingFraction: 0.68)
     static let gentle = Animation.spring(response: 0.55, dampingFraction: 0.9)
     static let pop    = Animation.spring(response: 0.35, dampingFraction: 0.6)
+    static let press  = Animation.spring(response: 0.20, dampingFraction: 0.72)   // key-press physics
+    static let flow   = Animation.spring(response: 0.5,  dampingFraction: 0.82)   // screen / hero transitions
 }
 
 // MARK: - Shimmer (one soft highlight sweep, then done) — prototype's `shimmerLine`
