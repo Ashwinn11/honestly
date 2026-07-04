@@ -83,6 +83,7 @@ struct LegalView: View {
                 .padding(.horizontal, 24)
                 .padding(.top, 56)
                 .padding(.bottom, 50)
+                .capWidth(Metrics.maxContentWidth)   // centered column; PaperBackground stays full
             }
             .scrollIndicators(.hidden)
             .ignoresSafeArea(.container, edges: .top)

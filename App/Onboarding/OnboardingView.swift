@@ -35,6 +35,7 @@ struct OnboardingView: View {
                         pager
                         controls
                     }
+                    .capWidth(Metrics.maxContentWidth)   // centered column; pager reads the capped width
                 }
                 .familyActivityPicker(isPresented: $showPicker, selection: $st.selection)
                 .onChange(of: showPicker) { _, presented in

@@ -27,15 +27,35 @@ final class PremiumManager {
         offerings = try? await Purchases.shared.offerings()
     }
 
-    /// The lifetime package, tolerant of how the offering is configured.
+    /// The lifetime one-time-purchase package.
     var lifetimePackage: Package? {
         guard let current = offerings?.current else { return nil }
         return current.availablePackages.first { $0.identifier == AppConfig.lifetimePackageID }
             ?? current.lifetime
-            ?? current.availablePackages.first
+            ?? current.availablePackages.first { $0.packageType == .lifetime }
     }
 
-    var priceString: String { lifetimePackage?.storeProduct.localizedPriceString ?? "" }
+    /// The monthly auto-renewing package (optional — only if configured in the offering).
+    var monthlyPackage: Package? {
+        guard let current = offerings?.current else { return nil }
+        return current.availablePackages.first { $0.identifier == AppConfig.monthlyPackageID }
+            ?? current.monthly
+            ?? current.availablePackages.first { $0.packageType == .monthly }
+    }
+
+    var hasLifetime: Bool { lifetimePackage != nil }
+    var hasMonthly: Bool { monthlyPackage != nil }
+    var lifetimePriceString: String { lifetimePackage?.storeProduct.localizedPriceString ?? "" }
+    var monthlyPriceString: String { monthlyPackage?.storeProduct.localizedPriceString ?? "" }
+
+    @discardableResult func purchaseLifetime() async -> Bool {
+        guard let p = lifetimePackage else { return false }
+        return await purchase(p)
+    }
+    @discardableResult func purchaseMonthly() async -> Bool {
+        guard let p = monthlyPackage else { return false }
+        return await purchase(p)
+    }
 
     @discardableResult
     func purchase(_ package: Package) async -> Bool {

@@ -10,6 +10,10 @@ struct HonestlyApp: App {
     private let container: ModelContainer
 
     init() {
+        // Responsive scale for the whole UI — 1.0 on iPhone, larger on iPad. Portrait-locked +
+        // full-screen, so the launch width is the stable device width.
+        DesignScale.configure(width: UIScreen.main.bounds.width)
+
         // App-group store, mirrored to the existing production CloudKit container so live users'
         // pages sync into the redesign. (`JournalEntry` maps to the deployed `CD_JournalEntry`.)
         let made: ModelContainer

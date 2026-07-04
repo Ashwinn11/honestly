@@ -15,9 +15,10 @@ struct ScreenScaffold<Content: View>: View {
             ScrollView {
                 content()
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.horizontal, hPadding)
-                    .padding(.top, topPadding)
-                    .padding(.bottom, bottomPadding)
+                    .padding(.horizontal, DesignScale.s(hPadding))
+                    .padding(.top, DesignScale.s(topPadding))
+                    .padding(.bottom, DesignScale.s(bottomPadding))
+                    .capWidth(Metrics.maxContentWidth)       // centered column on iPad; bg stays full-bleed
             }
             .scrollIndicators(.hidden)
             .ignoresSafeArea(.container, edges: .top)

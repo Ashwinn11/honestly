@@ -15,6 +15,7 @@ enum AppConfig {
     static let revenueCatAPIKey    = "test_dKMMvIxKaUMZklmdVFugqpnknFW"
     static let entitlementID       = "premium"
     static let lifetimePackageID   = "$rc_lifetime"
+    static let monthlyPackageID    = "$rc_monthly"
 
     // DeviceActivity schedule identity (built into DeviceActivityName in app + monitor).
     static let morningScheduleName = "morning.block.window"

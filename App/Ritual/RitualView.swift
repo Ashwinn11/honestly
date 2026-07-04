@@ -27,12 +27,13 @@ struct RitualView: View {
             CelebrationView(mood: mood ?? 2, streak: store.streak, summary: summary, onStart: onClose)
         } else {
             VStack(spacing: 0) {
-                header
+                header.capWidth(Metrics.maxContentWidth)
                 ScrollView {
                     stepBody
                         .padding(.horizontal, 22)
                         .padding(.top, 6)
                         .padding(.bottom, 8)
+                        .capWidth(Metrics.maxContentWidth)   // centered column; PaperBackground stays full
                 }
                 .scrollDismissesKeyboard(.interactively)
             }
@@ -304,6 +305,7 @@ private struct CelebrationView: View {
                 .padding(.top, 26)
             }
             .padding(.horizontal, 28)
+            .capWidth(Metrics.maxContentWidth)   // centered column; gradient stays full-bleed
         }
     }
 }

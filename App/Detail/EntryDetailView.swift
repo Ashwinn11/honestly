@@ -19,6 +19,7 @@ struct EntryDetailView: View {
                         header(entry)
                         body(entry)
                     }
+                    .capWidth(Metrics.maxContentWidth)   // centered column; PaperBackground stays full
                 }
                 .scrollIndicators(.hidden)
                 .ignoresSafeArea(.container, edges: .top)

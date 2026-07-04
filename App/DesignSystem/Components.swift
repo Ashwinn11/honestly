@@ -17,12 +17,13 @@ struct PrimaryButton: View {
             Text(title)
                 .font(Fonts.ui(16.5, .heavy))
                 .foregroundStyle(enabled ? textColor : Palette.inkSofter)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 16)
+                .frame(maxWidth: Metrics.maxButtonWidth)          // capped, fluid below — never full-column
+                .padding(.vertical, DesignScale.s(16))
                 .background(
                     enabled ? AnyShapeStyle(color) : AnyShapeStyle(Palette.ink.opacity(0.08)),
-                    in: RoundedRectangle(cornerRadius: 17, style: .continuous))
-                .shadow(color: enabled ? color.opacity(0.32) : .clear, radius: 11, y: 10)
+                    in: RoundedRectangle(cornerRadius: DesignScale.s(17), style: .continuous))
+                .shadow(color: enabled ? color.opacity(0.32) : .clear, radius: DesignScale.s(11), y: DesignScale.s(10))
+                .frame(maxWidth: .infinity)                       // center the capped pill in its parent
         }
         .buttonStyle(PressableStyle())
         .disabled(!enabled)
@@ -38,7 +39,8 @@ struct GhostButton: View {
     var body: some View {
         Button { Haptics.tap(); action() } label: {
             Text(title).font(Fonts.ui(14.5, .bold)).foregroundStyle(color)
-                .frame(maxWidth: .infinity).padding(.vertical, 14)
+                .frame(maxWidth: Metrics.maxButtonWidth).padding(.vertical, DesignScale.s(14))
+                .frame(maxWidth: .infinity)
         }
         .buttonStyle(PressableStyle(scale: 0.98))
     }
@@ -62,9 +64,9 @@ struct SoftCard: ViewModifier {
     var radius: CGFloat = 26
     func body(content: Content) -> some View {
         content
-            .padding(padding)
-            .background(.white, in: RoundedRectangle(cornerRadius: radius, style: .continuous))
-            .shadow(color: Color(hex: "78501E").opacity(0.09), radius: 15, x: 0, y: 12)
+            .padding(DesignScale.s(padding))
+            .background(.white, in: RoundedRectangle(cornerRadius: DesignScale.s(radius), style: .continuous))
+            .shadow(color: Color(hex: "78501E").opacity(0.09), radius: DesignScale.s(15), x: 0, y: DesignScale.s(12))
     }
 }
 
@@ -88,9 +90,9 @@ struct SoftCircleButton: View {
     var body: some View {
         Button { Haptics.tap(); action() } label: {
             Image(systemName: icon)
-                .font(.system(size: iconSize, weight: .bold))
+                .font(.system(size: DesignScale.s(iconSize), weight: .bold))
                 .foregroundStyle(iconColor)
-                .frame(width: diameter, height: diameter)
+                .frame(width: DesignScale.s(diameter), height: DesignScale.s(diameter))
                 .background(shadow ? AnyShapeStyle(Color.white) : AnyShapeStyle(fill), in: Circle())
                 .shadow(color: shadow ? Color(hex: "78501E").opacity(0.08) : .clear, radius: 12, y: 4)
         }
@@ -108,7 +110,7 @@ struct RitualPips: View {
             ForEach(0..<3, id: \.self) { i in
                 Capsule()
                     .fill(i <= step ? Palette.amber : Palette.ink.opacity(0.10))
-                    .frame(height: 6)
+                    .frame(height: DesignScale.s(6))
                     .frame(maxWidth: .infinity)
             }
         }
@@ -125,7 +127,7 @@ struct PagerDots: View {
             ForEach(0..<count, id: \.self) { i in
                 Capsule()
                     .fill(i == index ? Palette.amber : Palette.ink.opacity(0.14))
-                    .frame(width: i == index ? 20 : 7, height: 7)
+                    .frame(width: DesignScale.s(i == index ? 20 : 7), height: DesignScale.s(7))
             }
         }
         .animation(Motion.snappy, value: index)
