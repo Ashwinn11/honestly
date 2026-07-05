@@ -1,16 +1,13 @@
 import SwiftUI
-import FamilyControls
 
 struct OnboardingView: View {
     var onFinish: () -> Void
 
-    @Environment(ScreenTimeManager.self) private var screenTime
     @Environment(JournalStore.self) private var store
 
     @State private var answers = OnboardingAnswers()
     @State private var index = 0
     @State private var forward = true
-    @State private var showPicker = false
 
     private enum Beat: Int, CaseIterable {
         case brand, problem, goal, scroll, pain, apps, commitment, building, plan, ritual, social, notif, paywall
@@ -29,11 +26,10 @@ struct OnboardingView: View {
     }
 
     var body: some View {
-        @Bindable var st = screenTime
         ZStack {
             PaperBackground()
             if beat == .paywall {
-                PaywallView(gate: true, onClose: finish)
+                PaywallView(onClose: finish)
                     .transition(.move(edge: .trailing).combined(with: .opacity))
             } else {
                 beatView
@@ -48,10 +44,6 @@ struct OnboardingView: View {
             }
         }
         .animation(Motion.gentle, value: index)
-        .familyActivityPicker(isPresented: $showPicker, selection: $st.selection)
-        .onChange(of: showPicker) { _, presented in
-            if !presented { advance() }        // picker dismissed → move past the apps beat
-        }
     }
 
     private var slide: AnyTransition {
@@ -105,8 +97,7 @@ struct OnboardingView: View {
             }
 
         case .apps:
-            chrome(primary: .init(title: "Choose apps to quiet") { chooseApps() },
-                   secondary: .init(title: "Not now") { advance() }) {
+            chrome(primary: .init(title: "Continue") { advance() }) {
                 appsQuestion
             }
 
@@ -352,13 +343,6 @@ struct OnboardingView: View {
         withAnimation(Motion.gentle) { index = max(0, target) }
     }
 
-    private func chooseApps() {
-        Task {
-            if await screenTime.ensureAuthorizedForPicker() { showPicker = true }
-            else { advance() }
-        }
-    }
-
     private func requestNotifications() {
         Task {
             await AffirmationNudge.requestAuthorization()
@@ -373,7 +357,6 @@ struct OnboardingView: View {
                               gratitudes: [answers.demoAffirmation])
         }
         AffirmationNudge.scheduleNext(from: store.entries.flatMap(\.gratitudes))
-        screenTime.armSchedule()
         SharedState.onboardingComplete = true
         Haptics.success()
         onFinish()

@@ -540,12 +540,8 @@
         }
       }
     },
-    "— %@" : {
-
-    },
-    "“%@”" : {
-
-    },
+    "— %@" : {},
+    "“%@”" : {},
     "“Meet yourself before the world logs on.”" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -700,9 +696,7 @@
         }
       }
     },
-    "/%@" : {
-
-    },
+    "/%@" : {},
     "%@ · %lld affirmations" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -867,9 +861,7 @@
         }
       }
     },
-    "%lld" : {
-
-    },
+    "%lld" : {},
     "%lld apps stay asleep until you write. A few quiet minutes, just for you." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -1727,9 +1719,7 @@
         }
       }
     },
-    "12" : {
-
-    },
+    "12" : {},
     "A calmer start" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -6427,9 +6417,7 @@
         }
       }
     },
-    "Goal met" : {
-
-    },
+    "Goal met" : {},
     "Gone before I'm up" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -7046,9 +7034,7 @@
         }
       }
     },
-    "Honestly" : {
-
-    },
+    "Honestly" : {},
     "Honestly is built to be private. Your morning pages — your moods, your writing, your affirmations — belong to you. We don't sell them, mine them, or read them. There are no third-party trackers or advertising SDKs in this app." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -19446,8 +19432,171 @@
         }
       }
     },
-    "z" : {
-
+    "z" : {},
+    "Every affirmation echoed back to you, not just the first line" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cada afirmación repetida de vuelta, no solo la primera línea"
+          }
+        }
+      }
+    },
+    "Your full history, synced and backed up everywhere" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todo tu historial, sincronizado y respaldado en todas partes"
+          }
+        }
+      }
+    },
+    "Unlock Premium" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desbloquear Premium"
+          }
+        }
+      }
+    },
+    "Unlock your calendar" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desbloquea tu calendario"
+          }
+        }
+      }
+    },
+    "See every morning you've written, at a glance." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mira de un vistazo cada mañana que has escrito."
+          }
+        }
+      }
+    },
+    "Unlock to see your mood history" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desbloquea para ver tu historial de ánimo"
+          }
+        }
+      }
+    },
+    "Unlock your full history" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desbloquea todo tu historial"
+          }
+        }
+      }
+    },
+    "Every morning you've written, always here to revisit." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cada mañana que has escrito, siempre aquí para volver a leer."
+          }
+        }
+      }
+    },
+    "Manage your subscription" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gestiona tu suscripción"
+          }
+        }
+      }
+    },
+    "Go Premium" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hazte Premium"
+          }
+        }
+      }
+    },
+    "Full history, iCloud sync & app blocking" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Historial completo, sincronización con iCloud y bloqueo de apps"
+          }
+        }
+      }
+    },
+    "Upgrade" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mejorar"
+          }
+        }
+      }
+    },
+    "Approve Screen Time" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aprobar tiempo de pantalla"
+          }
+        }
+      }
+    },
+    "Grant access to start blocking distracting apps" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Concede acceso para empezar a bloquear apps que distraen"
+          }
+        }
+      }
+    },
+    "Distracting apps, quieted till you write" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Apps que distraen, en silencio hasta que escribas"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

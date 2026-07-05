@@ -12,7 +12,7 @@ enum AppConfig {
 
     // RevenueCat — replace with the real public SDK key before shipping.
     static let revenueCatAPIKey    = "test_dKMMvIxKaUMZklmdVFugqpnknFW"
-    static let entitlementID       = "premium"
+    static let entitlementID       = "premiu"
     static let lifetimePackageID   = "$rc_lifetime"
     static let monthlyPackageID    = "$rc_monthly"
 
@@ -45,6 +45,7 @@ enum SharedState {
         static let demoMood           = "onboarding.demoMood"       // mood face they tapped during the onboarding demo
         static let demoLine           = "onboarding.demoLine"       // the line they wrote during the onboarding demo
         static let demoAffirmation    = "onboarding.demoAffirmation" // the affirmation they wrote during the onboarding demo
+        static let premiumActive      = "premium.active"             // mirrors PremiumManager.isPremium for the background extension
     }
 
     // MARK: Day key helpers
@@ -143,5 +144,13 @@ enum SharedState {
     static var demoAffirmation: String {
         get { defaults.string(forKey: Key.demoAffirmation) ?? "" }
         set { defaults.set(newValue, forKey: Key.demoAffirmation) }
+    }
+
+    // MARK: Premium (mirrored so the background DeviceActivityMonitor extension, which has no
+    // RevenueCat access, can bail out of re-shielding once a subscription lapses)
+
+    static var premiumActive: Bool {
+        get { defaults.bool(forKey: Key.premiumActive) }
+        set { defaults.set(newValue, forKey: Key.premiumActive) }
     }
 }

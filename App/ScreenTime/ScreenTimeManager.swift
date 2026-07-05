@@ -12,6 +12,15 @@ final class ScreenTimeManager {
         didSet { commit(selection) }
     }
 
+    /// Kept in sync with `PremiumManager.isPremium` by `HonestlyApp`. Blocking must never run for a
+    /// free or lapsed subscriber, even if Screen Time authorization was granted while premium.
+    var isPremiumActive: Bool = false {
+        didSet {
+            guard isPremiumActive != oldValue else { return }
+            armSchedule()
+        }
+    }
+
     private let center = DeviceActivityCenter()
     private var applyingProgrammatically = false
 
@@ -70,7 +79,8 @@ final class ScreenTimeManager {
         BlockingCodec.save(new)
         SharedState.hasEverConfiguredBlocking = true
         SharedState.blockingEnabled = hasSelection
-        guard authorized else { return }   // never touch DeviceActivity / ManagedSettings unauthorized
+        // Never touch DeviceActivity / ManagedSettings unauthorized, or for a free/lapsed subscriber.
+        guard authorized, isPremiumActive else { stopMonitoring(); return }
         armSchedule()
         if hasSelection, isWithinMorningWindow(), !SharedState.ritualCompleted() {
             Shielding.apply(new)
@@ -88,7 +98,7 @@ final class ScreenTimeManager {
     // MARK: DeviceActivity schedule
 
     func armSchedule() {
-        guard authorized else { return }
+        guard authorized, isPremiumActive else { stopMonitoring(); return }
         let name = DeviceActivityName(AppConfig.morningScheduleName)
         center.stopMonitoring([name])
         guard hasSelection else { return }

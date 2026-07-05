@@ -2,6 +2,8 @@ import SwiftUI
 
 struct HistoryView: View {
     @Environment(JournalStore.self) private var store
+    @Environment(PremiumManager.self) private var premium
+    @Environment(AppFlow.self) private var flow
     @State private var filter: Int? = nil          // nil = All
     @State private var query = ""
 
@@ -30,13 +32,22 @@ struct HistoryView: View {
                 titleBlock
                 searchField.padding(.top, 16)
                 filterChips.padding(.top, 12)
-                if filtered.isEmpty {
+                if !premium.isPremium {
+                    lockedState.padding(.top, 60)
+                } else if filtered.isEmpty {
                     emptyState.padding(.top, 80)
                 } else {
                     list
                 }
             }
         }
+    }
+
+    private var lockedState: some View {
+        PremiumUnlockCard(title: "Unlock your full history",
+                           subtitle: "Every morning you've written, always here to revisit.",
+                           action: { flow.showPaywall() })
+            .frame(maxWidth: .infinity)
     }
 
     private var searchField: some View {

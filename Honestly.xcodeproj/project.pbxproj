@@ -79,6 +79,7 @@
 		CDFBD462099B516BD6A2AC88 /* BlockingCodec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 061ECF0CF39440C344FB8DE7 /* BlockingCodec.swift */; };
 		D160842BD3BFEB1FDFC0B71D /* ShantellSans-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 4BB954E9640F5AC2901E253E /* ShantellSans-SemiBold.ttf */; };
 		D315FC8BE8F592E20B9E4F68 /* Shielding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 468C6373F86CE0AF2AEB0E30 /* Shielding.swift */; };
+		E21CA905CFC814A588AF3BB8 /* PremiumLockOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00ABD03B5778E7FA4249D26A /* PremiumLockOverlay.swift */; };
 		E2648EC4DEF5FB544765A4E7 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = 28B9980C7C931F43F6391B0C /* Localizable.xcstrings */; };
 		E756D52A3BF6CF6BFBDC1EA2 /* ReviewPrompt.swift in Sources */ = {isa = PBXBuildFile; fileRef = 63563974992526601280DCAD /* ReviewPrompt.swift */; };
 		E845053612F6B8802A39A4EA /* ActivityMonitorExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DCCC5A53E1B5A453F93DB72 /* ActivityMonitorExtension.swift */; };
@@ -133,6 +134,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		00ABD03B5778E7FA4249D26A /* PremiumLockOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PremiumLockOverlay.swift; sourceTree = "<group>"; };
 		061ECF0CF39440C344FB8DE7 /* BlockingCodec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlockingCodec.swift; sourceTree = "<group>"; };
 		089B46770C57486A7908F0F1 /* MainTabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainTabView.swift; sourceTree = "<group>"; };
 		08E1B12E8851E942BD3D9539 /* Palette.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Palette.swift; sourceTree = "<group>"; };
@@ -462,6 +464,7 @@
 			isa = PBXGroup;
 			children = (
 				940F06599A1B282F70CE07C7 /* PaywallView.swift */,
+				00ABD03B5778E7FA4249D26A /* PremiumLockOverlay.swift */,
 				82A742134D7171635C201115 /* PremiumManager.swift */,
 			);
 			path = Paywall;
@@ -705,6 +708,7 @@
 				653BC8CDF4AA9C5F5204DE26 /* Palette.swift in Sources */,
 				2F2015B0DEC67B7C753D23F1 /* PaperBackground.swift in Sources */,
 				250F88AFAAEC361FCF6E2546 /* PaywallView.swift in Sources */,
+				E21CA905CFC814A588AF3BB8 /* PremiumLockOverlay.swift in Sources */,
 				836D381DB5BFB2E28B5D29D9 /* PremiumManager.swift in Sources */,
 				3FD789076280242F2E6B1547 /* ProfileView.swift in Sources */,
 				E756D52A3BF6CF6BFBDC1EA2 /* ReviewPrompt.swift in Sources */,

@@ -48,16 +48,26 @@ struct HonestlyApp: App {
                 .task {
                     premium.configure()
                     screenTime.refreshAuthStatus()
+                    // Seed explicitly rather than relying on `didSet` (which only fires on change) —
+                    // a cold launch must disarm a stale schedule for a free/lapsed user too.
+                    screenTime.isPremiumActive = premium.isPremium
+                    SharedState.premiumActive = premium.isPremium
                     screenTime.armSchedule()
+                    reconcileShield()
+                }
+                .onChange(of: premium.isPremium) { _, isPremium in
+                    screenTime.isPremiumActive = isPremium
+                    SharedState.premiumActive = isPremium
                     reconcileShield()
                 }
         }
     }
 
     private func reconcileShield() {
+        guard premium.isPremium else { Shielding.clear(); return }
         if store.ritualDoneToday {
             Shielding.clear()
-        } else if screenTime.hasSelection, screenTime.isWithinMorningWindow() {
+        } else if screenTime.hasSelection, screenTime.authorized, screenTime.isWithinMorningWindow() {
             Shielding.apply(BlockingCodec.load())
         }
     }

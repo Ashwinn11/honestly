@@ -2,7 +2,6 @@ import SwiftUI
 import Foundation
 
 struct PaywallView: View {
-    var gate: Bool = false
     var onClose: () -> Void
     @Environment(PremiumManager.self) private var premium
 
@@ -24,18 +23,14 @@ struct PaywallView: View {
         return months > 1 ? months : nil
     }
 
-    private var hasDemo: Bool { !SharedState.demoLine.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
-
     var body: some View {
         ZStack {
             PaperBackground()
             VStack(spacing: 0) {
-                header
                 GeometryReader { geo in
                     ScrollView {
                         VStack(spacing: 18) {
                             hero
-                            demoPreview
                             benefitsCard
                             planPicker
                         }
@@ -47,6 +42,7 @@ struct PaywallView: View {
                 footer
             }
             .capWidth(Metrics.maxContentWidth)
+            .overlay(alignment: .topTrailing) { closeButton }
         }
         .alert("No purchase found", isPresented: $showRestoreAlert) {
             Button("OK", role: .cancel) {}
@@ -59,15 +55,12 @@ struct PaywallView: View {
         .onChange(of: premium.hasMonthly) { _, _ in syncSelection() }
     }
 
-    // MARK: Header (close only when NOT the hard gate)
-    private var header: some View {
-        HStack {
-            Spacer()
-            if !gate { SoftCircleButton(icon: "xmark") { onClose() } }
-        }
-        .frame(height: 38)
-        .padding(.horizontal, 20)
-        .padding(.top, 8)
+    // MARK: Close
+    private var closeButton: some View {
+        SoftCircleButton(icon: "xmark") { onClose() }
+            .overlay(Circle().stroke(Palette.ink, lineWidth: 2))
+            .padding(.horizontal, 20)
+            .padding(.top, 8)
     }
 
     // MARK: Hero
@@ -91,49 +84,15 @@ struct PaywallView: View {
         }
     }
 
-    // MARK: Demo preview — the page they just wrote during onboarding, waiting to be unlocked
-    @ViewBuilder private var demoPreview: some View {
-        if hasDemo {
-            VStack(alignment: .leading, spacing: 10) {
-                HStack(spacing: 9) {
-                    MoodFace(mood: SharedState.demoMood, size: 26, expressive: true)
-                    Text(loc: "Already written, waiting for you")
-                        .ui(11.5, .heavy, color: Palette.inkSofter)
-                        .tracking(0.2)
-                }
-                Text("“\(SharedState.demoLine)”")
-                    .display(16, .semibold)
-                    .lineSpacing(3)
-                    .fixedSize(horizontal: false, vertical: true)
-                if !SharedState.demoAffirmation.trimmingCharacters(in: .whitespaces).isEmpty {
-                    HStack(spacing: 8) {
-                        SunMark(size: 15, rays: false)
-                        Text(SharedState.demoAffirmation).ui(13, .semibold, color: Palette.inkSoft)
-                    }
-                }
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .softCard(padding: 16, radius: 20, emphasized: true)
-        }
-    }
-
     // MARK: Benefits — sun-disc bullets, no card
     private var benefitsCard: some View {
         VStack(alignment: .leading, spacing: 12) {
-            benefitRow(Text(loc: "Your own affirmations, echoed back when you need them"))
-            quietBenefitRow
-            benefitRow(Text(loc: "Streaks, full history & cloud backup"))
+            benefitRow(Text(loc: "Every affirmation echoed back to you, not just the first line"))
+            benefitRow(Text(loc: "Distracting apps, quieted till you write"))
+            benefitRow(Text(loc: "Your full history, synced and backed up everywhere"))
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 4)
-    }
-
-    @ViewBuilder private var quietBenefitRow: some View {
-        if SharedState.appsPhrase.isEmpty {
-            benefitRow(Text(loc: "Your apps, quieted till you write"))
-        } else {
-            benefitRow(Text("\(SharedState.appsPhrase), quieted till you write"))
-        }
     }
 
     private func benefitRow(_ text: Text) -> some View {

@@ -4,6 +4,7 @@ struct HomeView: View {
     @Environment(JournalStore.self) private var store
     @Environment(AppFlow.self) private var flow
     @Environment(ScreenTimeManager.self) private var screenTime
+    @Environment(PremiumManager.self) private var premium
 
     var body: some View {
         ScreenScaffold {
@@ -89,15 +90,11 @@ struct HomeView: View {
                     Eyebrow(text: "Today · done", color: Palette.ink.opacity(0.85), size: 11)
                     Text("Your apps are awake")
                         .font(Fonts.display(23, .bold)).foregroundStyle(Palette.ink)
-                    NavigationLink(value: entry.dayKey) {
-                        HStack(spacing: 6) {
-                            Text("Read today's page")
-                                .font(Fonts.ui(13.5, .heavy)).foregroundStyle(Palette.amberDeep)
-                            Image(systemName: "arrow.right")
-                                .font(.system(size: 11, weight: .bold)).foregroundStyle(Palette.amberDeep)
-                        }
-                        .overlay(alignment: .bottom) {
-                            Rectangle().fill(Palette.amberDeep.opacity(0.4)).frame(height: 2).offset(y: 2)
+                    Group {
+                        if premium.isPremium {
+                            NavigationLink(value: entry.dayKey) { readTodayLabel }
+                        } else {
+                            Button { flow.showPaywall() } label: { readTodayLabel }
                         }
                     }
                     .padding(.top, 4)
@@ -111,6 +108,18 @@ struct HomeView: View {
         .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).stroke(Palette.ink, lineWidth: 2))
         .shadow(color: Color(hex: "3C5A28").opacity(0.4), radius: 20, y: 12)
         .staggeredAppear(index: 0)
+    }
+
+    private var readTodayLabel: some View {
+        HStack(spacing: 6) {
+            Text("Read today's page")
+                .font(Fonts.ui(13.5, .heavy)).foregroundStyle(Palette.amberDeep)
+            Image(systemName: "arrow.right")
+                .font(.system(size: 11, weight: .bold)).foregroundStyle(Palette.amberDeep)
+        }
+        .overlay(alignment: .bottom) {
+            Rectangle().fill(Palette.amberDeep.opacity(0.4)).frame(height: 2).offset(y: 2)
+        }
     }
 
     // MARK: Streak card
@@ -173,19 +182,37 @@ struct HomeView: View {
             if let today = store.todayEntry, !today.gratitudes.isEmpty {
                 VStack(spacing: 10) {
                     ForEach(Array(today.gratitudes.enumerated()), id: \.offset) { i, line in
-                        HStack(spacing: 12) {
-                            SunMark(size: 22, rays: false)
-                            Text(line).font(Fonts.ui(14.5, .semibold)).foregroundStyle(Palette.ink)
-                            Spacer(minLength: 0)
-                        }
-                        .padding(EdgeInsets(top: 11, leading: 14, bottom: 11, trailing: 14))
-                        .background(Palette.cream, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(Palette.outlineSoft, lineWidth: 1.5))
-                        .staggeredAppear(index: i + 2)
+                        affirmationRow(line, locked: !premium.isPremium && i > 0)
+                            .staggeredAppear(index: i + 2)
                     }
                 }
             } else {
                 emptyAffirmations
+            }
+        }
+    }
+
+    private func affirmationRow(_ line: String, locked: Bool) -> some View {
+        let row = HStack(spacing: 12) {
+            SunMark(size: 22, rays: false)
+            Text(line).font(Fonts.ui(14.5, .semibold)).foregroundStyle(Palette.ink)
+                .lineLimit(1)
+                .blur(radius: locked ? 5 : 0)
+            Spacer(minLength: 0)
+            if locked {
+                Image(systemName: "lock.fill").font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(Palette.inkSofter)
+            }
+        }
+        .padding(EdgeInsets(top: 11, leading: 14, bottom: 11, trailing: 14))
+        .background(Palette.cream, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(Palette.outlineSoft, lineWidth: 1.5))
+
+        return Group {
+            if locked {
+                Button { flow.showPaywall() } label: { row }.buttonStyle(PressableStyle(scale: 0.98))
+            } else {
+                row
             }
         }
     }

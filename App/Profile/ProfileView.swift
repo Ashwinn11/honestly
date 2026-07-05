@@ -4,10 +4,12 @@ import FamilyControls
 struct ProfileView: View {
     @Environment(JournalStore.self) private var store
     @Environment(ScreenTimeManager.self) private var screenTime
+    @Environment(PremiumManager.self) private var premium
+    @Environment(AppFlow.self) private var flow
     @Environment(\.openURL) private var openURL
     @Environment(\.requestReview) private var requestReview
 
-    @AppStorage("affirmationNudgeOn", store: SharedState.defaults) private var affirmNudgeOn = true
+    @AppStorage("affirmationNudgeOn", store: SharedState.defaults) private var affirmNudgeOn = false
     @State private var showPicker = false
     @State private var confirmDelete = false
     @State private var showICloud = false
@@ -25,6 +27,7 @@ struct ProfileView: View {
                     .font(Fonts.ui(14, .semibold)).foregroundStyle(Palette.inkSoft).padding(.top, 5)
 
                 heroCard.padding(.top, 16)
+                subscriptionCard.padding(.top, 16)
                 settingsCard.padding(.top, 16)
 
                 sectionEyebrow("Account")
@@ -79,6 +82,40 @@ struct ProfileView: View {
         }
     }
 
+    // MARK: Subscription — top of screen, above everything else
+    private var subscriptionCard: some View {
+        Group {
+            if premium.isPremium {
+                Button {
+                    Haptics.tap()
+                    openURL(URL(string: "https://apps.apple.com/account/subscriptions")!)
+                } label: {
+                    settingRow {
+                        rowText("Honestly Premium", "Manage your subscription")
+                    } trailing: { chevron }
+                }
+                .buttonStyle(RowPressStyle())
+            } else {
+                Button {
+                    Haptics.tap()
+                    flow.showPaywall()
+                } label: {
+                    settingRow {
+                        rowText("Go Premium", "Full history, iCloud sync & app blocking")
+                    } trailing: {
+                        Text(loc: "Upgrade").font(Fonts.ui(13, .heavy)).foregroundStyle(.white)
+                            .padding(.horizontal, 14).padding(.vertical, 7)
+                            .background(Palette.amber, in: Capsule())
+                    }
+                }
+                .buttonStyle(RowPressStyle())
+            }
+        }
+        .background(Palette.cream, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).stroke(Palette.outlineSoft, lineWidth: 1.5))
+        .shadow(color: Color(hex: "78501E").opacity(0.08), radius: 13, y: 10)
+    }
+
     // MARK: Hero
     private var heroCard: some View {
         ZStack(alignment: .topTrailing) {
@@ -114,12 +151,27 @@ struct ProfileView: View {
     }
 
     // MARK: Settings
+    private var affirmNudgeBinding: Binding<Bool> {
+        Binding(
+            get: { premium.isPremium && affirmNudgeOn },
+            set: { newValue in
+                guard premium.isPremium else { flow.showPaywall(); return }
+                affirmNudgeOn = newValue
+            }
+        )
+    }
+
+    private var appsRowTitle: String { screenTime.authorized ? "Apps on hold" : "Approve Screen Time" }
+    private var appsRowSubtitle: String {
+        screenTime.authorized ? "Managed by Screen Time" : "Grant access to start blocking distracting apps"
+    }
+
     private var settingsCard: some View {
         VStack(spacing: 0) {
             settingRow {
                 rowText("Affirmation reminders", "An occasional nudge with something you wrote")
             } trailing: {
-                AmberToggle(isOn: $affirmNudgeOn)
+                AmberToggle(isOn: affirmNudgeBinding)
             }
             divider
             settingRow {
@@ -129,13 +181,22 @@ struct ProfileView: View {
             }
             divider
             Button {
-                Task { if await screenTime.ensureAuthorizedForPicker() { showPicker = true } }
+                Haptics.tap()
+                if !premium.isPremium {
+                    flow.showPaywall()
+                } else {
+                    Task { if await screenTime.ensureAuthorizedForPicker() { showPicker = true } }
+                }
             } label: {
                 settingRow {
-                    rowText("Apps on hold", "Managed by Screen Time")
+                    rowText(appsRowTitle, appsRowSubtitle)
                 } trailing: {
-                    Text(loc: screenTime.selectionSummary)
-                        .font(Fonts.ui(14, .bold)).foregroundStyle(Palette.amberDeep)
+                    if screenTime.authorized {
+                        Text(loc: screenTime.selectionSummary)
+                            .font(Fonts.ui(14, .bold)).foregroundStyle(Palette.amberDeep)
+                    } else {
+                        chevron
+                    }
                 }
             }
             .buttonStyle(RowPressStyle())
@@ -150,25 +211,23 @@ struct ProfileView: View {
     // MARK: Account
     private var accountCard: some View {
         VStack(spacing: 0) {
-            Button { showICloud = true } label: {
+            Button {
+                Haptics.tap()
+                if premium.isPremium { showICloud = true } else { flow.showPaywall() }
+            } label: {
                 settingRow {
                     rowText("iCloud sync", "Back up or restore your pages")
                 } trailing: {
                     HStack(spacing: 9) {
-                        Text("On").font(Fonts.ui(14, .bold)).foregroundStyle(Palette.success)
+                        if premium.isPremium {
+                            Text("On").font(Fonts.ui(14, .bold)).foregroundStyle(Palette.success)
+                        } else {
+                            Image(systemName: "lock.fill").font(.system(size: 11, weight: .bold))
+                                .foregroundStyle(Palette.inkSofter)
+                        }
                         chevron
                     }
                 }
-            }
-            .buttonStyle(RowPressStyle())
-            divider
-            Button {
-                Haptics.tap()
-                openURL(URL(string: "https://apps.apple.com/account/subscriptions")!)
-            } label: {
-                settingRow {
-                    rowText("Manage subscription", nil)
-                } trailing: { chevron }
             }
             .buttonStyle(RowPressStyle())
         }
