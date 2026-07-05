@@ -19608,6 +19608,17 @@
           }
         }
       }
+    },
+    "Today's affirmation" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu afirmación de hoy"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

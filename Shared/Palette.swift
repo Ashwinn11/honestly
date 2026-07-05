@@ -57,6 +57,7 @@ enum Palette {
     static let inkUI      = UIColor(hex: "33261A")
     static let inkSoftUI  = UIColor(hex: "8A7A67")
     static let amberUI    = UIColor(hex: "F5851F")
+    static let sunDiscUI  = UIColor(hex: "F7B23C")
 }
 
 enum Mood: Int, CaseIterable, Identifiable, Codable {

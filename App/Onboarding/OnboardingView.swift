@@ -642,7 +642,7 @@ private struct NotifCard: View {
                 .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(Palette.ink.opacity(0.12), lineWidth: 1))
             VStack(alignment: .leading, spacing: 3) {
                 HStack {
-                    Text("Honestly").font(Fonts.ui(14, .heavy)).foregroundStyle(Palette.ink)
+                    Text(loc: "Today's affirmation").font(Fonts.ui(14, .heavy)).foregroundStyle(Palette.ink)
                     Spacer()
                     Text(loc: time).font(Fonts.ui(12, .semibold)).foregroundStyle(Palette.inkSofter)
                 }
@@ -669,13 +669,13 @@ private struct NotifStack: View {
 
     var body: some View {
         VStack(spacing: 14) {
-            if showExample {
-                NotifCard(text: example)
+            if showMine {
+                NotifCard(text: mine)
                     .transition(.asymmetric(insertion: .move(edge: .top).combined(with: .opacity),
                                             removal: .opacity))
             }
-            if showMine {
-                NotifCard(text: mine)
+            if showExample {
+                NotifCard(text: example)
                     .transition(.asymmetric(insertion: .move(edge: .top).combined(with: .opacity),
                                             removal: .opacity))
             }
@@ -685,15 +685,15 @@ private struct NotifStack: View {
 
     private func run() async {
         guard !reduceMotion else {
-            showExample = true; showMine = true
+            showMine = true; showExample = true
             Haptics.notificationSound()
             return
         }
         try? await Task.sleep(for: .seconds(0.3))
-        withAnimation(Motion.snappy) { showExample = true }
+        withAnimation(Motion.snappy) { showMine = true }
         Haptics.notificationSound()
         try? await Task.sleep(for: .seconds(1.0))
-        withAnimation(Motion.snappy) { showMine = true }
+        withAnimation(Motion.snappy) { showExample = true }
         Haptics.notificationSound()
     }
 }

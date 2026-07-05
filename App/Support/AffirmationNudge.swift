@@ -43,7 +43,8 @@ enum AffirmationNudge {
         d.set(line, forKey: lastSentKey)
 
         let content = UNMutableNotificationContent()
-        content.title = "Honestly"   // brand name — not localized
+        // Not SwiftUI here, so `Text(loc:)` doesn't apply — do the String Catalog lookup directly.
+        content.title = String(localized: "Today's affirmation")
         content.body = line          // the user's own words — never translated/rewritten
         content.sound = .default
 

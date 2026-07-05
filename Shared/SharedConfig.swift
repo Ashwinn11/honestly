@@ -12,7 +12,7 @@ enum AppConfig {
 
     // RevenueCat — replace with the real public SDK key before shipping.
     static let revenueCatAPIKey    = "test_dKMMvIxKaUMZklmdVFugqpnknFW"
-    static let entitlementID       = "premiu"
+    static let entitlementID       = "premium"
     static let lifetimePackageID   = "$rc_lifetime"
     static let monthlyPackageID    = "$rc_monthly"
 

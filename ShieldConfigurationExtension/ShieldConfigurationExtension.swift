@@ -2,8 +2,13 @@ import ManagedSettings
 import ManagedSettingsUI
 import UIKit
 
-/// The custom shield the user sees on a blocked app. Warm paper, a soft sunrise
-/// glyph, gentle copy, and an amber "do your ritual" button — a nudge, not a wall.
+/// The custom shield the user sees on a blocked app. Warm paper, the app's own sun mark, gentle
+/// copy, and a coral "do your ritual" button — a nudge, not a wall.
+///
+/// Every color here is a flat, static `UIColor(hex:)` (see `Palette`'s "UIKit mirror" section) —
+/// deliberately NOT dynamic/trait-adaptive, and `backgroundBlurStyle` is pinned to the explicit
+/// `.Light` material variant. That's intentional: the shield must always match the app's paper
+/// palette, regardless of the device's system light/dark mode setting.
 final class ShieldConfigurationExtension: ShieldConfigurationDataSource {
 
     override func configuration(shielding application: Application) -> ShieldConfiguration {
@@ -28,7 +33,7 @@ final class ShieldConfigurationExtension: ShieldConfigurationDataSource {
         ShieldConfiguration(
             backgroundBlurStyle: .systemUltraThinMaterialLight,
             backgroundColor: Palette.paperUI.withAlphaComponent(0.92),
-            icon: SunriseGlyph.image(side: 96),
+            icon: SunMarkGlyph.image(side: 96),
             title: .init(text: L10n.t("shield.title"), color: Palette.inkUI),
             subtitle: .init(text: L10n.t("shield.subtitle"), color: Palette.inkSoftUI),
             primaryButtonLabel: .init(text: L10n.t("shield.primary"), color: .white),
@@ -37,57 +42,42 @@ final class ShieldConfigurationExtension: ShieldConfigurationDataSource {
     }
 }
 
-/// A rendered sunrise mark so the shield feels bespoke instead of a system glyph.
-enum SunriseGlyph {
+/// A UIKit port of the app's `SunMark` brand glyph (`App/DesignSystem/SunMark.swift`) — same eight
+/// ink rays around a gold disc with a black ink outline. The shield extension can't reuse the
+/// SwiftUI view directly, so this mirrors its exact geometry; keep the two in sync if `SunMark`
+/// ever changes.
+enum SunMarkGlyph {
+    /// Ray endpoints in `SunMark`'s 100×100 unit viewBox.
+    private static let rayLines: [[CGFloat]] = [
+        [50, 5, 50, 17], [50, 83, 50, 95], [5, 50, 17, 50], [83, 50, 95, 50],
+        [19, 19, 27.5, 27.5], [72.5, 72.5, 81, 81], [81, 19, 72.5, 27.5], [27.5, 72.5, 19, 81],
+    ]
+
     static func image(side: CGFloat) -> UIImage {
         let size = CGSize(width: side, height: side)
         let renderer = UIGraphicsImageRenderer(size: size)
         return renderer.image { ctx in
             let c = ctx.cgContext
-            let center = CGPoint(x: side / 2, y: side * 0.62)
-            let sunR = side * 0.26
-            let amber = Palette.amberUI
+            let s = side / 100
+            let lineWidth = 4.5 * s   // matches SunMark's `lineUnits` for sizes ≥ 95
 
             // Rays.
-            c.setStrokeColor(amber.withAlphaComponent(0.9).cgColor)
-            c.setLineWidth(side * 0.035)
+            c.setStrokeColor(Palette.inkUI.cgColor)
+            c.setLineWidth(lineWidth)
             c.setLineCap(.round)
-            let rayCount = 9
-            for i in 0..<rayCount {
-                let a = (.pi) * (Double(i) / Double(rayCount - 1))   // upper semicircle
-                let inner = sunR + side * 0.08
-                let outer = sunR + side * 0.20
-                let sx = center.x - CGFloat(cos(a)) * inner
-                let sy = center.y - CGFloat(sin(a)) * inner
-                let ex = center.x - CGFloat(cos(a)) * outer
-                let ey = center.y - CGFloat(sin(a)) * outer
-                c.move(to: CGPoint(x: sx, y: sy))
-                c.addLine(to: CGPoint(x: ex, y: ey))
+            for l in rayLines {
+                c.move(to: CGPoint(x: l[0] * s, y: l[1] * s))
+                c.addLine(to: CGPoint(x: l[2] * s, y: l[3] * s))
             }
             c.strokePath()
 
-            // Sun disc with a soft gradient.
-            let disc = CGRect(x: center.x - sunR, y: center.y - sunR, width: sunR * 2, height: sunR * 2)
-            c.saveGState()
-            c.addEllipse(in: disc)
-            c.clip()
-            let colors = [amber.withAlphaComponent(1).cgColor,
-                          amber.withAlphaComponent(0.75).cgColor] as CFArray
-            if let grad = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(),
-                                     colors: colors, locations: [0, 1]) {
-                c.drawLinearGradient(grad,
-                                     start: CGPoint(x: center.x, y: center.y - sunR),
-                                     end: CGPoint(x: center.x, y: center.y + sunR),
-                                     options: [])
-            }
-            c.restoreGState()
-
-            // Horizon line.
-            c.setStrokeColor(Palette.inkSoftUI.withAlphaComponent(0.5).cgColor)
-            c.setLineWidth(side * 0.03)
-            c.move(to: CGPoint(x: side * 0.16, y: center.y + sunR * 0.7))
-            c.addLine(to: CGPoint(x: side * 0.84, y: center.y + sunR * 0.7))
-            c.strokePath()
+            // Disc — gold fill, black ink outline.
+            let disc = CGRect(x: 30 * s, y: 30 * s, width: 40 * s, height: 40 * s)
+            c.setFillColor(Palette.sunDiscUI.cgColor)
+            c.fillEllipse(in: disc)
+            c.setStrokeColor(Palette.inkUI.cgColor)
+            c.setLineWidth(lineWidth)
+            c.strokeEllipse(in: disc)
         }
     }
 }
