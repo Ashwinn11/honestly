@@ -29,7 +29,7 @@ struct EntryRow<Trailing: View>: View {
     }
 }
 
-/// The gratitude-count flourish on the right of a page card — a small gold sun disc + the count.
+/// The affirmation-count flourish on the right of a page card — a small gold sun disc + the count.
 struct EntryScore: View {
     let count: Int
     var body: some View {

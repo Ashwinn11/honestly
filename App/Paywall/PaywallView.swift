@@ -13,7 +13,7 @@ struct PaywallView: View {
     @State private var legal: LegalDoc? = nil
 
     private let benefits = [
-        "Every mood prompt, personalized to you",
+        "Your own affirmations, echoed back when you need them",
         "Your apps, quieted till you write",
         "Streaks, full history & cloud backup",
     ]

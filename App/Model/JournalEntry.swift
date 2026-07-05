@@ -14,10 +14,6 @@ final class JournalEntry {
     var createdAt: Date = Date()
     var id: UUID = UUID()
 
-    /// The daily prompt has no column in production — kept in memory only (shown on the just-written
-    /// entry; not persisted or synced), so the model stays a byte-for-byte match to the old store.
-    @Transient var promptText: String = ""
-
     init(content: String, gratitude: String, mood: String, wordCount: Int,
          createdAt: Date = Date(), id: UUID = UUID()) {
         self.content = content
@@ -30,7 +26,6 @@ final class JournalEntry {
 
     // MARK: - UI bridges (keep the screens reading the same shape)
     var journal: String { content }
-    var prompt: String { promptText }
     var date: Date { createdAt }
     var dayKey: String { SharedState.dayKey(for: createdAt) }
     var moodValue: Mood { Mood(stored: mood) }

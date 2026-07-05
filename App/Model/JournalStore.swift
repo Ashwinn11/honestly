@@ -120,7 +120,7 @@ final class JournalStore {
 
     /// Create or update today's page, then sync completion out to the app group + shield.
     @discardableResult
-    func saveRitual(mood: Int, journal: String, gratitudes: [String], prompt: String) -> JournalEntry {
+    func saveRitual(mood: Int, journal: String, gratitudes: [String]) -> JournalEntry {
         let face = Mood(rawValue: mood) ?? .sad
         let trimmed = journal.trimmingCharacters(in: .whitespacesAndNewlines)
         let content = trimmed.isEmpty ? AppContent.emptyJournalFallback : trimmed
@@ -138,7 +138,6 @@ final class JournalStore {
         entry.gratitude = grat
         entry.mood = face.storageKey
         entry.wordCount = JournalEntry.wordCount(of: content)
-        entry.promptText = prompt      // in-memory only (no production column for the prompt)
 
         try? context.save()
         reload()
@@ -166,7 +165,7 @@ final class JournalStore {
         SharedState.onboardingGoal = ""
         SharedState.scrollMinutes = 0
         SharedState.weeklyGoal = 5
-        MorningNudge.cancel()
+        AffirmationNudge.cancel()
         Shielding.clear()
     }
 

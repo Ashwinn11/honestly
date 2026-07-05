@@ -3,9 +3,14 @@ import SwiftUI
 struct HistoryView: View {
     @Environment(JournalStore.self) private var store
     @State private var filter: Int? = nil          // nil = All
+    @State private var query = ""
 
     private var filtered: [JournalEntry] {
-        store.entries.filter { filter == nil || $0.moodRaw == filter }
+        let q = query.trimmingCharacters(in: .whitespaces)
+        return store.entries.filter { entry in
+            (filter == nil || entry.moodRaw == filter) &&
+            (q.isEmpty || entry.content.localizedCaseInsensitiveContains(q))
+        }
     }
 
     private var groups: [(label: String, items: [JournalEntry])] {
@@ -23,7 +28,8 @@ struct HistoryView: View {
         ScreenScaffold {
             VStack(alignment: .leading, spacing: 0) {
                 titleBlock
-                filterChips.padding(.top, 16)
+                searchField.padding(.top, 16)
+                filterChips.padding(.top, 12)
                 if filtered.isEmpty {
                     emptyState.padding(.top, 80)
                 } else {
@@ -31,6 +37,25 @@ struct HistoryView: View {
                 }
             }
         }
+    }
+
+    private var searchField: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 14, weight: .semibold)).foregroundStyle(Palette.inkSofter)
+            TextField(LocalizedStringKey("Search your pages…"), text: $query)
+                .font(Fonts.ui(14.5, .semibold)).foregroundStyle(Palette.ink)
+            if !query.isEmpty {
+                Button { query = "" } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .font(.system(size: 14)).foregroundStyle(Palette.inkSofter)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(EdgeInsets(top: 11, leading: 14, bottom: 11, trailing: 14))
+        .background(Palette.cream, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(Palette.outlineSoft, lineWidth: 1.5))
     }
 
     private var titleBlock: some View {
@@ -97,11 +122,9 @@ struct HistoryView: View {
                 SunMark(size: 58).floaty(period: 5)
             }
             VStack(spacing: 7) {
-                Text(filter == nil ? "No pages yet" : "None with this mood")
+                Text(emptyTitle)
                     .font(Fonts.display(21, .bold)).foregroundStyle(Palette.ink)
-                Text(filter == nil
-                     ? "Write your first morning page —\nit'll gather here."
-                     : "Try another mood, or write today's page.")
+                Text(emptyBody)
                     .font(Fonts.ui(14, .semibold)).foregroundStyle(Palette.inkSofter)
                     .multilineTextAlignment(.center).lineSpacing(2)
             }
@@ -114,5 +137,16 @@ struct HistoryView: View {
     private func toggle(_ value: Int?) {
         Haptics.select()
         withAnimation(Motion.snappy) { filter = (filter == value) ? nil : value }
+    }
+
+    private var emptyTitle: String {
+        if !query.trimmingCharacters(in: .whitespaces).isEmpty { return "No matches" }
+        return filter == nil ? "No pages yet" : "None with this mood"
+    }
+    private var emptyBody: String {
+        if !query.trimmingCharacters(in: .whitespaces).isEmpty { return "Try a different word or two." }
+        return filter == nil
+            ? "Write your first morning page —\nit'll gather here."
+            : "Try another mood, or write today's page."
     }
 }

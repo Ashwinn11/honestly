@@ -7,7 +7,7 @@ struct ProfileView: View {
     @Environment(\.openURL) private var openURL
     @Environment(\.requestReview) private var requestReview
 
-    @AppStorage("morningNudgeOn", store: SharedState.defaults) private var nudgeOn = true
+    @AppStorage("affirmationNudgeOn", store: SharedState.defaults) private var affirmNudgeOn = true
     @State private var showPicker = false
     @State private var confirmDelete = false
     @State private var showICloud = false
@@ -73,9 +73,9 @@ struct ProfileView: View {
         } message: { Text(cloudMessage ?? "") }
         .overlay { if cloudBusy { ProgressView().controlSize(.large).tint(Palette.amber)
             .frame(maxWidth: .infinity, maxHeight: .infinity).background(.black.opacity(0.06)) } }
-        .onChange(of: nudgeOn) { _, on in
-            if on { Task { if await MorningNudge.requestAuthorization() { MorningNudge.schedule() } } }
-            else { MorningNudge.cancel() }
+        .onChange(of: affirmNudgeOn) { _, on in
+            if on { Task { await AffirmationNudge.requestAuthorization() } }
+            else { AffirmationNudge.cancel() }
         }
     }
 
@@ -117,9 +117,9 @@ struct ProfileView: View {
     private var settingsCard: some View {
         VStack(spacing: 0) {
             settingRow {
-                rowText("Morning nudge", "One gentle notification at 6:45 AM")
+                rowText("Affirmation reminders", "An occasional nudge with something you wrote")
             } trailing: {
-                AmberToggle(isOn: $nudgeOn)
+                AmberToggle(isOn: $affirmNudgeOn)
             }
             divider
             settingRow {

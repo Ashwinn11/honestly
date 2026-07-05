@@ -7,21 +7,18 @@ struct RitualView: View {
     @State private var step = 0
     @State private var mood: Int? = nil
     @State private var journal = ""
-    @State private var gratitudes = ["", "", "", "", ""]
-    @State private var promptIdx = 0
+    @State private var affirmations = ["", "", "", "", ""]
     @FocusState private var journalFocused: Bool
 
-    private var moodPrompts: [String] { AppContent.prompts(for: mood ?? 2) }
-    private var prompt: String { let p = moodPrompts; return p[promptIdx % p.count] }
     private var wordCount: Int {
         journal.split(whereSeparator: { $0.isWhitespace || $0.isNewline }).count
     }
-    private var gratCount: Int { gratitudes.filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }.count }
+    private var affirmCount: Int { affirmations.filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }.count }
 
     var body: some View {
         if step == 3 {
             CelebrationView(mood: mood ?? 2, streak: store.streak,
-                            words: wordCount, grats: gratCount, onStart: onClose)
+                            words: wordCount, affirmCount: affirmCount, onStart: onClose)
         } else {
             VStack(spacing: 0) {
                 header.capWidth(Metrics.maxContentWidth)
@@ -64,7 +61,7 @@ struct RitualView: View {
         switch step {
         case 0: moodBody
         case 1: journalBody
-        default: gratitudeBody
+        default: affirmationBody
         }
     }
 
@@ -74,7 +71,6 @@ struct RitualView: View {
         case 0:
             PrimaryButton(title: mood != nil ? "That's my morning" : "Tap how you feel",
                           enabled: mood != nil) {
-                promptIdx = Int.random(in: 0..<moodPrompts.count)
                 withAnimation(Motion.gentle) { step = 1 }
             }
         case 1:
@@ -84,8 +80,8 @@ struct RitualView: View {
                 withAnimation(Motion.gentle) { step = 2 }
             }
         default:
-            PrimaryButton(title: gratCount >= 1 ? "Unlock my morning" : "Add at least one",
-                          enabled: gratCount >= 1) { finish() }
+            PrimaryButton(title: affirmCount >= 1 ? "Unlock my morning" : "Say at least one",
+                          enabled: affirmCount >= 1) { finish() }
         }
     }
 
@@ -129,24 +125,13 @@ struct RitualView: View {
     // MARK: Step 1 — journal
     private var journalBody: some View {
         VStack(alignment: .leading, spacing: 0) {
-            HStack(alignment: .top, spacing: 12) {
-                VStack(alignment: .leading, spacing: 5) {
-                    Eyebrow(text: "Today's prompt", color: Palette.amberDeep, tracking: 1.3, size: 11)
-                    Text(loc: prompt).font(Fonts.display(21, .semibold)).foregroundStyle(Palette.ink)
-                        .lineSpacing(3).fixedSize(horizontal: false, vertical: true)
-                        .contentTransition(.opacity)
-                }
-                Spacer(minLength: 0)
-                IconTileButton(icon: "arrow.triangle.2.circlepath", size: 40, iconSize: 16,
-                               iconColor: Palette.amberDeep, fill: Palette.iconTile) {
-                    withAnimation(Motion.snappy) { promptIdx += 1 }
-                }
-            }
-            .padding(.top, 6)
+            Text("Empty your head").font(Fonts.display(29, .bold)).foregroundStyle(Palette.ink)
+            Text("No prompts, no rules. Just write.")
+                .font(Fonts.ui(15, .semibold)).foregroundStyle(Palette.inkSoft).padding(.top, 7)
 
             RuledTextEditor(text: $journal, placeholder: AppContent.journalPlaceholder)
                 .focused($journalFocused)
-                .padding(.top, 14)
+                .padding(.top, 20)
 
             (wordCount == 0 ? Text("This page is just for you.") : Text("\(wordCount) words — nice"))
                 .font(Fonts.ui(12.5, .semibold)).foregroundStyle(Palette.inkSofter)
@@ -155,27 +140,27 @@ struct RitualView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    // MARK: Step 2 — gratitude
-    private var gratitudeBody: some View {
+    // MARK: Step 2 — affirmations
+    private var affirmationBody: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text("Five small good things").font(Fonts.display(29, .bold)).foregroundStyle(Palette.ink)
-            Text("The tinier and truer, the better.")
+            Text("Affirm yourself").font(Fonts.display(29, .bold)).foregroundStyle(Palette.ink)
+            Text("Say it like you already believe it.")
                 .font(Fonts.ui(15, .semibold)).foregroundStyle(Palette.inkSoft).padding(.top, 7)
             VStack(spacing: 10) {
-                ForEach(0..<5, id: \.self) { i in gratitudeRow(i) }
+                ForEach(0..<5, id: \.self) { i in affirmationRow(i) }
             }
             .padding(.top, 22)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
-    private func gratitudeRow(_ i: Int) -> some View {
-        let lit = !gratitudes[i].trimmingCharacters(in: .whitespaces).isEmpty
+    private func affirmationRow(_ i: Int) -> some View {
+        let lit = !affirmations[i].trimmingCharacters(in: .whitespaces).isEmpty
         return HStack(spacing: 12) {
             SunMark(size: 26, muted: !lit)
                 .scaleEffect(lit ? 1.08 : 1)
                 .animation(Motion.pop, value: lit)
-            TextField(LocalizedStringKey(AppContent.gratitudePlaceholder(i)), text: $gratitudes[i])
+            TextField(LocalizedStringKey(AppContent.affirmationPlaceholder(i)), text: $affirmations[i])
                 .font(Fonts.ui(15, .semibold)).foregroundStyle(Palette.ink)
                 .submitLabel(.next)
         }
@@ -187,9 +172,10 @@ struct RitualView: View {
 
     // MARK: Finish
     private func finish() {
-        store.saveRitual(mood: mood ?? 2, journal: journal, gratitudes: gratitudes, prompt: prompt)
+        store.saveRitual(mood: mood ?? 2, journal: journal, gratitudes: affirmations)
         Haptics.success()
         withAnimation(Motion.gentle) { step = 3 }
+        AffirmationNudge.scheduleNext(from: store.entries.flatMap(\.gratitudes))
     }
 }
 
@@ -233,7 +219,7 @@ private struct CelebrationView: View {
     let mood: Int
     let streak: Int
     let words: Int
-    let grats: Int
+    let affirmCount: Int
     var onStart: () -> Void
 
     @Environment(\.requestReview) private var requestReview
@@ -278,7 +264,7 @@ private struct CelebrationView: View {
                 .padding(.top, 22)
                 .popIn(delay: 0.35)
 
-                Text("Mood: \(Text(loc: Mood(rawValue: mood)?.label ?? "Sad"))  ·  \(words) words  ·  \(grats) gratitudes")
+                Text("Mood: \(Text(loc: Mood(rawValue: mood)?.label ?? "Sad"))  ·  \(words) words  ·  \(affirmCount) affirmations")
                     .font(Fonts.ui(12.5, .bold)).foregroundStyle(.white.opacity(0.9))
                     .padding(.top, 18)
 

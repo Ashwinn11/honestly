@@ -12,7 +12,7 @@ struct OnboardingView: View {
     @State private var showPicker = false
 
     private enum Beat: Int, CaseIterable {
-        case brand, problem, goal, scroll, pain, apps, commitment, building, plan, ritual, social, notif, paywall
+        case brand, problem, goal, scroll, pain, apps, commitment, affirm, building, plan, ritual, social, notif, paywall
     }
     private let beats = Beat.allCases
     private var beat: Beat { beats[index] }
@@ -113,6 +113,11 @@ struct OnboardingView: View {
                         }
                     }
                 }
+            }
+
+        case .affirm:
+            chrome(primary: .init(title: "Continue") { advance() }) {
+                narrative(.grat, title: AppContent.onbAffirmTitle, body: AppContent.onbAffirmBody)
             }
 
         case .building:
@@ -342,7 +347,7 @@ struct OnboardingView: View {
 
     private func requestNotifications() {
         Task {
-            if await MorningNudge.requestAuthorization() { MorningNudge.schedule() }
+            await AffirmationNudge.requestAuthorization()
             advance()
         }
     }
@@ -521,7 +526,7 @@ private struct OnbPlanView: View {
 
             VStack(spacing: 14) {
                 planRow(SunMark(size: 20), "The ritual",
-                        "Mood → a 2-minute write → 5 gratitudes  ·  ~3 min")
+                        "Mood → a 2-minute write → a few affirmations  ·  ~3 min")
                 planRow(InkGlyph(kind: .moon, size: 20, fill: Palette.sunDisc, lineWidth: 1.6), "The quiet",
                         "Instagram, TikTok & X stay asleep until you've written")
                 planRow(InkGlyph(kind: .flame, size: 19, fill: Palette.sunDisc, lineWidth: 1.6), "The goal",
@@ -824,7 +829,7 @@ private struct OnbIllustration: View {
                     Spacer()
                     Text("now").font(Fonts.ui(12, .semibold)).foregroundStyle(Palette.inkSofter)
                 }
-                Text("Good morning. Your page is waiting — the world can hold on a minute.")
+                Text("I am capable of hard things.")
                     .font(Fonts.ui(13.5, .semibold)).foregroundStyle(Color(hex: "5A4A38"))
                     .lineSpacing(2).fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, alignment: .leading)

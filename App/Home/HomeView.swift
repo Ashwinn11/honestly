@@ -11,7 +11,7 @@ struct HomeView: View {
                 header
                 todayCard.padding(.top, 4)
                 streakCard.padding(.top, 16)
-                recentSection.padding(.top, 24)
+                affirmationSection.padding(.top, 24)
             }
         }
     }
@@ -162,43 +162,37 @@ struct HomeView: View {
     }
 
 
-    // MARK: Recent pages
-    private var recentSection: some View {
+    // MARK: Today's affirmations
+    @ViewBuilder private var affirmationSection: some View {
         VStack(alignment: .leading, spacing: 0) {
-            HStack {
-                Text("Recent pages").font(Fonts.display(21, .bold)).foregroundStyle(Palette.ink)
-                    .fixedSize()
-                    .underlineSquiggle(Palette.sunDisc, weight: 3.5, height: 8)
-                Spacer()
-                if !store.entries.isEmpty {
-                    Button("All") { flow.go(to: .history) }
-                        .font(Fonts.ui(13.5, .heavy)).foregroundStyle(Palette.amberDeep)
-                }
-            }
-            .padding(.bottom, 13)
+            Text("Today's affirmations").font(Fonts.display(21, .bold)).foregroundStyle(Palette.ink)
+                .fixedSize()
+                .underlineSquiggle(Palette.sunDisc, weight: 3.5, height: 8)
+                .padding(.bottom, 13)
 
-            if store.recent.isEmpty {
-                emptyRecent
-            } else {
-                ForEach(Array(store.recent.enumerated()), id: \.element.dayKey) { i, e in
-                    NavigationLink(value: e.dayKey) {
-                        EntryRow(entry: e) { EntryScore(count: e.gratitudeCount) }
+            if let today = store.todayEntry, !today.gratitudes.isEmpty {
+                VStack(spacing: 10) {
+                    ForEach(Array(today.gratitudes.enumerated()), id: \.offset) { i, line in
+                        HStack(spacing: 12) {
+                            SunMark(size: 22, rays: false)
+                            Text(line).font(Fonts.ui(14.5, .semibold)).foregroundStyle(Palette.ink)
+                            Spacer(minLength: 0)
+                        }
+                        .padding(EdgeInsets(top: 11, leading: 14, bottom: 11, trailing: 14))
+                        .background(Palette.cream, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(Palette.outlineSoft, lineWidth: 1.5))
+                        .staggeredAppear(index: i + 2)
                     }
-                    .buttonStyle(PressableStyle(scale: 0.98))
-                    .contextMenu {
-                        Button(role: .destructive) {
-                            withAnimation(Motion.snappy) { store.delete(e) }
-                        } label: { Label("Delete page", systemImage: "trash") }
-                    }
-                    .staggeredAppear(index: i + 2)
                 }
+            } else {
+                emptyAffirmations
             }
         }
     }
-    private var emptyRecent: some View {
+    private var emptyAffirmations: some View {
         VStack(spacing: 8) {
             SunMark(size: 34, muted: true)
-            Text("Your pages will gather here.\nWrite your first one this morning.")
+            Text("Your affirmations will land here\nonce you've written this morning.")
                 .font(Fonts.ui(13.5, .semibold)).foregroundStyle(Palette.inkSofter)
                 .multilineTextAlignment(.center).lineSpacing(2)
         }

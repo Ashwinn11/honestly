@@ -1,11 +1,11 @@
 import SwiftUI
 
 /// The sunrise mark, in the "Hand-drawn Warmth" style: eight **black ink rays** around a **gold disc
-/// with a black outline**. Parametric so it serves as the brand glyph, the gratitude sun, the
+/// with a black outline**. Parametric so it serves as the brand glyph, the affirmation sun, the
 /// notification icon and the streak/score flourish.
 ///
 /// - `rays` / `disc`: toggle either element (celebration halo = rays only; entry-row score = disc only).
-/// - `muted`: the faint empty-gratitude state — grey rays + hollow grey ring, no fill.
+/// - `muted`: the faint empty-affirmation state — grey rays + hollow grey ring, no fill.
 struct SunMark: View {
     var size: CGFloat = 28
     var rays: Bool = true

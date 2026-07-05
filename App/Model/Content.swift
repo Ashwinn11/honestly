@@ -2,87 +2,14 @@ import Foundation
 
 enum AppContent {
 
-    // MARK: Ritual prompts — a distinct pool per mood (index 0…4) so writing never feels repetitive.
-    static func prompts(for mood: Int) -> [String] {
-        let i = min(max(mood, 0), 4)
-        return promptsByMood[i]
-    }
-
-    static let promptsByMood: [[String]] = [
-        [
-            "What's making this morning feel good?",
-            "What do I want to carry into the rest of today?",
-            "What's one thing I'm genuinely looking forward to?",
-            "Who would I love to share this feeling with?",
-            "What went right lately that I haven't fully savored?",
-            "What does my best version of today look like?",
-            "What's a small win I can build on?",
-            "What am I grateful for right now, honestly?",
-            "How can I protect this good mood today?",
-            "What am I quietly proud of lately?",
-        ],
-        [
-            "What am I trying to figure out?",
-            "What feels unclear right now — and why?",
-            "If I already knew the answer, what would it be?",
-            "What decision am I avoiding?",
-            "What question is really underneath this one?",
-            "What do I actually want, before I talk myself out of it?",
-            "What would make today feel a little clearer?",
-            "What am I overthinking?",
-            "Whose opinion am I letting cloud my own?",
-            "What's one small thing I can decide today?",
-        ],
-        [
-            "What's weighing on me this morning?",
-            "What do I need to hear right now?",
-            "Where do I feel this sadness in my body?",
-            "What would I say to a friend who felt like this?",
-            "What's one small kindness I can give myself today?",
-            "What am I grieving, even quietly?",
-            "What would 'gentle' look like for me today?",
-            "What do I wish someone understood?",
-            "What's still okay, even now?",
-            "What can I let myself feel without trying to fix it?",
-        ],
-        [
-            "What's making today feel like too much?",
-            "What's the one thing I truly have to do — and what can wait?",
-            "What do I need just to get through the next hour?",
-            "What am I carrying that isn't mine to carry?",
-            "Where can I lower the bar today?",
-            "What would help, even 1%?",
-            "Who could I ask for help?",
-            "What's the kindest thing I could do for myself right now?",
-            "What do I want to let go of before the day starts?",
-            "If today is just about getting through, what does that look like?",
-        ],
-        [
-            "What do I need to let out this morning?",
-            "What's really hurting right now?",
-            "What have I been holding in?",
-            "What would it feel like to be fully honest here?",
-            "Who or what do I miss?",
-            "What do I need to forgive myself for?",
-            "What's the truest thing I can write right now?",
-            "What would actually comfort me today?",
-            "What am I not saying out loud?",
-            "What do I need to grieve before I can move?",
-        ],
-    ]
-
     // MARK: Journal
     static let journalPlaceholder = "Start anywhere. No one reads this but you."
     static let emptyJournalFallback = "Left the page quiet today — and that counts too."
 
-    static func journalHint(wordCount: Int) -> String {
-        wordCount == 0 ? "This page is just for you."
-            : "\(wordCount) " + (wordCount == 1 ? "word — keep going" : "words — nice")
-    }
-
-    // MARK: Gratitude
-    static func gratitudePlaceholder(_ index: Int) -> String {
-        index == 0 ? "the first thing that comes to mind…" : "one more small thing…"
+    // MARK: Affirmations — five short starters so each line becomes its own affirmation.
+    private static let affirmationStarters = ["I am…", "I can…", "I choose…", "I deserve…", "Today, I…"]
+    static func affirmationPlaceholder(_ index: Int) -> String {
+        affirmationStarters[index % affirmationStarters.count]
     }
 
     // MARK: - Onboarding funnel
@@ -122,18 +49,22 @@ enum AppContent {
 
     // MARK: The three-step ritual (taught in one screen, condensing the old moods/write/grat slides)
     static let ritualSteps: [RitualStep] = [
-        .init(kind: .moods, title: "Name the mood",  body: "Tap a face. No wrong answers at 6am."),
-        .init(kind: .write, title: "Empty your head", body: "A couple of minutes. Worries, plans, nonsense — let it spill."),
-        .init(kind: .grat,  title: "Five small goods", body: "Finish on gratitude. It's a muscle you'll build daily."),
+        .init(kind: .moods, title: "Name the mood",   body: "Tap a face. No wrong answers at 6am."),
+        .init(kind: .write, title: "Empty your head", body: "No prompts, no rules. Worries, plans, nonsense — let it spill."),
+        .init(kind: .grat,  title: "Affirm yourself", body: "Finish with a few honest affirmations. Say them like you already believe them."),
     ]
 
     // MARK: The "building your plan" ticks
     static let buildingTitle = "Designing your morning ritual…"
-    static let buildingTicks = ["Quieting your apps", "Choosing your prompts", "Setting your streak goal"]
+    static let buildingTicks = ["Quieting your apps", "Setting up your ritual", "Setting your streak goal"]
+
+    // MARK: Why affirmations (onboarding reassurance screen, right after the ritual is taught)
+    static let onbAffirmTitle = "Say it. Mean it."
+    static let onbAffirmBody  = "Affirmations aren't about pretending. They're about reminding yourself what's actually true — especially on mornings it's hard to feel it."
 
     // MARK: Notification nudge
-    static let notifTitle = "One gentle nudge each morning?"
-    static let notifBody  = "No badges, no bait — just a nudge to meet yourself before the day does."
+    static let notifTitle = "Hear your own words back?"
+    static let notifBody  = "Once in a while, we'll send you an affirmation you wrote yourself — nothing else, just a reminder from you, to you."
 
     // MARK: Reclaimed-time math (honest, derived from the user's own answers)
 

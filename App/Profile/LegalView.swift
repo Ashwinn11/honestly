@@ -10,7 +10,7 @@ enum LegalDoc: Identifiable {
 
     static let privacySections: [(heading: String, body: String)] = [
         ("The short version",
-         "Honestly is built to be private. Your morning pages — your moods, your writing, your gratitudes — belong to you. We don't sell them, mine them, or read them. There are no third-party trackers or advertising SDKs in this app."),
+         "Honestly is built to be private. Your morning pages — your moods, your writing, your affirmations — belong to you. We don't sell them, mine them, or read them. There are no third-party trackers or advertising SDKs in this app."),
         ("What stays on your device",
          "Everything you write is stored locally on your iPhone. If you have iCloud enabled, your pages are backed up to your own private iCloud account (Apple's CloudKit) so they follow you between devices. We never receive a copy on our servers — your iCloud data is encrypted and accessible only to you."),
         ("Screen Time",
@@ -18,7 +18,7 @@ enum LegalDoc: Identifiable {
         ("Purchases",
          "Honestly Premium is a one-time purchase processed by Apple. We use RevenueCat to verify your purchase and unlock premium features. This involves an anonymous purchase identifier only — no name, email, or contact information is required or collected."),
         ("Notifications",
-         "If you turn on the morning nudge, a single local notification is scheduled on your device. It is generated on-device and is not sent through any server."),
+         "If you turn on affirmation reminders, a single local notification quoting one of your own past affirmations is scheduled on your device. It is generated on-device and is not sent through any server."),
         ("What we don't do",
          "We do not collect analytics, we do not fingerprint your device, we do not build a profile of you, and we do not share anything with advertisers. There is nothing to opt out of because there is nothing being gathered."),
         ("Your control",
@@ -35,7 +35,7 @@ enum LegalDoc: Identifiable {
         ("Honestly Premium",
          "Honestly Premium is a one-time purchase that unlocks your full history and additional features for the lifetime of the app on your Apple account. Purchases are handled and billed by Apple under Apple's terms. Refunds are managed by Apple through the App Store."),
         ("Your content",
-         "Your pages are yours. You retain all rights to everything you write. We claim no ownership and take no license over your journal entries, moods, or gratitudes."),
+         "Your pages are yours. You retain all rights to everything you write. We claim no ownership and take no license over your journal entries, moods, or affirmations."),
         ("Acceptable use",
          "Use Honestly for your own reflection. Don't use it to break the law, and don't attempt to disrupt, probe, or misuse the app or the Screen Time features it relies on."),
         ("Screen Time & blocking",

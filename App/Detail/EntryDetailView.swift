@@ -27,7 +27,7 @@ struct EntryDetailView: View {
     }
 
     private func header(_ entry: JournalEntry) -> some View {
-        let grats = entry.gratitudes.count
+        let affirmCount = entry.gratitudes.count
         return ZStack(alignment: .topTrailing) {
             SoftGlow(color: Palette.sunDisc, opacity: 0.16, size: 220)
                 .offset(x: 70, y: -40)
@@ -47,7 +47,7 @@ struct EntryDetailView: View {
                     VStack(alignment: .leading, spacing: 4) {
                         Text("\(HDate.weekdayFull(entry.date)), \(HDate.monthDay(entry.date))")
                             .font(Fonts.display(26, .bold)).foregroundStyle(Palette.ink)
-                        Text("\(Text(loc: entry.moodValue.label)) · \(grats) gratitudes")
+                        Text("\(Text(loc: entry.moodValue.label)) · \(affirmCount) affirmations")
                             .textCase(.uppercase)
                             .font(Fonts.ui(10.5, .heavy)).tracking(1.4).foregroundStyle(Palette.inkSofter)
                     }
@@ -64,14 +64,6 @@ struct EntryDetailView: View {
 
     private func body(_ entry: JournalEntry) -> some View {
         VStack(alignment: .leading, spacing: 0) {
-            if !entry.prompt.isEmpty {
-                Eyebrow(text: "Today's prompt", color: Palette.amberDeep, tracking: 1.3, size: 11)
-                    .padding(.bottom, 5)
-                Text(loc: entry.prompt)
-                    .font(Fonts.display(19, .semibold)).foregroundStyle(Palette.inkSoft)
-                    .lineSpacing(4).padding(.bottom, 16)
-            }
-
             RuledPaper {
                 Text(entry.journal)
                     .font(Fonts.ui(16, .semibold)).foregroundStyle(Palette.ink)
@@ -82,7 +74,7 @@ struct EntryDetailView: View {
             .padding(.bottom, 24)
 
             if !entry.gratitudes.isEmpty {
-                Text("Grateful for")
+                Text("Today's affirmations")
                     .font(Fonts.display(20, .bold)).foregroundStyle(Palette.ink)
                     .fixedSize()
                     .underlineSquiggle(Palette.sunDisc, weight: 3.5, height: 8)
@@ -109,10 +101,9 @@ struct EntryDetailView: View {
 
     private func shareText(_ e: JournalEntry) -> String {
         var s = "\(HDate.weekdayFull(e.date)), \(HDate.monthDay(e.date)) — \(e.moodValue.label)\n\n"
-        if !e.prompt.isEmpty { s += "\(e.prompt)\n" }
         s += e.journal
         if !e.gratitudes.isEmpty {
-            s += "\n\nGrateful for:\n" + e.gratitudes.map { "• \($0)" }.joined(separator: "\n")
+            s += "\n\nToday's affirmations:\n" + e.gratitudes.map { "• \($0)" }.joined(separator: "\n")
         }
         return s
     }
