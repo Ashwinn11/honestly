@@ -182,37 +182,19 @@ struct HomeView: View {
             if let today = store.todayEntry, !today.gratitudes.isEmpty {
                 VStack(spacing: 10) {
                     ForEach(Array(today.gratitudes.enumerated()), id: \.offset) { i, line in
-                        affirmationRow(line, locked: !premium.isPremium && i > 0)
-                            .staggeredAppear(index: i + 2)
+                        HStack(spacing: 12) {
+                            SunMark(size: 22, rays: false)
+                            Text(line).font(Fonts.ui(14.5, .semibold)).foregroundStyle(Palette.ink)
+                            Spacer(minLength: 0)
+                        }
+                        .padding(EdgeInsets(top: 11, leading: 14, bottom: 11, trailing: 14))
+                        .background(Palette.cream, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(Palette.outlineSoft, lineWidth: 1.5))
+                        .staggeredAppear(index: i + 2)
                     }
                 }
             } else {
                 emptyAffirmations
-            }
-        }
-    }
-
-    private func affirmationRow(_ line: String, locked: Bool) -> some View {
-        let row = HStack(spacing: 12) {
-            SunMark(size: 22, rays: false)
-            Text(line).font(Fonts.ui(14.5, .semibold)).foregroundStyle(Palette.ink)
-                .lineLimit(1)
-                .blur(radius: locked ? 5 : 0)
-            Spacer(minLength: 0)
-            if locked {
-                Image(systemName: "lock.fill").font(.system(size: 10, weight: .bold))
-                    .foregroundStyle(Palette.inkSofter)
-            }
-        }
-        .padding(EdgeInsets(top: 11, leading: 14, bottom: 11, trailing: 14))
-        .background(Palette.cream, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(Palette.outlineSoft, lineWidth: 1.5))
-
-        return Group {
-            if locked {
-                Button { flow.showPaywall() } label: { row }.buttonStyle(PressableStyle(scale: 0.98))
-            } else {
-                row
             }
         }
     }

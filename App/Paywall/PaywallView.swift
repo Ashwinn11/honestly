@@ -41,8 +41,8 @@ struct PaywallView: View {
                 }
                 footer
             }
-            .capWidth(Metrics.maxContentWidth)
             .overlay(alignment: .topTrailing) { closeButton }
+            .capWidth(Metrics.maxContentWidth)
         }
         .alert("No purchase found", isPresented: $showRestoreAlert) {
             Button("OK", role: .cancel) {}

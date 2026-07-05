@@ -3,6 +3,8 @@ import SwiftUI
 struct RitualView: View {
     var onClose: () -> Void
     @Environment(JournalStore.self) private var store
+    @Environment(PremiumManager.self) private var premium
+    @Environment(AppFlow.self) private var flow
 
     @State private var step = 0
     @State private var mood: Int? = nil
@@ -16,30 +18,40 @@ struct RitualView: View {
     private var affirmCount: Int { affirmations.filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }.count }
 
     var body: some View {
-        if step == 3 {
-            CelebrationView(mood: mood ?? 2, streak: store.streak,
-                            words: wordCount, affirmCount: affirmCount, onStart: onClose)
-        } else {
-            VStack(spacing: 0) {
-                header.capWidth(Metrics.maxContentWidth)
-                ScrollView {
-                    stepBody
-                        .padding(.horizontal, 22)
-                        .padding(.top, 6)
-                        .padding(.bottom, 8)
-                        .capWidth(Metrics.maxContentWidth)   // centered column; PaperBackground stays full
+        @Bindable var flow = flow
+        Group {
+            if step == 3 {
+                CelebrationView(mood: mood ?? 2, streak: store.streak,
+                                words: wordCount, affirmCount: affirmCount, onStart: onClose)
+            } else {
+                VStack(spacing: 0) {
+                    header.capWidth(Metrics.maxContentWidth)
+                    ScrollView {
+                        stepBody
+                            .padding(.horizontal, 22)
+                            .padding(.top, 6)
+                            .padding(.bottom, 8)
+                            .capWidth(Metrics.maxContentWidth)   // centered column; PaperBackground stays full
+                    }
+                    .scrollDismissesKeyboard(.interactively)
                 }
-                .scrollDismissesKeyboard(.interactively)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                .background(PaperBackground())
+                .safeAreaInset(edge: .bottom) {
+                    footer
+                        .padding(.horizontal, 22)
+                        .padding(.top, 8)
+                        .padding(.bottom, 14)
+                        .background(Palette.paper)
+                }
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-            .background(PaperBackground())
-            .safeAreaInset(edge: .bottom) {
-                footer
-                    .padding(.horizontal, 22)
-                    .padding(.top, 8)
-                    .padding(.bottom, 14)
-                    .background(Palette.paper)
-            }
+        }
+        // RitualView is itself a fullScreenCover off RootView, which also owns a fullScreenCover
+        // for the paywall — presenting from the same presenter while it's already presenting Ritual
+        // silently queues until Ritual dismisses. Attaching a second copy here lets the paywall
+        // present on top of Ritual directly, so an in-progress entry isn't lost.
+        .fullScreenCover(isPresented: $flow.paywallPresented) {
+            PaywallView(onClose: { flow.paywallPresented = false })
         }
     }
 
@@ -154,20 +166,43 @@ struct RitualView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
     }
 
+    @ViewBuilder
     private func affirmationRow(_ i: Int) -> some View {
-        let lit = !affirmations[i].trimmingCharacters(in: .whitespaces).isEmpty
-        return HStack(spacing: 12) {
-            SunMark(size: 26, muted: !lit)
-                .scaleEffect(lit ? 1.08 : 1)
-                .animation(Motion.pop, value: lit)
-            TextField(LocalizedStringKey(AppContent.affirmationPlaceholder(i)), text: $affirmations[i])
-                .font(Fonts.ui(15, .semibold)).foregroundStyle(Palette.ink)
-                .submitLabel(.next)
+        if i > 0 && !premium.isPremium {
+            lockedAffirmationRow
+        } else {
+            let lit = !affirmations[i].trimmingCharacters(in: .whitespaces).isEmpty
+            HStack(spacing: 12) {
+                SunMark(size: 26, muted: !lit)
+                    .scaleEffect(lit ? 1.08 : 1)
+                    .animation(Motion.pop, value: lit)
+                TextField(LocalizedStringKey(AppContent.affirmationPlaceholder(i)), text: $affirmations[i])
+                    .font(Fonts.ui(15, .semibold)).foregroundStyle(Palette.ink)
+                    .submitLabel(.next)
+            }
+            .padding(EdgeInsets(top: 12, leading: 14, bottom: 12, trailing: 14))
+            .background(lit ? Palette.cream : .white, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(lit ? Palette.outlineSoft : Palette.ink.opacity(0.12), lineWidth: 1.5))
         }
-        .padding(EdgeInsets(top: 12, leading: 14, bottom: 12, trailing: 14))
-        .background(lit ? Palette.cream : .white, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
-            .stroke(lit ? Palette.outlineSoft : Palette.ink.opacity(0.12), lineWidth: 1.5))
+    }
+
+    private var lockedAffirmationRow: some View {
+        Button { flow.showPaywall() } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "lock.fill")
+                    .font(.system(size: 13, weight: .bold)).foregroundStyle(Palette.inkSofter)
+                    .frame(width: 26, height: 26)
+                Text(loc: "Unlock more affirmations")
+                    .font(Fonts.ui(15, .semibold)).foregroundStyle(Palette.inkSofter)
+                Spacer(minLength: 0)
+            }
+            .padding(EdgeInsets(top: 12, leading: 14, bottom: 12, trailing: 14))
+            .background(.white, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(Palette.ink.opacity(0.12), lineWidth: 1.5))
+        }
+        .buttonStyle(PressableStyle(scale: 0.98))
     }
 
     // MARK: Finish

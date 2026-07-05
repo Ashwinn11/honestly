@@ -27,7 +27,7 @@ struct PremiumUnlockCard: View {
                     .background(Palette.amber, in: Capsule())
             }
             .padding(24)
-            .frame(maxWidth: 280)
+            .frame(maxWidth: .infinity)
         }
         .buttonStyle(PressableStyle(scale: 0.97))
         .softCard(padding: 0, radius: 22, emphasized: true)

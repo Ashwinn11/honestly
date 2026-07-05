@@ -19597,6 +19597,17 @@
           }
         }
       }
+    },
+    "Unlock more affirmations" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desbloquea más afirmaciones"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"
