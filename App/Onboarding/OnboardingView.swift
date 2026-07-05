@@ -356,7 +356,6 @@ struct OnboardingView: View {
             store.saveRitual(mood: answers.demoMood ?? 2, journal: answers.demoLine,
                               gratitudes: [answers.demoAffirmation])
         }
-        AffirmationNudge.scheduleNext(from: store.entries.flatMap(\.gratitudes))
         SharedState.onboardingComplete = true
         Haptics.success()
         onFinish()

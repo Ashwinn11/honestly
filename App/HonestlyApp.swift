@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import UserNotifications
 
 @main
 struct HonestlyApp: App {
@@ -12,6 +13,7 @@ struct HonestlyApp: App {
 
     init() {
         DesignScale.configure(width: UIScreen.main.bounds.width)
+        UNUserNotificationCenter.current().delegate = AffirmationNudge.ForegroundPresenter.shared
 
         // App-group store, mirrored to the existing production CloudKit container so live users'
         // pages sync into the redesign. (`JournalEntry` maps to the deployed `CD_JournalEntry`.)
@@ -54,6 +56,12 @@ struct HonestlyApp: App {
                     SharedState.premiumActive = premium.isPremium
                     screenTime.armSchedule()
                     reconcileShield()
+                    // Covers days the ritual is never opened at all — `saveRitual` already handles
+                    // scheduling whenever it actually runs. Gated on onboarding being done so this
+                    // doesn't fire mid-onboarding, before the user has even started.
+                    if SharedState.onboardingComplete {
+                        AffirmationNudge.scheduleReminderIfNeeded(ritualDoneToday: store.ritualDoneToday)
+                    }
                 }
                 .onChange(of: premium.isPremium) { _, isPremium in
                     screenTime.isPremiumActive = isPremium

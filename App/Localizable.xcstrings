@@ -19619,6 +19619,17 @@
           }
         }
       }
+    },
+    "Write today's page — a few quiet minutes, just for you." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escribe la página de hoy — unos minutos de calma, solo para ti."
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

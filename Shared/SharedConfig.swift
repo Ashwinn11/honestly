@@ -11,7 +11,7 @@ enum AppConfig {
     static let shieldActionID      = "com.morning-journal.app.ShieldAction"
 
     // RevenueCat — replace with the real public SDK key before shipping.
-    static let revenueCatAPIKey    = "test_dKMMvIxKaUMZklmdVFugqpnknFW"
+    static let revenueCatAPIKey    = "appl_zRRSBwyTqHGTNBJtwyKyrDifAdI"
     static let entitlementID       = "premium"
     static let lifetimePackageID   = "$rc_lifetime"
     static let monthlyPackageID    = "$rc_monthly"

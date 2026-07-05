@@ -210,7 +210,6 @@ struct RitualView: View {
         store.saveRitual(mood: mood ?? 2, journal: journal, gratitudes: affirmations)
         Haptics.success()
         withAnimation(Motion.gentle) { step = 3 }
-        AffirmationNudge.scheduleNext(from: store.entries.flatMap(\.gratitudes))
     }
 }
 

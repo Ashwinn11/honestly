@@ -145,6 +145,7 @@ final class JournalStore {
         SharedState.markRitualComplete(mood: face.storageKey)
         SharedState.streak = streak
         Shielding.clear()
+        AffirmationNudge.scheduleForToday(gratitudes)
         return entry
     }
 
