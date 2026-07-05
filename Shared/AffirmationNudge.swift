@@ -1,10 +1,10 @@
 import Foundation
 import UserNotifications
 
-/// One notification per affirmation actually written today, each quoting that specific line at
-/// its own random delay — so writing 1 affirmation sends 1 notification, writing 5 sends 5. If
-/// today has none (ritual skipped, or completed with the affirmation field left blank), sends a
-/// single generic "come write today" reminder instead — fired at most once per day.
+/// One notification per affirmation actually written today, each quoting that specific line —
+/// so writing 1 affirmation sends 1 notification, writing 5 sends 5. If today has none (ritual
+/// skipped, or completed with the affirmation field left blank), sends a single generic
+/// "come write today" reminder instead — fired at most once per day.
 enum AffirmationNudge {
     private static let reminderID = "honestly.affirmation.reminder"
     private static let echoIDPrefix = "honestly.affirmation.echo."
@@ -13,6 +13,15 @@ enum AffirmationNudge {
     private static let reminderLastDayKey = "affirmationReminderLastSentDay"
 
     private static var allIDs: [String] { [reminderID] + (0..<maxEchoes).map { echoIDPrefix + "\($0)" } }
+
+    /// Fixed cadence, no randomness: slot 0 fires 2 hours out, slot 1 at 4 hours, slot 2 at 6
+    /// hours, and so on. Which affirmation lands in which slot doesn't matter, so a predictable,
+    /// evenly spaced schedule means writing just one doesn't end up waiting longer than writing
+    /// several — it's always the same +2h first step either way.
+    private static let intervalHours = 2.0
+    private static func delay(forSlot slot: Int) -> TimeInterval {
+        Double(slot + 1) * intervalHours * 3600
+    }
 
     static var isEnabled: Bool {
         let d = SharedState.defaults
@@ -37,7 +46,7 @@ enum AffirmationNudge {
             .filter { !$0.isEmpty }
 
         if lines.isEmpty {
-            sendReminder(center: center, markDay: false)
+            sendImmediateReminder(center: center)
         } else {
             for (i, line) in lines.prefix(maxEchoes).enumerated() {
                 let content = UNMutableNotificationContent()
@@ -45,34 +54,48 @@ enum AffirmationNudge {
                 content.title = String(localized: "Today's affirmation")
                 content.body = line   // the user's own words — never translated/rewritten
                 content.sound = .default
-                let seconds = TimeInterval(Int.random(in: 2 * 3600...10 * 3600))   // 2–10 hours out
+                let seconds = delay(forSlot: i)
                 let trigger = UNTimeIntervalNotificationTrigger(timeInterval: seconds, repeats: false)
                 center.add(UNNotificationRequest(identifier: echoIDPrefix + "\(i)", content: content, trigger: trigger))
             }
         }
     }
 
-    /// Call on app launch/foreground. Covers the case `scheduleForToday` never runs at all because
-    /// the user hasn't opened the ritual today — fires the generic reminder once for the day, and
-    /// only once, no matter how many times the app is opened without writing.
+    /// Call once a day from `ActivityMonitorExtension.intervalDidStart` (04:00) — runs even if the
+    /// app itself is never opened, so a day with zero app-opens still gets a reminder. Ritual can
+    /// never be done yet at 04:00, so unlike `scheduleForToday`'s relative "+2h" delay, this
+    /// schedules for a fixed later time of day instead — cancelled automatically by
+    /// `scheduleForToday` if the user does end up writing before then. Fires at most once per day.
+    private static let reminderHour = 20   // 8pm — gives the whole day to write first
     static func scheduleReminderIfNeeded(ritualDoneToday: Bool) {
         guard isEnabled, !ritualDoneToday else { return }
         let d = SharedState.defaults
         let today = SharedState.dayKey()
         guard d.string(forKey: reminderLastDayKey) != today else { return }   // already handled today
-        sendReminder(center: UNUserNotificationCenter.current(), markDay: true)
-    }
+        d.set(today, forKey: reminderLastDayKey)
 
-    private static func sendReminder(center: UNUserNotificationCenter, markDay: Bool) {
-        if markDay {
-            SharedState.defaults.set(SharedState.dayKey(), forKey: reminderLastDayKey)
-        }
         let content = UNMutableNotificationContent()
         content.title = "Honestly"   // brand name — not localized
         // Not SwiftUI here, so `Text(loc:)` doesn't apply — do the String Catalog lookup directly.
         content.body = String(localized: "Write today's page — a few quiet minutes, just for you.")
         content.sound = .default
-        let seconds = TimeInterval(Int.random(in: 2 * 3600...10 * 3600))   // 2–10 hours out
+
+        var when = DateComponents()
+        when.hour = reminderHour
+        when.minute = 0
+        let trigger = UNCalendarNotificationTrigger(dateMatching: when, repeats: false)
+        UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: reminderID, content: content, trigger: trigger))
+    }
+
+    /// Used only by `scheduleForToday`'s empty-lines case — the ritual was engaged with today (so
+    /// a relative delay from "now" makes sense here, unlike the fixed-time version above).
+    private static func sendImmediateReminder(center: UNUserNotificationCenter) {
+        let content = UNMutableNotificationContent()
+        content.title = "Honestly"   // brand name — not localized
+        // Not SwiftUI here, so `Text(loc:)` doesn't apply — do the String Catalog lookup directly.
+        content.body = String(localized: "Write today's page — a few quiet minutes, just for you.")
+        content.sound = .default
+        let seconds = delay(forSlot: 0)   // a lone reminder is always the first (and only) slot
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: seconds, repeats: false)
         center.add(UNNotificationRequest(identifier: reminderID, content: content, trigger: trigger))
     }

@@ -22,6 +22,7 @@
 		1A8B18EB4B7FBE17BD4FA9A3 /* L10n.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DF2325EADE999011118E9E6 /* L10n.swift */; };
 		233FF7AA22C5227842F2B5B1 /* EntryDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8717A2F348F65C9D2B651F8B /* EntryDetailView.swift */; };
 		250F88AFAAEC361FCF6E2546 /* PaywallView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 940F06599A1B282F70CE07C7 /* PaywallView.swift */; };
+		2980C6C65554E055E5D85E27 /* AffirmationNudge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27C935667FAFA3A76917E9A9 /* AffirmationNudge.swift */; };
 		2A79495612C3D4AEB9AF3897 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6BB1509C1A7C3B4A47C2E7F /* HomeView.swift */; };
 		2F2015B0DEC67B7C753D23F1 /* PaperBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = DDBB946391405B3F3596EA71 /* PaperBackground.swift */; };
 		2F69830582B97B939B3C3A5B /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C67B55D50159B662AEB0776 /* OnboardingView.swift */; };
@@ -56,12 +57,14 @@
 		8C2F6FD8AC1566A0F2AE3EBF /* SharedConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1195B485D82E1BF1BA2F477 /* SharedConfig.swift */; };
 		8E53286C15162C9980AE200C /* Color+Hex.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82D4B1B0AFB7A70426A5B632 /* Color+Hex.swift */; };
 		9071F6C7B274D8892B85F1C9 /* Color+Hex.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82D4B1B0AFB7A70426A5B632 /* Color+Hex.swift */; };
+		92CF6639643917CF2B095993 /* AffirmationNudge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27C935667FAFA3A76917E9A9 /* AffirmationNudge.swift */; };
 		98CBAFBE9DD3FE263F4ECAF7 /* Decor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B2811C6179A764E8940886C /* Decor.swift */; };
 		9A8DB69EDA02B9A15B24B46F /* BrandIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C1D92DDCA8F38C3B3A8C820 /* BrandIcon.swift */; };
 		9B2F983ADFC8EA8990ED94F8 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C8C56B931070B34A08E71CA0 /* Assets.xcassets */; };
 		9E347ACC403914E3EB5FFE50 /* L10n.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DF2325EADE999011118E9E6 /* L10n.swift */; };
 		9E98E2A45FC45BD9600D4C5D /* Haptics.swift in Sources */ = {isa = PBXBuildFile; fileRef = A49C0FED24781FD5206E0096 /* Haptics.swift */; };
 		9F9B69AE12C4AB1626EAFE78 /* Nunito-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = EFE4B1956ADF5CD1A7B3D0BF /* Nunito-SemiBold.ttf */; };
+		A1C78FFA27533FFEA5CAFBD2 /* AffirmationNudge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27C935667FAFA3A76917E9A9 /* AffirmationNudge.swift */; };
 		A313199AC6E8E817001A5767 /* MoodFace.swift in Sources */ = {isa = PBXBuildFile; fileRef = 537AFEF703575D2C77812527 /* MoodFace.swift */; };
 		A46589E3988855DB21C7B961 /* ShieldConfigurationExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 70B8CEB96504686736E4C105 /* ShieldConfigurationExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		B11B97621435BD4620956FC8 /* Palette.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08E1B12E8851E942BD3D9539 /* Palette.swift */; };
@@ -86,8 +89,8 @@
 		EA2D480AD7D8D35852668E86 /* Nunito-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 430F79CF9723A3D2F41D3D2C /* Nunito-Medium.ttf */; };
 		EB61FBDE11D953043FBF2E39 /* SunMark.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1595CC7F851FF4B3DCAD21F /* SunMark.swift */; };
 		EC78E429DECD7DBBC04432BA /* Content.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E1200CBC40E0E13AFC847C1 /* Content.swift */; };
+		ED272DC18F4FCA3C9F44B6DE /* AffirmationNudge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27C935667FAFA3A76917E9A9 /* AffirmationNudge.swift */; };
 		EF67FB5952C2610FDD59ABAE /* Palette.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08E1B12E8851E942BD3D9539 /* Palette.swift */; };
-		F95515D081A57B587E3F31B1 /* AffirmationNudge.swift in Sources */ = {isa = PBXBuildFile; fileRef = C79D7A6DBB1C416D131E1390 /* AffirmationNudge.swift */; };
 		FF10AC36B15F0CA3D2FC9103 /* LegalView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DBE51770A695B42BB4822C88 /* LegalView.swift */; };
 		FF5BB9EF989C7FC8A18C17FF /* BlockingCodec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 061ECF0CF39440C344FB8DE7 /* BlockingCodec.swift */; };
 		FF9200F2157724B27DCC8B7D /* JournalEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9C9DDC1B23DD34ADAB78D508 /* JournalEntry.swift */; };
@@ -145,6 +148,7 @@
 		21DF4660F2F1C1C30BE56510 /* ScreenTimeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenTimeManager.swift; sourceTree = "<group>"; };
 		2231F4643A77903710C39679 /* CloudBackup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudBackup.swift; sourceTree = "<group>"; };
 		23BA11679B24CB75FEE26FCF /* ActivityMonitorExtension.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = ActivityMonitorExtension.entitlements; sourceTree = "<group>"; };
+		27C935667FAFA3A76917E9A9 /* AffirmationNudge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AffirmationNudge.swift; sourceTree = "<group>"; };
 		2896CBC1517CAB89F89BEA48 /* ShantellSans-Medium.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "ShantellSans-Medium.ttf"; sourceTree = "<group>"; };
 		28B9980C7C931F43F6391B0C /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		2B50BFB4245FC077633028D0 /* ShieldActionExtension.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = ShieldActionExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -193,7 +197,6 @@
 		BAF9F7C84F8C7EA7FCC8557F /* ShantellSans-ExtraBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "ShantellSans-ExtraBold.ttf"; sourceTree = "<group>"; };
 		BDA932EF9A5D58094E84FD80 /* Motion.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Motion.swift; sourceTree = "<group>"; };
 		C1595CC7F851FF4B3DCAD21F /* SunMark.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SunMark.swift; sourceTree = "<group>"; };
-		C79D7A6DBB1C416D131E1390 /* AffirmationNudge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AffirmationNudge.swift; sourceTree = "<group>"; };
 		C8C56B931070B34A08E71CA0 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		CE44E20BCB7FA81897657AE2 /* Nunito-ExtraBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Nunito-ExtraBold.ttf"; sourceTree = "<group>"; };
 		CE81F331686ACA60CF7D4B8E /* Nunito-Black.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Nunito-Black.ttf"; sourceTree = "<group>"; };
@@ -310,7 +313,6 @@
 		4443C8243A52A6ADB3B751A4 /* Support */ = {
 			isa = PBXGroup;
 			children = (
-				C79D7A6DBB1C416D131E1390 /* AffirmationNudge.swift */,
 				7EAEF9CA555EF0E0854B3DFA /* Dates.swift */,
 				A49C0FED24781FD5206E0096 /* Haptics.swift */,
 				BDA932EF9A5D58094E84FD80 /* Motion.swift */,
@@ -393,6 +395,7 @@
 		B24F45FC82010AD33AD233E5 /* Shared */ = {
 			isa = PBXGroup;
 			children = (
+				27C935667FAFA3A76917E9A9 /* AffirmationNudge.swift */,
 				061ECF0CF39440C344FB8DE7 /* BlockingCodec.swift */,
 				82D4B1B0AFB7A70426A5B632 /* Color+Hex.swift */,
 				0DF2325EADE999011118E9E6 /* L10n.swift */,
@@ -648,6 +651,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				E845053612F6B8802A39A4EA /* ActivityMonitorExtension.swift in Sources */,
+				92CF6639643917CF2B095993 /* AffirmationNudge.swift in Sources */,
 				6D674A8E3EE8C314F7DEEC31 /* BlockingCodec.swift in Sources */,
 				8E53286C15162C9980AE200C /* Color+Hex.swift in Sources */,
 				0ED76A201D2F126EAA567F59 /* L10n.swift in Sources */,
@@ -661,6 +665,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A1C78FFA27533FFEA5CAFBD2 /* AffirmationNudge.swift in Sources */,
 				2FA5F60608A76426B9B85D13 /* BlockingCodec.swift in Sources */,
 				5DDFBA31292A92A52C7C7E4E /* Color+Hex.swift in Sources */,
 				9E347ACC403914E3EB5FFE50 /* L10n.swift in Sources */,
@@ -675,7 +680,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				F95515D081A57B587E3F31B1 /* AffirmationNudge.swift in Sources */,
+				2980C6C65554E055E5D85E27 /* AffirmationNudge.swift in Sources */,
 				CAC370344F36BC807876EAE7 /* AppFlow.swift in Sources */,
 				51C5B6F36C0547625270F6A0 /* Backup.swift in Sources */,
 				FF5BB9EF989C7FC8A18C17FF /* BlockingCodec.swift in Sources */,
@@ -729,6 +734,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				ED272DC18F4FCA3C9F44B6DE /* AffirmationNudge.swift in Sources */,
 				CDFBD462099B516BD6A2AC88 /* BlockingCodec.swift in Sources */,
 				014F25953AA083892D1C57BB /* Color+Hex.swift in Sources */,
 				C530411362AC9131CE522330 /* L10n.swift in Sources */,

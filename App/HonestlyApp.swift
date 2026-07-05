@@ -56,12 +56,6 @@ struct HonestlyApp: App {
                     SharedState.premiumActive = premium.isPremium
                     screenTime.armSchedule()
                     reconcileShield()
-                    // Covers days the ritual is never opened at all — `saveRitual` already handles
-                    // scheduling whenever it actually runs. Gated on onboarding being done so this
-                    // doesn't fire mid-onboarding, before the user has even started.
-                    if SharedState.onboardingComplete {
-                        AffirmationNudge.scheduleReminderIfNeeded(ritualDoneToday: store.ritualDoneToday)
-                    }
                 }
                 .onChange(of: premium.isPremium) { _, isPremium in
                     screenTime.isPremiumActive = isPremium
