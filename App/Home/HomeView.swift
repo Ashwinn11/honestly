@@ -19,7 +19,7 @@ struct HomeView: View {
     // MARK: Header
     private var header: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text("Good morning").font(Fonts.display(34, .bold)).foregroundStyle(Palette.ink)
+            Text(loc: HDate.greetingKey(Date())).font(Fonts.display(34, .bold)).foregroundStyle(Palette.ink)
                 .fixedSize()
                 .underlineSquiggle(Palette.amber, weight: 4.5, height: 10)
             Eyebrow(text: HDate.homeHeader(Date()), color: Palette.inkSoft, tracking: 1.4)
@@ -118,40 +118,22 @@ struct HomeView: View {
         VStack(spacing: 17) {
             HStack(spacing: 13) {
                 IconTile(size: 52, fill: Palette.iconTile, radius: 16) { SunMark(size: 28) }
-                VStack(alignment: .leading, spacing: 3) {
-                    HStack(alignment: .firstTextBaseline, spacing: 6) {
-                        Text("\(store.streak)").font(Fonts.display(30, .heavy)).foregroundStyle(Palette.ink)
-                        Text("day streak").font(Fonts.ui(14, .heavy)).foregroundStyle(Palette.inkSoft)
-                    }
-                    Text(loc: streakSubtitle).font(Fonts.ui(12.5, .semibold)).foregroundStyle(Palette.inkSofter)
+                HStack(alignment: .center, spacing: 10) {
+                    Text("\(monthCount)").font(Fonts.display(30, .heavy)).foregroundStyle(Palette.ink)
+                    Text("mornings written\nin \(HDate.monthShort(Date()))")
+                        .font(Fonts.ui(13, .semibold)).foregroundStyle(Palette.inkSoft).lineSpacing(1)
                 }
                 Spacer(minLength: 0)
-            }
-            HStack {
-                ForEach(store.weekStrip) { cell in
-                    VStack(spacing: 7) {
-                        ZStack {
-                            if let e = cell.entry {
-                                MoodFace(mood: e.moodRaw, size: 31)
-                            } else {
-                                Circle()
-                                    .strokeBorder(style: StrokeStyle(lineWidth: 2, dash: [3, 3]))
-                                    .foregroundStyle(cell.isToday ? Palette.amber : Palette.ink.opacity(0.14))
-                                    .frame(width: 30, height: 30)
-                            }
-                        }
-                        .frame(width: 34, height: 34)
-                        Text(cell.letter)
-                            .font(Fonts.ui(11, cell.isToday ? .heavy : .bold))
-                            .foregroundStyle(cell.isToday ? Palette.amber : Palette.inkSofter)
-                    }
-                    .frame(maxWidth: .infinity)
-                }
             }
             weeklyGoalRow
         }
         .softCard(padding: 18)
         .staggeredAppear(index: 1)
+    }
+
+    private var monthCount: Int {
+        let c = Calendar.current.dateComponents([.year, .month], from: Date())
+        return store.monthCount(year: c.year ?? 0, month: c.month ?? 0)
     }
 
     private var morningsThisWeek: Int { store.weekStrip.filter { $0.entry != nil }.count }
@@ -179,12 +161,6 @@ struct HomeView: View {
         .padding(.top, 2)
     }
 
-    private var streakSubtitle: String {
-        let s = store.streak
-        if s == 0 { return "A fresh page is waiting. Begin today." }
-        if s >= store.bestStreak { return "Your longest yet. Keep the sun rising." }
-        return "Keep the sun rising."
-    }
 
     // MARK: Recent pages
     private var recentSection: some View {

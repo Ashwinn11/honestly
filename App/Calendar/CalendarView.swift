@@ -30,7 +30,6 @@ struct CalendarView: View {
                 .softCard(padding: 15, radius: 22, emphasized: true)
                 .padding(.top, 18)
 
-                countCard.padding(.top, 16)
                 moodsCard.padding(.top, 16)
             }
         }
@@ -106,17 +105,6 @@ struct CalendarView: View {
         } else {
             cell
         }
-    }
-
-    private var countCard: some View {
-        HStack(spacing: 14) {
-            Text("\(store.monthCount(year: comps.year, month: comps.month))")
-                .font(Fonts.display(30, .heavy)).foregroundStyle(Palette.amber)
-            Text("mornings written\nin \(HDate.monthShort(monthAnchor))")
-                .font(Fonts.ui(14, .semibold)).foregroundStyle(Palette.inkSoft).lineSpacing(1)
-            Spacer(minLength: 0)
-        }
-        .softCard(padding: 16, radius: 20)
     }
 
     private var moodsCard: some View {
