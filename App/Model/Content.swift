@@ -11,16 +11,14 @@ enum AppContent {
     static func affirmationPlaceholder(_ index: Int) -> String {
         affirmationStarters[index % affirmationStarters.count]
     }
+    /// Sent in the affirmation notification until the user has written one of their own.
+    static let defaultAffirmation = "I am capable of hard things."
 
     // MARK: - Onboarding funnel
 
     static let onbBrandTagline  = "The quiet part of the morning — before the world logs on."
     static let onbProblemTitle  = "You reach for\nthe phone first."
     static let onbProblemBody   = "Before you've had one thought of your own, the feed has a hundred."
-
-    // MARK: Quiet your apps (o6 — illustration + single action, no quiz)
-    static let onbQuietTitle    = "Put the noisy\napps to sleep"
-    static let onbQuietBody     = "They stay quiet each morning until your page is written."
 
     // MARK: Quiz — goal (multi-select, up to 2)
     static let goalQuestion = "What do you want your mornings to give you?"
@@ -47,24 +45,13 @@ enum AppContent {
         .init(perWeek: 7, label: "Every morning", note: "All in — who I'm becoming"),
     ]
 
-    // MARK: The three-step ritual (taught in one screen, condensing the old moods/write/grat slides)
-    static let ritualSteps: [RitualStep] = [
-        .init(kind: .moods, title: "Name the mood",   body: "Tap a face. No wrong answers at 6am."),
-        .init(kind: .write, title: "Empty your head", body: "No prompts, no rules. Worries, plans, nonsense — let it spill."),
-        .init(kind: .grat,  title: "Affirm yourself", body: "Finish with a few honest affirmations. Say them like you already believe them."),
-    ]
-
     // MARK: The "building your plan" ticks
     static let buildingTitle = "Designing your morning ritual…"
     static let buildingTicks = ["Quieting your apps", "Setting up your ritual", "Setting your streak goal"]
 
-    // MARK: Why affirmations (onboarding reassurance screen, right after the ritual is taught)
-    static let onbAffirmTitle = "Say it. Mean it."
-    static let onbAffirmBody  = "Affirmations aren't about pretending. They're about reminding yourself what's actually true — especially on mornings it's hard to feel it."
-
     // MARK: Notification nudge
     static let notifTitle = "Hear your own words back?"
-    static let notifBody  = "Once in a while, we'll send you an affirmation you wrote yourself — nothing else, just a reminder from you, to you."
+    static let notifBody  = "Once you've written a few, we'll echo one back to you — until then, a gentle one to start."
 
     // MARK: Reclaimed-time math (honest, derived from the user's own answers)
 
@@ -141,13 +128,6 @@ struct CommitOption: Identifiable {
     var id: Int { perWeek }
 }
 
-struct RitualStep: Identifiable {
-    let kind: OnbKind
-    let title: String
-    let body: String
-    var id: String { title }
-}
-
 struct SocialProof {
     let rating: String        // "" until a real App Store rating is supplied
     let ratingsCount: String  // "" until a real ratings count is supplied
@@ -161,4 +141,4 @@ struct SocialProof {
     }
 }
 
-enum OnbKind { case brand, noise, page, moods, write, grat, quiet, streak, notif, ready }
+enum OnbKind { case brand, noise, page, moods, write, quiet, streak, ready }

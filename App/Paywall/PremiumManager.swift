@@ -44,6 +44,8 @@ final class PremiumManager {
     var hasMonthly: Bool { monthlyPackage != nil }
     var lifetimePriceString: String { lifetimePackage?.storeProduct.localizedPriceString ?? "" }
     var monthlyPriceString: String { monthlyPackage?.storeProduct.localizedPriceString ?? "" }
+    var lifetimePrice: Decimal? { lifetimePackage?.storeProduct.price }
+    var monthlyPrice: Decimal? { monthlyPackage?.storeProduct.price }
 
     @discardableResult func purchaseLifetime() async -> Bool {
         guard let p = lifetimePackage else { return false }

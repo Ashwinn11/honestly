@@ -41,6 +41,10 @@ enum SharedState {
         static let weeklyGoal         = "onboarding.weeklyGoal"     // mornings/week the user committed to
         static let onboardingGoal     = "onboarding.goal"           // primary stated goal (OnbGoal key)
         static let scrollMinutes      = "onboarding.scrollMinutes"  // self-reported morning scroll minutes
+        static let appsPhrase         = "onboarding.appsPhrase"     // display phrase for the apps they picked, e.g. "Instagram & TikTok"
+        static let demoMood           = "onboarding.demoMood"       // mood face they tapped during the onboarding demo
+        static let demoLine           = "onboarding.demoLine"       // the line they wrote during the onboarding demo
+        static let demoAffirmation    = "onboarding.demoAffirmation" // the affirmation they wrote during the onboarding demo
     }
 
     // MARK: Day key helpers
@@ -117,5 +121,27 @@ enum SharedState {
     static var scrollMinutes: Int {
         get { defaults.integer(forKey: Key.scrollMinutes) }
         set { defaults.set(newValue, forKey: Key.scrollMinutes) }
+    }
+
+    static var appsPhrase: String {
+        get { defaults.string(forKey: Key.appsPhrase) ?? "" }
+        set { defaults.set(newValue, forKey: Key.appsPhrase) }
+    }
+
+    // MARK: Onboarding demo (the "try it now" morning page — reused to preview what unlocking keeps)
+
+    static var demoMood: Int {
+        get { defaults.object(forKey: Key.demoMood) as? Int ?? -1 }
+        set { defaults.set(newValue, forKey: Key.demoMood) }
+    }
+
+    static var demoLine: String {
+        get { defaults.string(forKey: Key.demoLine) ?? "" }
+        set { defaults.set(newValue, forKey: Key.demoLine) }
+    }
+
+    static var demoAffirmation: String {
+        get { defaults.string(forKey: Key.demoAffirmation) ?? "" }
+        set { defaults.set(newValue, forKey: Key.demoAffirmation) }
     }
 }

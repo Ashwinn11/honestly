@@ -3,7 +3,7 @@ import SwiftUI
 // MARK: - Primary CTA (full-width amber pill) — the prototype's main button
 
 struct PrimaryButton: View {
-    let title: String
+    let title: LocalizedStringKey
     var enabled: Bool = true
     var color: Color = Palette.amber
     var textColor: Color = .white
@@ -14,7 +14,7 @@ struct PrimaryButton: View {
             guard enabled else { return }
             Haptics.tap(); action()
         } label: {
-            Text(loc: title)
+            Text(title)
                 .font(Fonts.ui(16.5, .heavy))
                 .foregroundStyle(enabled ? textColor : Palette.inkSofter)
                 .frame(maxWidth: .infinity)

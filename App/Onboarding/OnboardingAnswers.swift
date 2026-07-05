@@ -9,6 +9,15 @@ final class OnboardingAnswers {
     var pickedBrands: [Brand] = []
     var weeklyGoal: Int = 5
 
+    // MARK: The "try it now" demo (one real rep of the ritual, done during onboarding)
+    var demoMood: Int? = nil
+    var demoLine: String = ""
+    var demoAffirmation: String = ""
+
+    var demoReady: Bool {
+        demoMood != nil && !demoLine.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
     // MARK: Derived
 
     var primaryGoal: OnbGoal { goals.first ?? .calmStart }
@@ -52,6 +61,10 @@ final class OnboardingAnswers {
         SharedState.onboardingGoal = primaryGoal.rawValue
         SharedState.weeklyGoal     = weeklyGoal
         SharedState.scrollMinutes  = scrollMinutes
+        SharedState.appsPhrase     = pickedBrands.isEmpty ? "" : appsPhrase
+        if let demoMood { SharedState.demoMood = demoMood }
+        SharedState.demoLine        = demoLine
+        SharedState.demoAffirmation = demoAffirmation
     }
 }
 

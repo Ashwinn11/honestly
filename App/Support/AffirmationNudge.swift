@@ -1,11 +1,11 @@
 import Foundation
 import UserNotifications
 
-/// Randomly resurfaces one of the user's own past affirmations as a local notification — never
-/// canned content, always something they actually wrote. There's no separate "come write today"
-/// reminder (the Screen Time shield already does that job), so this is the app's only nudge.
-/// Scheduled once per completed ritual (see `RitualView.finish()`); silently no-ops if there's
-/// nothing to quote yet or the user has turned reminders off.
+/// Resurfaces one of the user's own past affirmations as a local notification whenever there's
+/// one to quote; falls back to `AppContent.defaultAffirmation` before they've written their
+/// first one, so the nudge still lands rather than silently never firing. There's no separate
+/// "come write today" reminder (the Screen Time shield already does that job), so this is the
+/// app's only nudge. Scheduled once per completed ritual (see `RitualView.finish()`).
 enum AffirmationNudge {
     static let id = "honestly.affirmation.nudge"
     private static let enabledKey = "affirmationNudgeOn"
@@ -24,16 +24,22 @@ enum AffirmationNudge {
 
     /// Schedules one reminder a few hours out, quoting a random line from `pool` (the user's own
     /// affirmations across all entries) — avoiding an immediate repeat of the last one sent
-    /// whenever there's an alternative. No-op if reminders are off or there's nothing to quote.
+    /// whenever there's an alternative. Uses the default line when `pool` is empty. No-op only if
+    /// reminders are off.
     static func scheduleNext(from pool: [String]) {
         guard isEnabled else { return }
         let lines = pool.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }.filter { !$0.isEmpty }
-        guard !lines.isEmpty else { return }
 
         let d = SharedState.defaults
-        let last = d.string(forKey: lastSentKey)
-        let candidates = lines.count > 1 ? lines.filter { $0 != last } : lines
-        guard let line = candidates.randomElement() else { return }
+        let line: String
+        if lines.isEmpty {
+            // Not SwiftUI here, so `Text(loc:)` doesn't apply — do the String Catalog lookup directly.
+            line = String(localized: String.LocalizationValue(AppContent.defaultAffirmation))
+        } else {
+            let last = d.string(forKey: lastSentKey)
+            let candidates = lines.count > 1 ? lines.filter { $0 != last } : lines
+            line = candidates.randomElement() ?? lines[0]
+        }
         d.set(line, forKey: lastSentKey)
 
         let content = UNMutableNotificationContent()

@@ -165,6 +165,10 @@ final class JournalStore {
         SharedState.onboardingGoal = ""
         SharedState.scrollMinutes = 0
         SharedState.weeklyGoal = 5
+        SharedState.appsPhrase = ""
+        SharedState.demoMood = -1
+        SharedState.demoLine = ""
+        SharedState.demoAffirmation = ""
         AffirmationNudge.cancel()
         Shielding.clear()
     }

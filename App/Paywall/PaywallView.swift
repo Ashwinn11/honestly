@@ -1,4 +1,5 @@
 import SwiftUI
+import Foundation
 
 struct PaywallView: View {
     var gate: Bool = false
@@ -12,15 +13,18 @@ struct PaywallView: View {
     @State private var showRestoreAlert = false
     @State private var legal: LegalDoc? = nil
 
-    private let benefits = [
-        "Your own affirmations, echoed back when you need them",
-        "Your apps, quieted till you write",
-        "Streaks, full history & cloud backup",
-    ]
-
     private var goal: OnbGoal? { OnbGoal(rawValue: SharedState.onboardingGoal) }
     private var heroTitle: String { goal?.paywallHero ?? "Take your mornings back" }
-    private var heroSub: String { "Everything you need to keep the ritual." }
+    private var reclaimedHours: Int {
+        AppContent.reclaimedHours(scrollMin: SharedState.scrollMinutes, morningsPerWeek: SharedState.weeklyGoal)
+    }
+    private var priceAnchorMonths: Int? {
+        guard let lifetime = premium.lifetimePrice, let monthly = premium.monthlyPrice, monthly > 0 else { return nil }
+        let months = Int((Double(truncating: (lifetime / monthly) as NSDecimalNumber)).rounded())
+        return months > 1 ? months : nil
+    }
+
+    private var hasDemo: Bool { !SharedState.demoLine.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
 
     var body: some View {
         ZStack {
@@ -31,6 +35,7 @@ struct PaywallView: View {
                     ScrollView {
                         VStack(spacing: 18) {
                             hero
+                            demoPreview
                             benefitsCard
                             planPicker
                         }
@@ -66,6 +71,10 @@ struct PaywallView: View {
     }
 
     // MARK: Hero
+    // The reclaimed-hours line is written as a literal interpolation directly in this `some View`
+    // body (matching RitualView's `"\(wordCount) words — nice"` pattern) — that's what lets Xcode
+    // extract it as a real translatable `%lld` placeholder. Building it elsewhere as a `Text`-typed
+    // property or concatenating separate `Text` values does not extract the same way.
     private var hero: some View {
         VStack(spacing: 10) {
             SunMark(size: 60).floaty()
@@ -73,26 +82,66 @@ struct PaywallView: View {
             Text(loc: heroTitle)
                 .display(27, .bold)
                 .multilineTextAlignment(.center)
-            Text(loc: heroSub)
+            (SharedState.scrollMinutes > 0
+                ? Text("≈\(reclaimedHours) hours reclaimed a month, starting today.")
+                : Text(loc: "Everything you need to keep the ritual."))
                 .ui(13.5, .semibold, color: Palette.inkSoft)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
         }
     }
 
+    // MARK: Demo preview — the page they just wrote during onboarding, waiting to be unlocked
+    @ViewBuilder private var demoPreview: some View {
+        if hasDemo {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 9) {
+                    MoodFace(mood: SharedState.demoMood, size: 26, expressive: true)
+                    Text(loc: "Already written, waiting for you")
+                        .ui(11.5, .heavy, color: Palette.inkSofter)
+                        .tracking(0.2)
+                }
+                Text("“\(SharedState.demoLine)”")
+                    .display(16, .semibold)
+                    .lineSpacing(3)
+                    .fixedSize(horizontal: false, vertical: true)
+                if !SharedState.demoAffirmation.trimmingCharacters(in: .whitespaces).isEmpty {
+                    HStack(spacing: 8) {
+                        SunMark(size: 15, rays: false)
+                        Text(SharedState.demoAffirmation).ui(13, .semibold, color: Palette.inkSoft)
+                    }
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .softCard(padding: 16, radius: 20, emphasized: true)
+        }
+    }
+
     // MARK: Benefits — sun-disc bullets, no card
     private var benefitsCard: some View {
         VStack(alignment: .leading, spacing: 12) {
-            ForEach(benefits, id: \.self) { b in
-                HStack(spacing: 11) {
-                    SunMark(size: 22, rays: false)
-                    Text(loc: b).ui(14.5, .semibold)
-                    Spacer(minLength: 0)
-                }
-            }
+            benefitRow(Text(loc: "Your own affirmations, echoed back when you need them"))
+            quietBenefitRow
+            benefitRow(Text(loc: "Streaks, full history & cloud backup"))
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 4)
+    }
+
+    @ViewBuilder private var quietBenefitRow: some View {
+        if SharedState.appsPhrase.isEmpty {
+            benefitRow(Text(loc: "Your apps, quieted till you write"))
+        } else {
+            benefitRow(Text("\(SharedState.appsPhrase), quieted till you write"))
+        }
+    }
+
+    private func benefitRow(_ text: Text) -> some View {
+        HStack(spacing: 11) {
+            SunMark(size: 22, rays: false)
+            text.ui(14.5, .semibold)
+            Spacer(minLength: 0)
+        }
     }
 
     // MARK: Plan picker — Lifetime (best value) + Monthly (optional)
@@ -152,9 +201,9 @@ struct PaywallView: View {
     // MARK: Footer — CTA + plan-aware reassurance + links
     private var footer: some View {
         VStack(spacing: 11) {
-            PrimaryButton(title: ctaTitle, enabled: !purchasing) { purchase() }
-            Text(loc: subNote)
-                .ui(12, .semibold, color: Palette.inkSofter)
+            ctaButton
+            subNoteView
+                .font(Fonts.ui(12, .semibold)).foregroundStyle(Palette.inkSofter)
                 .multilineTextAlignment(.center)
             HStack(spacing: 18) {
                 footerLink(restoring ? "Restoring…" : "Restore") { restore() }
@@ -169,16 +218,37 @@ struct PaywallView: View {
         .padding(.bottom, 26)
     }
 
-    private var ctaTitle: String {
-        if purchasing { return "Please wait…" }
-        // Price is shown in the plan cards; keep the CTA a clean, fully-localizable label.
-        return selected == .lifetime ? "Unlock forever" : "Continue"
+    // The price must be interpolated directly into each `Text`/`PrimaryButton` literal (not built as
+    // a plain String first) so the String Catalog can extract it as a translatable placeholder.
+    @ViewBuilder private var ctaButton: some View {
+        if purchasing {
+            PrimaryButton(title: "Please wait…", enabled: false) {}
+        } else if selected == .lifetime {
+            let price = premium.lifetimePriceString
+            if price.isEmpty {
+                PrimaryButton(title: "Unlock forever") { purchase() }
+            } else {
+                PrimaryButton(title: "Unlock forever — \(price)") { purchase() }
+            }
+        } else {
+            let price = premium.monthlyPriceString
+            if price.isEmpty {
+                PrimaryButton(title: "Continue") { purchase() }
+            } else {
+                PrimaryButton(title: "Continue — \(price)/mo") { purchase() }
+            }
+        }
     }
 
-    private var subNote: String {
-        selected == .lifetime
-            ? "One-time payment · no subscription, ever"
-            : "Cancel anytime · secure checkout"
+    @ViewBuilder private var subNoteView: some View {
+        if selected != .lifetime {
+            Text(loc: "Cancel anytime · secure checkout")
+        } else if let months = priceAnchorMonths {
+            // Honest price framing from real store prices — no fabricated urgency or trial claims.
+            Text("Pays for itself in about \(months) months of the monthly plan")
+        } else {
+            Text(loc: "One-time payment · no subscription, ever")
+        }
     }
 
     // MARK: Actions
