@@ -38,6 +38,7 @@
 		317C9B6AD536D5856FD99FAD /* TextLocalization.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4503890E8EE490EB68F8AE82 /* TextLocalization.swift */; };
 		3D8D68890524EA6C17C81076 /* Dates.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7EAEF9CA555EF0E0854B3DFA /* Dates.swift */; };
 		3FD789076280242F2E6B1547 /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 89966A84FD79E46F93FF1477 /* ProfileView.swift */; };
+		4095E7BFEE1927AE3D9E2BE1 /* SplashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0EB289BB4C4548F897B60F5A /* SplashView.swift */; };
 		42C9946FB4EED036118C2178 /* Nunito-Black.ttf in Resources */ = {isa = PBXBuildFile; fileRef = CE81F331686ACA60CF7D4B8E /* Nunito-Black.ttf */; };
 		456E65D7674DAAA32378D52C /* Shielding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 468C6373F86CE0AF2AEB0E30 /* Shielding.swift */; };
 		45CF1A82A1B5049E7ACBDB06 /* Palette.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08E1B12E8851E942BD3D9539 /* Palette.swift */; };
@@ -182,6 +183,7 @@
 		0C67B55D50159B662AEB0776 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		0DF2325EADE999011118E9E6 /* L10n.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = L10n.swift; sourceTree = "<group>"; };
 		0E115360782378E64517CE0E /* Honestly.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Honestly.entitlements; sourceTree = "<group>"; };
+		0EB289BB4C4548F897B60F5A /* SplashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplashView.swift; sourceTree = "<group>"; };
 		1F55C46F9039AF1301E0C834 /* RitualView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RitualView.swift; sourceTree = "<group>"; };
 		21DF4660F2F1C1C30BE56510 /* ScreenTimeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenTimeManager.swift; sourceTree = "<group>"; };
 		2231F4643A77903710C39679 /* CloudBackup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudBackup.swift; sourceTree = "<group>"; };
@@ -436,6 +438,7 @@
 				D62147A92601AB0CBF5AE714 /* AppFlow.swift */,
 				089B46770C57486A7908F0F1 /* MainTabView.swift */,
 				4A3D37C7B52DE1DBED46882F /* RootView.swift */,
+				0EB289BB4C4548F897B60F5A /* SplashView.swift */,
 			);
 			path = Root;
 			sourceTree = "<group>";
@@ -852,6 +855,7 @@
 				B7375163C9FC8AAC6D81015B /* Shaders.metal in Sources */,
 				BB9400B73D8B89CEEF19BF72 /* SharedConfig.swift in Sources */,
 				6168B885D71E0821738F33CB /* Shielding.swift in Sources */,
+				4095E7BFEE1927AE3D9E2BE1 /* SplashView.swift in Sources */,
 				EB61FBDE11D953043FBF2E39 /* SunMark.swift in Sources */,
 				7B035CF85A9BDDC085DBA801 /* TextLocalization.swift in Sources */,
 				116E4BE8B866DEBF08C9D8E1 /* Typography.swift in Sources */,

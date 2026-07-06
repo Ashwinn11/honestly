@@ -640,12 +640,12 @@ private struct NotifCard: View {
     var time: String = "now"
 
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
+        HStack(alignment: .top, spacing: DesignScale.s(12)) {
             Image("app-mark").resizable().scaledToFill()
-                .frame(width: 42, height: 42)
-                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(Palette.ink.opacity(0.12), lineWidth: 1))
-            VStack(alignment: .leading, spacing: 3) {
+                .frame(width: DesignScale.s(42), height: DesignScale.s(42))
+                .clipShape(RoundedRectangle(cornerRadius: DesignScale.s(10), style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: DesignScale.s(10), style: .continuous).stroke(Palette.ink.opacity(0.12), lineWidth: 1))
+            VStack(alignment: .leading, spacing: DesignScale.s(3)) {
                 HStack {
                     Text(loc: "Today's affirmation").font(Fonts.ui(14, .heavy)).foregroundStyle(Palette.ink)
                     Spacer()
@@ -657,11 +657,11 @@ private struct NotifCard: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
-        .padding(EdgeInsets(top: 15, leading: 15, bottom: 15, trailing: 16))
-        .frame(maxWidth: 330)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).stroke(Palette.ink, lineWidth: 2))
-        .shadow(color: Color(hex: "78501E").opacity(0.14), radius: 16, y: 9)
+        .padding(EdgeInsets(top: DesignScale.s(15), leading: DesignScale.s(15), bottom: DesignScale.s(15), trailing: DesignScale.s(16)))
+        .frame(maxWidth: DesignScale.s(330))
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: DesignScale.s(22), style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: DesignScale.s(22), style: .continuous).stroke(Palette.ink, lineWidth: 2))
+        .shadow(color: Color(hex: "78501E").opacity(0.14), radius: DesignScale.s(16), y: DesignScale.s(9))
     }
 }
 
@@ -806,15 +806,15 @@ private struct OnbIllustration: View {
     private var noise: some View {
         ZStack {
             notifChip(.instagram, "2 new likes on your photo", tilt: -4)
-                .offset(x: -62, y: -92).floaty(amplitude: 5, period: 3.4).popIn(delay: Self.notifDelays[0])
+                .offset(x: DesignScale.s(-62), y: DesignScale.s(-92)).floaty(amplitude: 5, period: 3.4).popIn(delay: Self.notifDelays[0])
             notifChip(.tiktok, "24 new videos for you", tilt: 5)
-                .offset(x: 60, y: -32).floaty(amplitude: 5, period: 3.8, delay: 0.2).popIn(delay: Self.notifDelays[1])
+                .offset(x: DesignScale.s(60), y: DesignScale.s(-32)).floaty(amplitude: 5, period: 3.8, delay: 0.2).popIn(delay: Self.notifDelays[1])
             notifChip(.snapchat, "New snap from a friend", tilt: -5)
-                .offset(x: -60, y: 32).floaty(amplitude: 5, period: 3.2, delay: 0.4).popIn(delay: Self.notifDelays[2])
+                .offset(x: DesignScale.s(-60), y: DesignScale.s(32)).floaty(amplitude: 5, period: 3.2, delay: 0.4).popIn(delay: Self.notifDelays[2])
             notifChip(.whatsapp, "3 new messages", tilt: 4)
-                .offset(x: 62, y: 92).floaty(amplitude: 5, period: 3.6, delay: 0.1).popIn(delay: Self.notifDelays[3])
+                .offset(x: DesignScale.s(62), y: DesignScale.s(92)).floaty(amplitude: 5, period: 3.6, delay: 0.1).popIn(delay: Self.notifDelays[3])
         }
-        .frame(width: 250, height: 260)
+        .frame(width: DesignScale.s(250), height: DesignScale.s(260))
         .task { await fireNotifHaptics() }
     }
     private func fireNotifHaptics() async {
@@ -826,19 +826,19 @@ private struct OnbIllustration: View {
         }
     }
     private func notifChip(_ brand: Brand, _ teaser: String, tilt: Double) -> some View {
-        HStack(spacing: 9) {
-            BrandIcon(brand: brand, size: 34)
-            VStack(alignment: .leading, spacing: 1) {
+        HStack(spacing: DesignScale.s(9)) {
+            BrandIcon(brand: brand, size: DesignScale.s(34))
+            VStack(alignment: .leading, spacing: DesignScale.s(1)) {
                 Text(brand.displayName).font(Fonts.ui(12.5, .heavy)).foregroundStyle(Palette.ink)
                 Text(loc: teaser).font(Fonts.ui(11, .semibold)).foregroundStyle(Palette.inkSoft)
                     .lineLimit(1)
             }
         }
-        .padding(EdgeInsets(top: 9, leading: 9, bottom: 9, trailing: 14))
-        .frame(width: 192, alignment: .leading)
-        .background(.white, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(Palette.ink, lineWidth: 2))
-        .shadow(color: Color(hex: "78501E").opacity(0.14), radius: 12, y: 7)
+        .padding(EdgeInsets(top: DesignScale.s(9), leading: DesignScale.s(9), bottom: DesignScale.s(9), trailing: DesignScale.s(14)))
+        .frame(width: DesignScale.s(192), alignment: .leading)
+        .background(.white, in: RoundedRectangle(cornerRadius: DesignScale.s(16), style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: DesignScale.s(16), style: .continuous).stroke(Palette.ink, lineWidth: 2))
+        .shadow(color: Color(hex: "78501E").opacity(0.14), radius: DesignScale.s(12), y: DesignScale.s(7))
         .rotationEffect(.degrees(tilt))
     }
 }
