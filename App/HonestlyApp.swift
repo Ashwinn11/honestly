@@ -45,6 +45,11 @@ struct HonestlyApp: App {
                 .environment(l10n)
                 .environment(\.locale, l10n.locale)                    // live String Catalog switch
                 .environment(\.layoutDirection, l10n.layoutDirection)  // RTL for Arabic
+                // `Text(loc:)`/literal `Text` re-resolve automatically on a locale change, but
+                // plain `String`s computed from `HDate` (month/weekday names via `DateFormatter`)
+                // don't — they're not observed by SwiftUI at all. Forcing a fresh identity on
+                // language change rebuilds the whole tree, so those recompute too.
+                .id(l10n.code)
                 .modelContainer(container)
                 .preferredColorScheme(.light)
                 .task {
