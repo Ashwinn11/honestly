@@ -314,7 +314,7 @@ struct OnboardingView: View {
                                 .opacity(picked ? 1 : 0.55)
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 62 * 0.23, style: .continuous)
-                                        .stroke(Palette.amber, lineWidth: picked ? 3 : 0))
+                                        .stroke(Palette.ink, lineWidth: picked ? 3 : 0))
                             Text(b.displayName)
                                 .font(Fonts.ui(11.5, .bold))
                                 .foregroundStyle(picked ? Palette.ink : Palette.inkSofter)
@@ -477,7 +477,13 @@ private struct OnbBuildingView: View {
                 }
             }
             Spacer()
-            OnbDots(index: dotIndex, total: dotTotal)
+            VStack(spacing: 18) {
+                OnbDots(index: dotIndex, total: dotTotal)
+                // Reserves the same height the CTA button row occupies on every other beat, so the
+                // dots land at the same vertical position here as everywhere else (this screen has
+                // no buttons of its own — it auto-advances).
+                Color.clear.frame(height: DesignScale.s(56))
+            }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .padding(.horizontal, 40)
@@ -795,24 +801,44 @@ private struct OnbIllustration: View {
         }
     }
 
+    private static let notifDelays: [Double] = [0.1, 0.28, 0.46, 0.64]
+
     private var noise: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 26, style: .continuous)
-                .fill(Palette.ink).frame(width: 118, height: 230)
-                .shadow(color: Palette.ink.opacity(0.24), radius: 17, y: 9)
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(Color(hex: "4A3A2A")).frame(width: 100, height: 210)
-            bar(Palette.amber, w: 118).offset(x: -46, y: -78).floaty(period: 3.2)
-            bar(Palette.mood(1), w: 120).offset(x: 44, y: -24).floaty(period: 3.8, delay: 0.3)
-            bar(Palette.mood(4), w: 110).offset(x: -50, y: 30).floaty(period: 3.4, delay: 0.6)
-            bar(Palette.mood(2), w: 104).offset(x: 42, y: 78).floaty(period: 3.6, delay: 0.2)
+            notifChip(.instagram, "2 new likes on your photo", tilt: -4)
+                .offset(x: -62, y: -92).floaty(amplitude: 5, period: 3.4).popIn(delay: Self.notifDelays[0])
+            notifChip(.tiktok, "24 new videos for you", tilt: 5)
+                .offset(x: 60, y: -32).floaty(amplitude: 5, period: 3.8, delay: 0.2).popIn(delay: Self.notifDelays[1])
+            notifChip(.snapchat, "New snap from a friend", tilt: -5)
+                .offset(x: -60, y: 32).floaty(amplitude: 5, period: 3.2, delay: 0.4).popIn(delay: Self.notifDelays[2])
+            notifChip(.whatsapp, "3 new messages", tilt: 4)
+                .offset(x: 62, y: 92).floaty(amplitude: 5, period: 3.6, delay: 0.1).popIn(delay: Self.notifDelays[3])
         }
-        .frame(width: 210, height: 250)
+        .frame(width: 250, height: 260)
+        .task { await fireNotifHaptics() }
     }
-    private func bar(_ c: Color, w: CGFloat) -> some View {
-        RoundedRectangle(cornerRadius: 13, style: .continuous)
-            .fill(c).frame(width: w, height: 26)
-            .overlay(RoundedRectangle(cornerRadius: 13, style: .continuous).stroke(Palette.ink, lineWidth: 2.5))
-            .tactile(5, cornerRadius: 13, color: Palette.ink.opacity(0.15))
+    private func fireNotifHaptics() async {
+        var elapsed = 0.0
+        for delay in Self.notifDelays {
+            try? await Task.sleep(for: .seconds(delay - elapsed))
+            Haptics.tap()
+            elapsed = delay
+        }
+    }
+    private func notifChip(_ brand: Brand, _ teaser: String, tilt: Double) -> some View {
+        HStack(spacing: 9) {
+            BrandIcon(brand: brand, size: 34)
+            VStack(alignment: .leading, spacing: 1) {
+                Text(brand.displayName).font(Fonts.ui(12.5, .heavy)).foregroundStyle(Palette.ink)
+                Text(loc: teaser).font(Fonts.ui(11, .semibold)).foregroundStyle(Palette.inkSoft)
+                    .lineLimit(1)
+            }
+        }
+        .padding(EdgeInsets(top: 9, leading: 9, bottom: 9, trailing: 14))
+        .frame(width: 192, alignment: .leading)
+        .background(.white, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(Palette.ink, lineWidth: 2))
+        .shadow(color: Color(hex: "78501E").opacity(0.14), radius: 12, y: 7)
+        .rotationEffect(.degrees(tilt))
     }
 }
