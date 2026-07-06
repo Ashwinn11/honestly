@@ -9,6 +9,7 @@ enum AppConfig {
     static let activityMonitorID   = "com.morning-journal.app.activity-monitor"
     static let shieldConfigID      = "com.morning-journal.app.ShieldConfiguration"
     static let shieldActionID      = "com.morning-journal.app.ShieldAction"
+    static let bigWinsWidgetID     = "com.morning-journal.app.BigWinsWidget"   // matches the old app's widget bundle ID
 
     // RevenueCat — replace with the real public SDK key before shipping.
     static let revenueCatAPIKey    = "appl_zRRSBwyTqHGTNBJtwyKyrDifAdI"
@@ -46,6 +47,8 @@ enum SharedState {
         static let demoLine           = "onboarding.demoLine"       // the line they wrote during the onboarding demo
         static let demoAffirmation    = "onboarding.demoAffirmation" // the affirmation they wrote during the onboarding demo
         static let premiumActive      = "premium.active"             // mirrors PremiumManager.isPremium for the background extension
+        static let todayAffirmations  = "ritual.todayAffirmations"   // [String] — today's written affirmations, in order (widget data source)
+        static let todayAffirmationsSetAt = "ritual.todayAffirmationsSetAt"  // when they were last saved (widget rotation start time)
     }
 
     // MARK: Day key helpers
@@ -152,5 +155,20 @@ enum SharedState {
     static var premiumActive: Bool {
         get { defaults.bool(forKey: Key.premiumActive) }
         set { defaults.set(newValue, forKey: Key.premiumActive) }
+    }
+
+    // MARK: Widget data (BigWinsWidget reads these directly — no SwiftData access across processes)
+
+    static var todayAffirmations: [String] {
+        get { defaults.stringArray(forKey: Key.todayAffirmations) ?? [] }
+        set { defaults.set(newValue, forKey: Key.todayAffirmations) }
+    }
+
+    static var todayAffirmationsSetAt: Date? {
+        get {
+            let t = defaults.double(forKey: Key.todayAffirmationsSetAt)
+            return t > 0 ? Date(timeIntervalSince1970: t) : nil
+        }
+        set { defaults.set(newValue?.timeIntervalSince1970 ?? 0, forKey: Key.todayAffirmationsSetAt) }
     }
 }

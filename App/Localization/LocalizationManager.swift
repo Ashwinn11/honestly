@@ -1,4 +1,5 @@
 import SwiftUI
+import WidgetKit
 
 /// Drives the in-app language. The picker writes here; the root injects `locale` + `layoutDirection`
 /// into the environment so every SwiftUI `Text` re-resolves against the String Catalog **live**, no
@@ -54,6 +55,10 @@ final class LocalizationManager {
             code = language.code
             SharedState.language = language.code
         }
+        // The widget forces this same value via `.environment(\.locale, ...)`, but only re-reads
+        // it whenever it next renders — without this it'd keep showing the old language until
+        // some unrelated refresh (next midnight, or writing today's page) happened to trigger one.
+        WidgetCenter.shared.reloadAllTimelines()
     }
 
     /// Saved choice if valid, else the best match for the device's preferred languages, else English.
@@ -77,10 +82,4 @@ final class LocalizationManager {
         }
         return "en"
     }
-}
-
-extension Text {
-    /// Localize a runtime `String` through the String Catalog (keys are the English source strings).
-    /// Use for values that arrive as `String` (content constants, option labels) rather than literals.
-    init(loc key: String) { self.init(LocalizedStringKey(key)) }
 }

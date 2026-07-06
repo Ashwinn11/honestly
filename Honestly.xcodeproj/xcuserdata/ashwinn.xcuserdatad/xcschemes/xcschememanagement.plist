@@ -9,10 +9,15 @@
 			<key>orderHint</key>
 			<integer>2</integer>
 		</dict>
+		<key>BigWinsWidget.xcscheme_^#shared#^_</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>3</integer>
+		</dict>
 		<key>Honestly.xcscheme_^#shared#^_</key>
 		<dict>
 			<key>orderHint</key>
-			<integer>5</integer>
+			<integer>0</integer>
 		</dict>
 		<key>ShieldActionExtension.xcscheme_^#shared#^_</key>
 		<dict>
@@ -43,6 +48,11 @@
 			<true/>
 		</dict>
 		<key>B907DE630ED5E4C3385E35FC</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
+		<key>C3BB7B841F2D4C3C146C318D</key>
 		<dict>
 			<key>primary</key>
 			<true/>

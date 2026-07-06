@@ -14,7 +14,7 @@ settings:
     DEVELOPMENT_TEAM: PVQK77DQWL
     CODE_SIGN_STYLE: Automatic
     MARKETING_VERSION: "3.4"
-    CURRENT_PROJECT_VERSION: "1"
+    CURRENT_PROJECT_VERSION: "2"
     SWIFT_VERSION: "5.0"
     IPHONEOS_DEPLOYMENT_TARGET: "18.0"
     TARGETED_DEVICE_FAMILY: "1,2"
@@ -53,6 +53,7 @@ targets:
       - target: ActivityMonitorExtension
       - target: ShieldConfigurationExtension
       - target: ShieldActionExtension
+      - target: BigWinsWidget
 
   ActivityMonitorExtension:
     type: app-extension
@@ -92,6 +93,23 @@ targets:
         PRODUCT_NAME: ShieldActionExtension
         INFOPLIST_FILE: ShieldActionExtension/Info.plist
         CODE_SIGN_ENTITLEMENTS: ShieldActionExtension/ShieldActionExtension.entitlements
+
+  BigWinsWidget:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: BigWinsWidget
+      - path: Shared
+      - path: App/DesignSystem/SunMark.swift
+      - path: App/DesignSystem/Typography.swift
+      - path: App/Resources/Fonts
+      - path: App/Localizable.xcstrings
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.morning-journal.app.BigWinsWidget
+        PRODUCT_NAME: BigWinsWidget
+        INFOPLIST_FILE: BigWinsWidget/Info.plist
+        CODE_SIGN_ENTITLEMENTS: BigWinsWidget/BigWinsWidget.entitlements
 
 schemes:
   Honestly:

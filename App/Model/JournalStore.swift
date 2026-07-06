@@ -1,6 +1,7 @@
 import Foundation
 import SwiftData
 import Observation
+import WidgetKit
 
 /// The app's single source of truth for morning pages. Wraps a SwiftData `ModelContext`,
 /// derives the streak / week strip / mood distribution the screens read, and — on save —
@@ -31,6 +32,20 @@ final class JournalStore {
             try? context.save()
         }
         entries = kept
+        syncWidgetData()
+    }
+
+    /// Keeps the widget's cross-process cache (`SharedState.todayAffirmations`) in step with the
+    /// real store on every mutation this triggers from (save, delete, deleteAll, launch) — covers
+    /// entries that existed before this cache did, and clears stale data the moment today's entry
+    /// is deleted, rather than only ever refreshing it on a fresh save.
+    private func syncWidgetData() {
+        let today = entries.first { $0.dayKey == SharedState.dayKey() }
+        let lines = today?.gratitudes ?? []
+        guard lines != SharedState.todayAffirmations else { return }   // avoid needless widget reloads
+        SharedState.todayAffirmations = lines
+        SharedState.todayAffirmationsSetAt = lines.isEmpty ? nil : Date()
+        WidgetCenter.shared.reloadAllTimelines()
     }
 
     // MARK: Today
