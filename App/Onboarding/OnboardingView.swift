@@ -345,7 +345,7 @@ struct OnboardingView: View {
 
     private func requestNotifications() {
         Task {
-            await AffirmationNudge.requestAuthorization()
+            await AffirmationNudge.activate()
             advance()
         }
     }

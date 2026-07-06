@@ -163,7 +163,9 @@ struct HomeView: View {
                 }
             }
             .frame(height: 8)
-            Text(loc: done >= goal ? "Goal met" : "\(done)/\(goal)")
+            // Literal `Text`, not `Text(loc:)`: the compiler only extracts (and localizes) keys
+            // from direct literals — a `String` ternary would look up "2/5" instead of "%lld/%lld".
+            (done >= goal ? Text("Goal met") : Text("\(done)/\(goal)"))
                 .font(Fonts.ui(12, .heavy))
                 .foregroundStyle(done >= goal ? Palette.success : Palette.inkSoft)
         }

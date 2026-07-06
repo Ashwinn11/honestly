@@ -23,26 +23,42 @@ enum AffirmationNudge {
         Double(slot + 1) * intervalHours * 3600
     }
 
+    /// Nudges are a premium feature: OFF until a premium user flips the profile toggle (which
+    /// writes `enabledKey`), and they go quiet again if the subscription lapses — same
+    /// `premiumActive` mirror the shielding extension relies on. An absent key is OFF, matching
+    /// the toggle's own default, so onboarding's permission beat never enables anything by itself.
     static var isEnabled: Bool {
-        let d = SharedState.defaults
-        return d.object(forKey: enabledKey) == nil ? true : d.bool(forKey: enabledKey)
+        SharedState.premiumActive && SharedState.defaults.bool(forKey: enabledKey)
     }
 
+    /// The single "nudge became active" path — the onboarding permission beat and the profile
+    /// toggle both go through here. Requests permission, then recovers today's echoes if the
+    /// ritual is already written (either flow), so enabling late in the day isn't silent until
+    /// tomorrow. Scheduling only sticks if iOS is authorized at the moment `add` runs — a later
+    /// grant never resurrects dropped requests — which is why grant and schedule live together.
+    /// Returns false when iOS won't allow notifications (a fresh denial, or one from earlier —
+    /// iOS never re-prompts after that) so callers can surface the Settings hand-off.
     @discardableResult
-    static func requestAuthorization() async -> Bool {
-        (try? await UNUserNotificationCenter.current()
+    static func activate() async -> Bool {
+        let granted = (try? await UNUserNotificationCenter.current()
             .requestAuthorization(options: [.alert, .sound])) ?? false
+        guard granted else { return false }
+        if SharedState.ritualCompleted() { scheduleForToday() }
+        return true
     }
 
     /// Call right after a ritual (or the onboarding demo) finishes for the day. Replaces whatever
-    /// was previously scheduled for today: one echo per non-empty line in `todaysAffirmations`, or
-    /// — if that's empty — the generic reminder, so there's always exactly one outcome per day.
-    static func scheduleForToday(_ todaysAffirmations: [String]) {
+    /// was previously scheduled for today: one echo per non-empty line of today's affirmations, or
+    /// — if there are none — the generic reminder, so there's always exactly one outcome per day.
+    /// Reads `SharedState.todayAffirmations` (synced by `JournalStore` on every mutation) rather
+    /// than taking the lines as a parameter, so every caller schedules from the same source of truth.
+    static func scheduleForToday() {
         let center = UNUserNotificationCenter.current()
         center.removePendingNotificationRequests(withIdentifiers: allIDs)
         guard isEnabled else { return }
 
-        let lines = todaysAffirmations.map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+        let lines = SharedState.todayAffirmations
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
 
         if lines.isEmpty {

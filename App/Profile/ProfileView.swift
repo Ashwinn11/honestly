@@ -10,6 +10,7 @@ struct ProfileView: View {
     @Environment(\.requestReview) private var requestReview
 
     @AppStorage("affirmationNudgeOn", store: SharedState.defaults) private var affirmNudgeOn = false
+    @State private var notifDenied = false
     @State private var showPicker = false
     @State private var confirmDelete = false
     @State private var showICloud = false
@@ -56,8 +57,27 @@ struct ProfileView: View {
         .overlay { if cloudBusy { ProgressView().controlSize(.large).tint(Palette.amber)
             .frame(maxWidth: .infinity, maxHeight: .infinity).background(.black.opacity(0.06)) } }
         .onChange(of: affirmNudgeOn) { _, on in
-            if on { Task { await AffirmationNudge.requestAuthorization() } }
-            else { AffirmationNudge.cancel() }
+            if on {
+                Task {
+                    // iOS never re-prompts after a denial — activate just returns false. Don't
+                    // leave the toggle lying about a nudge that can never deliver: flip it back
+                    // and point them at Settings, the only place a denial can be undone.
+                    if await AffirmationNudge.activate() == false {
+                        affirmNudgeOn = false
+                        notifDenied = true
+                    }
+                }
+            } else {
+                AffirmationNudge.cancel()
+            }
+        }
+        .alert("Notifications are switched off", isPresented: $notifDenied) {
+            Button("Open Settings") {
+                if let url = URL(string: UIApplication.openNotificationSettingsURLString) { openURL(url) }
+            }
+            Button("Not now", role: .cancel) { }
+        } message: {
+            Text("Your affirmations can't reach you yet — allow notifications for Honestly in Settings and they'll find their way back.")
         }
     }
 
