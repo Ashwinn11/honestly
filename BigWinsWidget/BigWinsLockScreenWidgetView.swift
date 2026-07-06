@@ -10,10 +10,10 @@ struct BigWinsLockScreenWidgetView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
             HStack(spacing: 4) {
-                SunMark(size: 12, muted: entry.affirmation == nil)
                 Text(loc: "Today's affirmation")
                     .font(Fonts.ui(10, .heavy))
                     .textCase(.uppercase)
+                SunMark(size: 12, muted: entry.affirmation == nil)
             }
             if let text = entry.affirmation {
                 // The user's own words — never localized/rewritten (matches AffirmationNudge).

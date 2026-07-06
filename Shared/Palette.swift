@@ -11,7 +11,6 @@ enum Palette {
     static let inkSoft     = Color(hex: "8A7A67")   // secondary text
     static let inkSofter   = Color(hex: "B7A991")   // tertiary / hints
     static let inkMuted    = Color(hex: "C3B6A2")   // placeholder / faint
-    static let eyebrow     = Color(hex: "C0B29A")   // uppercase eyebrow labels
     static let hairline    = Color(hex: "D8CBB6")   // chevrons / faint rules
     static let dashFuture  = Color(hex: "DACDB8")   // future/empty day numerals
 
@@ -26,8 +25,6 @@ enum Palette {
     static let amberLight  = Color(hex: "FF9A4D")   // secondary glow
     static let amberDeep   = Color(hex: "BC5E17")   // text-on-amber-card / links
     static let sunDisc     = Color(hex: "F7B23C")   // the sun's gold disc / Happy-adjacent gold
-    static let amberGradient = LinearGradient(colors: [amber, amberLight],
-                                              startPoint: .topLeading, endPoint: .bottomTrailing)
 
     // Warm hero gradient (home "this morning" card, celebration)
     static let heroWarm    = Color(hex: "FF9E42")
@@ -63,8 +60,5 @@ enum Palette {
 enum Mood: Int, CaseIterable, Identifiable, Codable {
     case happy = 0, confused, sad, awful, cry
     var id: Int { rawValue }
-    var color: Color     { Palette.mood(rawValue) }
-    var soft: Color      { Palette.moodSoft(rawValue) }
-    var ink: Color       { Palette.moodInk(rawValue) }
     var label: String    { ["Happy", "Confused", "Sad", "Awful", "Cry"][rawValue] }
 }

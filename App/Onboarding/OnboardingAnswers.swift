@@ -28,16 +28,6 @@ final class OnboardingAnswers {
         AppContent.reclaimedHours(scrollMin: scrollMinutes, morningsPerWeek: weeklyGoal)
     }
 
-    var appsPhrase: String {
-        let names = pickedBrands.prefix(3).map(\.displayName)
-        switch names.count {
-        case 0: return "your loudest apps"
-        case 1: return names[0]
-        case 2: return "\(names[0]) & \(names[1])"
-        default: return "\(names[0]), \(names[1]) & \(names[2])"
-        }
-    }
-
     // MARK: Selection helpers
 
     func toggleGoal(_ g: OnbGoal) {
@@ -61,7 +51,6 @@ final class OnboardingAnswers {
         SharedState.onboardingGoal = primaryGoal.rawValue
         SharedState.weeklyGoal     = weeklyGoal
         SharedState.scrollMinutes  = scrollMinutes
-        SharedState.appsPhrase     = pickedBrands.isEmpty ? "" : appsPhrase
         if let demoMood { SharedState.demoMood = demoMood }
         SharedState.demoLine        = demoLine
         SharedState.demoAffirmation = demoAffirmation

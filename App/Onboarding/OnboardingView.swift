@@ -771,12 +771,6 @@ private struct OnbIllustration: View {
         switch kind {
         case .brand:  brand
         case .noise:  noise
-        case .page:   page
-        case .moods:  moods
-        case .write:  write
-        case .quiet:  quiet
-        case .streak: streak
-        case .ready:  ready
         }
     }
 
@@ -820,108 +814,5 @@ private struct OnbIllustration: View {
             .fill(c).frame(width: w, height: 26)
             .overlay(RoundedRectangle(cornerRadius: 13, style: .continuous).stroke(Palette.ink, lineWidth: 2.5))
             .tactile(5, cornerRadius: 13, color: Palette.ink.opacity(0.15))
-    }
-
-    private var page: some View {
-        ZStack(alignment: .topTrailing) {
-            VStack(alignment: .leading, spacing: 15) {
-                line(0.72, Palette.ink.opacity(0.10))
-                line(0.92, Palette.ink.opacity(0.09))
-                line(0.84, Palette.ink.opacity(0.09))
-                line(0.60, Palette.ink.opacity(0.09))
-                line(0.78, Palette.amber.opacity(0.28))
-            }
-            .padding(EdgeInsets(top: 26, leading: 22, bottom: 26, trailing: 22))
-            .frame(width: 210, height: 250, alignment: .topLeading)
-            .background(.white, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-            .shadow(color: Color(hex: "78501E").opacity(0.16), radius: 20, y: 12)
-            .rotationEffect(.degrees(-4))
-            SunMark(size: 52).offset(x: 6, y: -10).floaty(period: 5)
-        }
-        .frame(width: 226, height: 260)
-    }
-    private func line(_ frac: CGFloat, _ c: Color) -> some View {
-        GeometryReader { g in
-            Capsule().fill(c).frame(width: g.size.width * frac, height: 9)
-        }.frame(height: 9)
-    }
-
-    private var moods: some View {
-        HStack(spacing: 10) {
-            faceFloat(0, 46, 3.0, 0)
-            faceFloat(1, 54, 3.4, 0.15)
-            faceFloat(3, 72, 2.8, 0.3)
-            faceFloat(2, 54, 3.6, 0.1)
-            faceFloat(4, 46, 3.1, 0.25)
-        }
-    }
-    private func faceFloat(_ m: Int, _ s: CGFloat, _ p: Double, _ d: Double) -> some View {
-        MoodFace(mood: m, size: s).floaty(amplitude: 8, period: p, delay: d)
-    }
-
-    private var write: some View {
-        VStack(alignment: .leading, spacing: 18) {
-            AnimatedLine(frac: 0.90, color: Palette.amberLight, delay: 0.1)
-            AnimatedLine(frac: 1.0, color: Palette.ink.opacity(0.12), delay: 0.4)
-            AnimatedLine(frac: 0.74, color: Palette.ink.opacity(0.12), delay: 0.7)
-            AnimatedLine(frac: 0.52, color: Palette.amber, delay: 1.0)
-        }
-        .padding(EdgeInsets(top: 26, leading: 24, bottom: 26, trailing: 24))
-        .frame(width: 220)
-        .background(.white, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-        .shadow(color: Color(hex: "78501E").opacity(0.14), radius: 20, y: 12)
-    }
-
-    private var quiet: some View {
-        HStack(alignment: .center, spacing: 12) {
-            SleepingAppTile(brand: .instagram, size: 58, tilt: -8).floaty(period: 3.4)
-            SleepingAppTile(brand: .snapchat, size: 58, tilt: 5).floaty(period: 3.0, delay: 0.2)
-            SleepingAppTile(brand: .x, size: 58, tilt: -4).floaty(period: 3.6, delay: 0.4)
-            SleepingAppTile(brand: .whatsapp, size: 58, tilt: 8).floaty(period: 3.2, delay: 0.1)
-        }
-        .background { SoftGlow(color: Palette.sunDisc, opacity: 0.16, size: 300) }
-    }
-
-    private var streak: some View {
-        VStack(spacing: 0) {
-            HStack(alignment: .bottom, spacing: 8) {
-                sun(26, 0.4); sun(34, 0.55); sun(44, 0.7); sun(56, 0.85)
-                SunMark(size: 72).floaty(period: 3)
-            }
-            .padding(.bottom, 20)
-            Text("12").font(Fonts.display(60, .heavy)).foregroundStyle(Palette.amber)
-            Eyebrow(text: "days and counting", color: Palette.inkSofter, tracking: 1, size: 13).padding(.top, 2)
-        }
-    }
-    private func sun(_ s: CGFloat, _ op: Double) -> some View { SunMark(size: s).opacity(op) }
-
-    private var ready: some View {
-        ZStack {
-            SunMark(size: 24).offset(x: -70, y: -50).floaty(period: 4)
-            SunMark(size: 18).offset(x: 74, y: -14).floaty(period: 5, delay: 0.4)
-            SunMark(size: 130).spin(period: 24).floaty(period: 6)
-        }
-        .frame(height: 180)
-    }
-}
-
-private struct AnimatedLine: View {
-    let frac: CGFloat
-    let color: Color
-    var delay: Double
-    @State private var shown = false
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-    var body: some View {
-        GeometryReader { g in
-            Capsule().fill(color)
-                .frame(width: g.size.width * frac, height: 11)
-                .scaleEffect(x: shown ? 1 : 0, anchor: .leading)
-        }
-        .frame(height: 11)
-        .onAppear {
-            if reduceMotion { shown = true; return }
-            withAnimation(.easeOut(duration: 1.1).delay(delay)) { shown = true }
-        }
     }
 }

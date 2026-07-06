@@ -77,20 +77,6 @@ struct CreamButton: View {
     }
 }
 
-struct GhostButton: View {
-    let title: String
-    var color: Color = Palette.inkSofter
-    var action: () -> Void
-    var body: some View {
-        Button { Haptics.tap(); action() } label: {
-            Text(loc: title).font(Fonts.ui(14.5, .bold)).foregroundStyle(color)
-                .frame(maxWidth: Metrics.maxButtonWidth).padding(.vertical, DesignScale.s(14))
-                .frame(maxWidth: .infinity)
-        }
-        .buttonStyle(PressableStyle(scale: 0.98))
-    }
-}
-
 // MARK: - Press feedback
 
 struct PressableStyle: ButtonStyle {
@@ -201,21 +187,6 @@ struct RitualPips: View {
             }
         }
         .animation(Motion.snappy, value: step)
-    }
-}
-
-struct PagerDots: View {
-    let count: Int
-    let index: Int
-    var body: some View {
-        HStack(spacing: 6) {
-            ForEach(0..<count, id: \.self) { i in
-                Capsule()
-                    .fill(i == index ? Palette.amber : Palette.ink.opacity(0.14))
-                    .frame(width: DesignScale.s(i == index ? 20 : 7), height: DesignScale.s(7))
-            }
-        }
-        .animation(Motion.snappy, value: index)
     }
 }
 

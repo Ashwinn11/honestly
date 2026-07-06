@@ -133,9 +133,9 @@ struct HistoryView: View {
                 SunMark(size: 58).floaty(period: 5)
             }
             VStack(spacing: 7) {
-                Text(emptyTitle)
+                Text(loc: emptyTitle)
                     .font(Fonts.display(21, .bold)).foregroundStyle(Palette.ink)
-                Text(emptyBody)
+                Text(loc: emptyBody)
                     .font(Fonts.ui(14, .semibold)).foregroundStyle(Palette.inkSofter)
                     .multilineTextAlignment(.center).lineSpacing(2)
             }

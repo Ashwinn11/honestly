@@ -17,11 +17,6 @@ struct PaywallView: View {
     private var reclaimedHours: Int {
         AppContent.reclaimedHours(scrollMin: SharedState.scrollMinutes, morningsPerWeek: SharedState.weeklyGoal)
     }
-    private var priceAnchorMonths: Int? {
-        guard let lifetime = premium.lifetimePrice, let monthly = premium.monthlyPrice, monthly > 0 else { return nil }
-        let months = Int((Double(truncating: (lifetime / monthly) as NSDecimalNumber)).rounded())
-        return months > 1 ? months : nil
-    }
 
     var body: some View {
         ZStack {
@@ -202,9 +197,6 @@ struct PaywallView: View {
     @ViewBuilder private var subNoteView: some View {
         if selected != .lifetime {
             Text(loc: "Cancel anytime · secure checkout")
-        } else if let months = priceAnchorMonths {
-            // Honest price framing from real store prices — no fabricated urgency or trial claims.
-            Text("Pays for itself in about \(months) months of the monthly plan")
         } else {
             Text(loc: "One-time payment · no subscription, ever")
         }

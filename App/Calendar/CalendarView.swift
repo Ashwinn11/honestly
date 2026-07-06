@@ -6,7 +6,13 @@ struct CalendarView: View {
         for: Calendar.current.date(from: Calendar.current.dateComponents([.year, .month], from: Date()))!)
 
     private let cols = Array(repeating: GridItem(.flexible(), spacing: 5), count: 7)
-    private let weekdayLetters = ["S", "M", "T", "W", "T", "F", "S"]
+    // Sunday-first, matching the grid's fixed layout (`leading` below assumes weekday 1 = Sunday).
+    // `veryShortWeekdaySymbols` is always Sunday…Saturday regardless of the locale's first-day-of-week.
+    private var weekdayLetters: [String] {
+        let f = DateFormatter()
+        f.locale = HDate.appLocale
+        return f.veryShortWeekdaySymbols
+    }
 
     private var comps: (year: Int, month: Int) {
         let c = Calendar.current.dateComponents([.year, .month], from: monthAnchor)
@@ -139,7 +145,7 @@ struct CalendarView: View {
                     VStack(spacing: 5) {
                         MoodFace(mood: i, size: 34)
                         Text("\(counts[i])").font(Fonts.ui(13, .heavy)).foregroundStyle(Palette.ink)
-                        Text(i == 4 ? "Crying" : Mood(rawValue: i)!.label)
+                        Text(loc: i == 4 ? "Crying" : Mood(rawValue: i)!.label)
                             .font(Fonts.ui(10, .bold)).foregroundStyle(Palette.inkSofter)
                     }
                     .frame(maxWidth: .infinity)

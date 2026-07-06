@@ -89,12 +89,6 @@ final class ScreenTimeManager {
         }
     }
 
-    func setSelectionSilently(_ new: FamilyActivitySelection) {
-        applyingProgrammatically = true
-        selection = new
-        applyingProgrammatically = false
-    }
-
     // MARK: DeviceActivity schedule
 
     func armSchedule() {

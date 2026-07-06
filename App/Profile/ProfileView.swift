@@ -14,7 +14,14 @@ struct ProfileView: View {
     @State private var confirmDelete = false
     @State private var showICloud = false
     @State private var cloudBusy = false
-    @State private var cloudMessage: String?
+    @State private var cloudMessage: CloudMessage?
+
+    private enum CloudMessage {
+        case backedUp(Int)
+        case backupFailed
+        case restored(Int)
+        case restoreNotFound
+    }
 
     var body: some View {
         @Bindable var st = screenTime
@@ -46,34 +53,6 @@ struct ProfileView: View {
         } message: {
             Text("This erases every page, your streak, and your app selection, and returns you to the start. It can't be undone.")
         }
-        .confirmationDialog("iCloud backup", isPresented: $showICloud, titleVisibility: .visible) {
-            Button("Back up to iCloud now") {
-                Task {
-                    cloudBusy = true
-                    let ok = await store.backupToCloud()
-                    cloudBusy = false
-                    if ok { Haptics.success() }
-                    cloudMessage = ok ? "Backed up \(store.totalMornings) page\(store.totalMornings == 1 ? "" : "s") to iCloud."
-                                      : "Couldn't reach iCloud. Check you're signed in and try again."
-                }
-            }
-            Button("Restore from iCloud") {
-                Task {
-                    cloudBusy = true
-                    let n = await store.restoreFromCloud()
-                    cloudBusy = false
-                    if let n { Haptics.success(); cloudMessage = "Restored \(n) page\(n == 1 ? "" : "s") from your iCloud backup." }
-                    else { cloudMessage = "No iCloud backup found." }
-                }
-            }
-            Button("Cancel", role: .cancel) { }
-        } message: {
-            Text("Save a snapshot of your pages to iCloud, or restore your latest one.")
-        }
-        .alert("iCloud", isPresented: Binding(get: { cloudMessage != nil },
-                                              set: { if !$0 { cloudMessage = nil } })) {
-            Button("OK", role: .cancel) { cloudMessage = nil }
-        } message: { Text(cloudMessage ?? "") }
         .overlay { if cloudBusy { ProgressView().controlSize(.large).tint(Palette.amber)
             .frame(maxWidth: .infinity, maxHeight: .infinity).background(.black.opacity(0.06)) } }
         .onChange(of: affirmNudgeOn) { _, on in
@@ -230,6 +209,43 @@ struct ProfileView: View {
                 }
             }
             .buttonStyle(RowPressStyle())
+            .confirmationDialog("iCloud backup", isPresented: $showICloud, titleVisibility: .visible) {
+                Button("Back up to iCloud now") {
+                    Task {
+                        cloudBusy = true
+                        let ok = await store.backupToCloud()
+                        cloudBusy = false
+                        if ok { Haptics.success() }
+                        cloudMessage = ok ? .backedUp(store.totalMornings) : .backupFailed
+                    }
+                }
+                Button("Restore from iCloud") {
+                    Task {
+                        cloudBusy = true
+                        let n = await store.restoreFromCloud()
+                        cloudBusy = false
+                        if let n { Haptics.success(); cloudMessage = .restored(n) }
+                        else { cloudMessage = .restoreNotFound }
+                    }
+                }
+                Button("Cancel", role: .cancel) { }
+            } message: {
+                Text("Save a snapshot of your pages to iCloud, or restore your latest one.")
+            }
+            .alert("iCloud", isPresented: Binding(get: { cloudMessage != nil },
+                                                  set: { if !$0 { cloudMessage = nil } })) {
+                Button("OK", role: .cancel) { cloudMessage = nil }
+            } message: {
+                switch cloudMessage {
+                case .backedUp(let n) where n == 1: Text("Backed up 1 page to iCloud.")
+                case .backedUp(let n): Text("Backed up \(n) pages to iCloud.")
+                case .backupFailed: Text("Couldn't reach iCloud. Check you're signed in and try again.")
+                case .restored(let n) where n == 1: Text("Restored 1 page from your iCloud backup.")
+                case .restored(let n): Text("Restored \(n) pages from your iCloud backup.")
+                case .restoreNotFound: Text("No iCloud backup found.")
+                case nil: EmptyView()
+                }
+            }
         }
         .background(Palette.cream, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).stroke(Palette.outlineSoft, lineWidth: 1.5))

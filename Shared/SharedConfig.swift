@@ -1,15 +1,9 @@
 import Foundation
 
 enum AppConfig {
-    static let bundleID            = "com.morning-journal.app"
     static let appGroupID          = "group.morning-journal.app"
     static let iCloudContainerID   = "iCloud.com.morning-journal.app"
     static let appStoreID          = "6759817879"   // Honestly on the App Store — used for the review deep link
-
-    static let activityMonitorID   = "com.morning-journal.app.activity-monitor"
-    static let shieldConfigID      = "com.morning-journal.app.ShieldConfiguration"
-    static let shieldActionID      = "com.morning-journal.app.ShieldAction"
-    static let bigWinsWidgetID     = "com.morning-journal.app.BigWinsWidget"   // matches the old app's widget bundle ID
 
     // RevenueCat — replace with the real public SDK key before shipping.
     static let revenueCatAPIKey    = "appl_zRRSBwyTqHGTNBJtwyKyrDifAdI"
@@ -42,7 +36,6 @@ enum SharedState {
         static let weeklyGoal         = "onboarding.weeklyGoal"     // mornings/week the user committed to
         static let onboardingGoal     = "onboarding.goal"           // primary stated goal (OnbGoal key)
         static let scrollMinutes      = "onboarding.scrollMinutes"  // self-reported morning scroll minutes
-        static let appsPhrase         = "onboarding.appsPhrase"     // display phrase for the apps they picked, e.g. "Instagram & TikTok"
         static let demoMood           = "onboarding.demoMood"       // mood face they tapped during the onboarding demo
         static let demoLine           = "onboarding.demoLine"       // the line they wrote during the onboarding demo
         static let demoAffirmation    = "onboarding.demoAffirmation" // the affirmation they wrote during the onboarding demo
@@ -59,8 +52,6 @@ enum SharedState {
         let c = cal.dateComponents([.year, .month, .day], from: date)
         return String(format: "%04d-%02d-%02d", c.year ?? 0, c.month ?? 0, c.day ?? 0)
     }
-
-    static func entryID(for date: Date = Date()) -> String { "journal-\(dayKey(for: date))" }
 
     // MARK: Ritual completion
 
@@ -125,11 +116,6 @@ enum SharedState {
     static var scrollMinutes: Int {
         get { defaults.integer(forKey: Key.scrollMinutes) }
         set { defaults.set(newValue, forKey: Key.scrollMinutes) }
-    }
-
-    static var appsPhrase: String {
-        get { defaults.string(forKey: Key.appsPhrase) ?? "" }
-        set { defaults.set(newValue, forKey: Key.appsPhrase) }
     }
 
     // MARK: Onboarding demo (the "try it now" morning page — reused to preview what unlocking keeps)

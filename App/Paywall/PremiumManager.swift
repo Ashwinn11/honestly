@@ -9,7 +9,6 @@ import RevenueCat
 final class PremiumManager {
     var isPremium = false
     var offerings: Offerings? = nil
-    var purchasing = false
 
     func configure() {
         Purchases.logLevel = .warn
@@ -44,8 +43,6 @@ final class PremiumManager {
     var hasMonthly: Bool { monthlyPackage != nil }
     var lifetimePriceString: String { lifetimePackage?.storeProduct.localizedPriceString ?? "" }
     var monthlyPriceString: String { monthlyPackage?.storeProduct.localizedPriceString ?? "" }
-    var lifetimePrice: Decimal? { lifetimePackage?.storeProduct.price }
-    var monthlyPrice: Decimal? { monthlyPackage?.storeProduct.price }
 
     @discardableResult func purchaseLifetime() async -> Bool {
         guard let p = lifetimePackage else { return false }
@@ -58,8 +55,6 @@ final class PremiumManager {
 
     @discardableResult
     func purchase(_ package: Package) async -> Bool {
-        purchasing = true
-        defer { purchasing = false }
         guard let result = try? await Purchases.shared.purchase(package: package), !result.userCancelled
         else { return false }
         isPremium = result.customerInfo.entitlements[AppConfig.entitlementID]?.isActive == true

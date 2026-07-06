@@ -57,7 +57,6 @@ final class JournalStore {
 
     // MARK: Aggregate stats
     var totalMornings: Int { entries.count }
-    var recent: [JournalEntry] { Array(entries.prefix(3)) }
 
     var streak: Int {
         let cal = Calendar.current
@@ -102,11 +101,7 @@ final class JournalStore {
     // MARK: Week strip (last 7 days, oldest → today)
     struct DayCell: Identifiable {
         let id: String
-        let date: Date
-        let letter: String        // single-letter weekday
         let entry: JournalEntry?
-        let isToday: Bool
-        var filled: Bool { entry != nil }
     }
 
     var weekStrip: [DayCell] {
@@ -115,8 +110,7 @@ final class JournalStore {
         return (0..<7).reversed().map { off in
             let d = cal.date(byAdding: .day, value: -off, to: today) ?? today
             let key = SharedState.dayKey(for: d)
-            return DayCell(id: key, date: d, letter: Self.weekdayLetter(d),
-                           entry: entry(for: key), isToday: off == 0)
+            return DayCell(id: key, entry: entry(for: key))
         }
     }
 
@@ -181,7 +175,6 @@ final class JournalStore {
         SharedState.onboardingGoal = ""
         SharedState.scrollMinutes = 0
         SharedState.weeklyGoal = 5
-        SharedState.appsPhrase = ""
         SharedState.demoMood = -1
         SharedState.demoLine = ""
         SharedState.demoAffirmation = ""
@@ -235,10 +228,4 @@ final class JournalStore {
         reload()
         return added
     }
-
-    // MARK: Helpers
-    private static let letterFmt: DateFormatter = {
-        let f = DateFormatter(); f.dateFormat = "EEEEE"; return f     // narrow weekday, e.g. "M"
-    }()
-    static func weekdayLetter(_ d: Date) -> String { letterFmt.string(from: d) }
 }

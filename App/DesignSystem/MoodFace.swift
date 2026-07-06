@@ -12,9 +12,6 @@ struct MoodFace: View {
     init(mood: Int, size: CGFloat = 44, expressive: Bool = false) {
         self.mood = min(max(mood, 0), 4); self.size = size; self.expressive = expressive
     }
-    init(_ mood: Mood, size: CGFloat = 44, expressive: Bool = false) {
-        self.init(mood: mood.rawValue, size: size, expressive: expressive)
-    }
 
     var body: some View {
         Canvas { ctx, cs in

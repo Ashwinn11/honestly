@@ -163,7 +163,7 @@ struct HomeView: View {
                 }
             }
             .frame(height: 8)
-            Text(done >= goal ? "Goal met" : "\(done)/\(goal)")
+            Text(loc: done >= goal ? "Goal met" : "\(done)/\(goal)")
                 .font(Fonts.ui(12, .heavy))
                 .foregroundStyle(done >= goal ? Palette.success : Palette.inkSoft)
         }

@@ -9,9 +9,3 @@ struct PaperBackground: View {
             .ignoresSafeArea()
     }
 }
-
-extension View {
-    func paperBackground() -> some View {
-        background(PaperBackground())
-    }
-}

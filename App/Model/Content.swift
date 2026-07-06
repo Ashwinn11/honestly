@@ -16,7 +16,6 @@ enum AppContent {
 
     // MARK: - Onboarding funnel
 
-    static let onbBrandTagline  = "The quiet part of the morning — before the world logs on."
     static let onbProblemTitle  = "You reach for\nthe phone first."
     static let onbProblemBody   = "Before you've had one thought of your own, the feed has a hundred."
 
@@ -104,14 +103,6 @@ enum OnbGoal: String, CaseIterable, Identifiable {
         case .feelFeelings: return "Let's make space to feel what you're actually feeling."
         }
     }
-    var leadBenefit: String {
-        switch self {
-        case .clearHead, .calmStart: return "leaf.fill"
-        case .offPhone:              return "sunrise.fill"
-        case .momentForMe:           return "lock.fill"
-        case .feelFeelings:          return "flame.fill"
-        }
-    }
 }
 
 struct ScrollOption: Identifiable {
@@ -141,4 +132,4 @@ struct SocialProof {
     }
 }
 
-enum OnbKind { case brand, noise, page, moods, write, quiet, streak, ready }
+enum OnbKind { case brand, noise }
