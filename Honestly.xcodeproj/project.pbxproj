@@ -907,6 +907,8 @@
 		04925D245E1EA37ED08116D3 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				LOCALIZED_STRING_SWIFT_SYMBOLS_GENERATION = NO;
+				GENERATE_LOCALIZABLE_STRINGS_SYMBOLS = NO;
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
@@ -956,7 +958,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				MARKETING_VERSION = 3.4;
+				MARKETING_VERSION = 3.5;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -972,6 +974,8 @@
 		114D381C69C4CE4895A290C8 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				LOCALIZED_STRING_SWIFT_SYMBOLS_GENERATION = NO;
+				GENERATE_LOCALIZABLE_STRINGS_SYMBOLS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = App/Honestly.entitlements;
@@ -993,6 +997,8 @@
 		1F041035F7D1A1F16B57DAE9 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				LOCALIZED_STRING_SWIFT_SYMBOLS_GENERATION = NO;
+				GENERATE_LOCALIZABLE_STRINGS_SYMBOLS = NO;
 				CODE_SIGN_ENTITLEMENTS = ActivityMonitorExtension/ActivityMonitorExtension.entitlements;
 				INFOPLIST_FILE = ActivityMonitorExtension/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1010,6 +1016,8 @@
 		35C5A4FDC11983DF05BEF3BD /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				LOCALIZED_STRING_SWIFT_SYMBOLS_GENERATION = NO;
+				GENERATE_LOCALIZABLE_STRINGS_SYMBOLS = NO;
 				CODE_SIGN_ENTITLEMENTS = BigWinsWidget/BigWinsWidget.entitlements;
 				INFOPLIST_FILE = BigWinsWidget/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1027,6 +1035,8 @@
 		4A3FDDF2A3C67AF46969ECB6 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				LOCALIZED_STRING_SWIFT_SYMBOLS_GENERATION = NO;
+				GENERATE_LOCALIZABLE_STRINGS_SYMBOLS = NO;
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = App/Honestly.entitlements;
@@ -1048,6 +1058,8 @@
 		5E95835CF6D9E455104E229D /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				LOCALIZED_STRING_SWIFT_SYMBOLS_GENERATION = NO;
+				GENERATE_LOCALIZABLE_STRINGS_SYMBOLS = NO;
 				CODE_SIGN_ENTITLEMENTS = ShieldActionExtension/ShieldActionExtension.entitlements;
 				INFOPLIST_FILE = ShieldActionExtension/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1065,6 +1077,8 @@
 		6724B53EEC24C71398BD01FF /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				LOCALIZED_STRING_SWIFT_SYMBOLS_GENERATION = NO;
+				GENERATE_LOCALIZABLE_STRINGS_SYMBOLS = NO;
 				CODE_SIGN_ENTITLEMENTS = ShieldConfigurationExtension/ShieldConfigurationExtension.entitlements;
 				INFOPLIST_FILE = ShieldConfigurationExtension/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1082,6 +1096,8 @@
 		AA6C243DC1925EABF476AD7E /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				LOCALIZED_STRING_SWIFT_SYMBOLS_GENERATION = NO;
+				GENERATE_LOCALIZABLE_STRINGS_SYMBOLS = NO;
 				CODE_SIGN_ENTITLEMENTS = ShieldConfigurationExtension/ShieldConfigurationExtension.entitlements;
 				INFOPLIST_FILE = ShieldConfigurationExtension/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1099,6 +1115,8 @@
 		B57BA09946B798BF8BB6E86E /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				LOCALIZED_STRING_SWIFT_SYMBOLS_GENERATION = NO;
+				GENERATE_LOCALIZABLE_STRINGS_SYMBOLS = NO;
 				CODE_SIGN_ENTITLEMENTS = BigWinsWidget/BigWinsWidget.entitlements;
 				INFOPLIST_FILE = BigWinsWidget/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1116,6 +1134,8 @@
 		C05DD02113C902A74241BA46 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				LOCALIZED_STRING_SWIFT_SYMBOLS_GENERATION = NO;
+				GENERATE_LOCALIZABLE_STRINGS_SYMBOLS = NO;
 				CODE_SIGN_ENTITLEMENTS = ShieldActionExtension/ShieldActionExtension.entitlements;
 				INFOPLIST_FILE = ShieldActionExtension/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1133,6 +1153,8 @@
 		DB296526419FFE4B7BC97B3F /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				LOCALIZED_STRING_SWIFT_SYMBOLS_GENERATION = NO;
+				GENERATE_LOCALIZABLE_STRINGS_SYMBOLS = NO;
 				CODE_SIGN_ENTITLEMENTS = ActivityMonitorExtension/ActivityMonitorExtension.entitlements;
 				INFOPLIST_FILE = ActivityMonitorExtension/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -1150,6 +1172,8 @@
 		E69D0549D05FA160C235FB2D /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				LOCALIZED_STRING_SWIFT_SYMBOLS_GENERATION = NO;
+				GENERATE_LOCALIZABLE_STRINGS_SYMBOLS = NO;
 				ALWAYS_SEARCH_USER_PATHS = NO;
 				CLANG_ANALYZER_NONNULL = YES;
 				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
@@ -1205,7 +1229,7 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				GENERATE_INFOPLIST_FILE = NO;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
-				MARKETING_VERSION = 3.4;
+				MARKETING_VERSION = 3.5;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;

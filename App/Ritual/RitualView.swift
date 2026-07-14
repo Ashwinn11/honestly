@@ -11,11 +11,28 @@ struct RitualView: View {
     @State private var journal = ""
     @State private var affirmations = ["", "", "", "", ""]
     @FocusState private var journalFocused: Bool
+    @State private var promptIndex: Int = 0
+    @State private var promptDismissed: Bool = false
 
     private var wordCount: Int {
         journal.split(whereSeparator: { $0.isWhitespace || $0.isNewline }).count
     }
     private var affirmCount: Int { affirmations.filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }.count }
+
+    // MARK: Prompt helpers
+    private var promptPool: [JournalPrompt] { AppContent.prompts(for: mood) }
+    private var currentPromptText: String {
+        guard !promptPool.isEmpty else { return "" }
+        return promptPool[promptIndex % promptPool.count].text
+    }
+    private func shufflePrompt() {
+        guard promptPool.count > 1 else { return }
+        var next: Int
+        repeat { next = Int.random(in: 0..<promptPool.count) }
+        while next == promptIndex % promptPool.count
+        withAnimation(Motion.snappy) { promptIndex = next }
+        Haptics.select()
+    }
 
     var body: some View {
         @Bindable var flow = flow
@@ -141,6 +158,20 @@ struct RitualView: View {
             Text("No prompts, no rules. Just write.")
                 .font(Fonts.ui(15, .semibold)).foregroundStyle(Palette.inkSoft).padding(.top, 7)
 
+            // Prompt chip: hidden once the user starts writing (premium) or on explicit dismiss.
+            // Free users see a blurred teaser that opens the paywall on tap.
+            if !promptDismissed && !(premium.isPremium && wordCount > 0) {
+                JournalPromptChip(
+                    text: currentPromptText,
+                    isPremium: premium.isPremium,
+                    onShuffle: shufflePrompt,
+                    onDismiss: { withAnimation(Motion.gentle) { promptDismissed = true } },
+                    onLockTap: { flow.showPaywall() }
+                )
+                .padding(.top, 16)
+                .transition(.opacity.combined(with: .move(edge: .top)))
+            }
+
             RuledTextEditor(text: $journal, placeholder: AppContent.journalPlaceholder)
                 .focused($journalFocused)
                 .padding(.top, 20)
@@ -150,6 +181,12 @@ struct RitualView: View {
                 .padding(.top, 12).padding(.horizontal, 2)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .onAppear {
+            // Seed with today's daily prompt for this mood pool — stable all session, rotates daily.
+            promptIndex = AppContent.dailyPromptIndex(in: promptPool)
+            promptDismissed = false
+        }
+        .animation(Motion.gentle, value: wordCount == 0)
     }
 
     // MARK: Step 2 — affirmations
@@ -210,6 +247,93 @@ struct RitualView: View {
         store.saveRitual(mood: mood ?? 2, journal: journal, gratitudes: affirmations)
         Haptics.success()
         withAnimation(Motion.gentle) { step = 3 }
+    }
+}
+
+// MARK: - Journal prompt chip (premium: readable + shuffle/dismiss · free: blurred teaser → paywall)
+
+private struct JournalPromptChip: View {
+    let text: String
+    let isPremium: Bool
+    let onShuffle: () -> Void
+    let onDismiss: () -> Void
+    let onLockTap: () -> Void
+
+    var body: some View {
+        if isPremium {
+            premiumChip
+        } else {
+            lockedChip
+        }
+    }
+
+    // Amber-tinted chip with shuffle + dismiss controls
+    private var premiumChip: some View {
+        HStack(alignment: .top, spacing: 10) {
+            InkGlyph(kind: .sparkle, size: 14, fill: Palette.amber, lineWidth: 1.2)
+                .frame(width: 18, height: 18)
+                .padding(.top, 1)
+
+            Text(loc: text)
+                .font(Fonts.ui(13.5, .semibold))
+                .foregroundStyle(Palette.ink)
+                .lineSpacing(2)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+
+            HStack(spacing: 12) {
+                Button(action: onShuffle) {
+                    Image(systemName: "arrow.2.squarepath")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(Palette.inkSofter)
+                }
+                .buttonStyle(PressableStyle(scale: 0.88))
+
+                Button(action: onDismiss) {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(Palette.inkSofter)
+                }
+                .buttonStyle(PressableStyle(scale: 0.88))
+            }
+        }
+        .padding(EdgeInsets(top: 12, leading: 14, bottom: 12, trailing: 14))
+        .background(Palette.cream, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(Palette.outlineSoft, lineWidth: 1.5)
+        )
+    }
+
+    // Same layout but text blurred — tap anywhere opens paywall
+    private var lockedChip: some View {
+        Button(action: onLockTap) {
+            HStack(alignment: .center, spacing: 12) {
+                Image(systemName: "lock.fill")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(Palette.inkSofter)
+                    .frame(width: 18, height: 18)
+
+                Text(loc: "Unlock daily morning prompts")
+                    .font(Fonts.ui(14.5, .semibold))
+                    .foregroundStyle(Palette.inkSofter)
+
+                Spacer(minLength: 0)
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(Palette.hairline)
+            }
+            .padding(EdgeInsets(top: 12, leading: 14, bottom: 12, trailing: 14))
+            .background(Palette.cream, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(Palette.ink.opacity(0.12), lineWidth: 1.5)
+            )
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(PressableStyle(scale: 0.98))
     }
 }
 

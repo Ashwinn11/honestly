@@ -534,7 +534,7 @@ private struct OnbPlanView: View {
 
             VStack(spacing: 14) {
                 planRow(SunMark(size: 20), "The ritual",
-                        "Mood → a 2-minute write → a few affirmations  ·  ~3 min")
+                        "Mood → a prompt → write → affirm  ·  ~3 min")
                 planRow(InkGlyph(kind: .moon, size: 20, fill: Palette.sunDisc, lineWidth: 1.6), "The quiet",
                         "Instagram, TikTok & X stay asleep until you've written")
                 planRow(InkGlyph(kind: .flame, size: 19, fill: Palette.sunDisc, lineWidth: 1.6), "The goal",
@@ -584,6 +584,30 @@ private struct OnbRitualDemoView: View {
 
             VStack(alignment: .leading, spacing: 10) {
                 fieldLabel("Empty your head — one line")
+
+                // Show a mood-matched prompt chip once the user has picked a mood.
+                // No controls — purely demonstrating the premium feature in context.
+                if let mood = answers.demoMood {
+                    let pool = AppContent.prompts(for: mood)
+                    let prompt = pool[AppContent.dailyPromptIndex(in: pool) % pool.count].text
+                    HStack(alignment: .top, spacing: 10) {
+                        InkGlyph(kind: .sparkle, size: 14, fill: Palette.amber, lineWidth: 1.2)
+                            .frame(width: 18, height: 18)
+                            .padding(.top, 1)
+                        Text(loc: prompt)
+                            .font(Fonts.ui(13.5, .semibold))
+                            .foregroundStyle(Palette.ink)
+                            .lineSpacing(2)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .padding(EdgeInsets(top: 12, leading: 14, bottom: 12, trailing: 14))
+                    .background(Palette.cream, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(Palette.outlineSoft, lineWidth: 1.5))
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+                }
+
                 TextField(LocalizedStringKey(AppContent.journalPlaceholder), text: $answers.demoLine, axis: .vertical)
                     .font(Fonts.ui(16, .semibold)).foregroundStyle(Palette.ink)
                     .lineLimit(2...4)
@@ -594,6 +618,7 @@ private struct OnbRitualDemoView: View {
                         .stroke(Palette.ink.opacity(0.15), lineWidth: 1.5))
             }
             .padding(.bottom, 22)
+            .animation(Motion.snappy, value: answers.demoMood)
 
             VStack(alignment: .leading, spacing: 10) {
                 fieldLabel("Affirm yourself")

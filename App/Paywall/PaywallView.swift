@@ -82,6 +82,7 @@ struct PaywallView: View {
     // MARK: Benefits — sun-disc bullets, no card
     private var benefitsCard: some View {
         VStack(alignment: .leading, spacing: 12) {
+            benefitRow(Text(loc: "Daily prompts that match how you're actually feeling"))
             benefitRow(Text(loc: "Every affirmation echoed back to you, not just the first line"))
             benefitRow(Text(loc: "Distracting apps, quieted till you write"))
             benefitRow(Text(loc: "Your full history, synced and backed up everywhere"))
