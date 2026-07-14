@@ -317,6 +317,7 @@ struct ProfileView: View {
                 Text("Delete all data").font(Fonts.ui(15, .heavy)).foregroundStyle(Palette.danger)
             }
             .frame(maxWidth: .infinity).padding(.vertical, 16)
+            .contentShape(Rectangle())
         }
         .buttonStyle(RowPressStyle())
         .background(Palette.cream, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
@@ -337,6 +338,7 @@ struct ProfileView: View {
             trailing()
         }
         .padding(.horizontal, 18).padding(.vertical, 15)
+        .contentShape(Rectangle())
     }
     private func rowText(_ title: String, _ subtitle: String? = nil) -> some View {
         VStack(alignment: .leading, spacing: 1) {

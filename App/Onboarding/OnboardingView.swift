@@ -166,14 +166,15 @@ struct OnboardingView: View {
                     content()
                         .frame(maxWidth: .infinity)
                         .frame(minHeight: geo.size.height, alignment: .center)
+                        .padding(.horizontal, 26)   // padding lives here so shadows bleed freely
                         .padding(.vertical, 12)
                 }
                 .scrollIndicators(.hidden)
                 .scrollBounceBehavior(.basedOnSize)
             }
             footer(primary: primary, secondary: secondary)   // pinned at the bottom
+                .padding(.horizontal, 26)
         }
-        .padding(.horizontal, 26)
         .padding(.top, 8)
         .padding(.bottom, 30)
     }
