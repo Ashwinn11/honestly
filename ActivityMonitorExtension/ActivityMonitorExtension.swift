@@ -9,15 +9,7 @@ final class ActivityMonitorExtension: DeviceActivityMonitor {
 
     override func intervalDidStart(for activity: DeviceActivityName) {
         super.intervalDidStart(for: activity)
-        // Blocking is a premium feature — a subscription that lapsed while the app was never
-        // reopened must not get re-shielded off a stale schedule.
-        guard SharedState.premiumActive else { Shielding.clear(); return }
-        // A fresh morning: shield unless today's ritual is already complete.
-        if SharedState.ritualCompleted() {
-            Shielding.clear()
-        } else {
-            Shielding.applySaved()
-        }
+        Shielding.reconcile()
         // Runs even on days the app is never opened — the only trigger that reliably covers that
         // case, since everything else depends on the app or its UI actually being used.
         AffirmationNudge.scheduleReminderIfNeeded(ritualDoneToday: SharedState.ritualCompleted())

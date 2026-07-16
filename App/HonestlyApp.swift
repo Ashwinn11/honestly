@@ -55,27 +55,20 @@ struct HonestlyApp: App {
                 .task {
                     premium.configure()
                     screenTime.refreshAuthStatus()
-                    // Seed explicitly rather than relying on `didSet` (which only fires on change) —
-                    // a cold launch must disarm a stale schedule for a free/lapsed user too.
+                    // `isPremium` is the persisted lifetime flag — already correct at first frame,
+                    // so the schedule/shield decisions below never see a transient "free" while
+                    // RevenueCat is still resolving. Seed explicitly rather than relying on
+                    // `didSet` (which only fires on change).
                     screenTime.isPremiumActive = premium.isPremium
-                    SharedState.premiumActive = premium.isPremium
                     screenTime.armSchedule()
-                    reconcileShield()
+                    Shielding.reconcile()
                 }
                 .onChange(of: premium.isPremium) { _, isPremium in
+                    // Fires once in the app's life: the moment the lifetime unlock ratchets on.
                     screenTime.isPremiumActive = isPremium
-                    SharedState.premiumActive = isPremium
-                    reconcileShield()
+                    Shielding.reconcile()
                 }
         }
     }
 
-    private func reconcileShield() {
-        guard premium.isPremium else { Shielding.clear(); return }
-        if store.ritualDoneToday {
-            Shielding.clear()
-        } else if screenTime.hasSelection, screenTime.authorized, screenTime.isWithinMorningWindow() {
-            Shielding.apply(BlockingCodec.load())
-        }
-    }
 }

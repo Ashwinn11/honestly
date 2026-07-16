@@ -79,14 +79,10 @@ final class ScreenTimeManager {
         BlockingCodec.save(new)
         SharedState.hasEverConfiguredBlocking = true
         SharedState.blockingEnabled = hasSelection
-        // Never touch DeviceActivity / ManagedSettings unauthorized, or for a free/lapsed subscriber.
+        // Never touch DeviceActivity / ManagedSettings unauthorized, or for a free subscriber.
         guard authorized, isPremiumActive else { stopMonitoring(); return }
         armSchedule()
-        if hasSelection, isWithinMorningWindow(), !SharedState.ritualCompleted() {
-            Shielding.apply(new)
-        } else {
-            Shielding.clear()
-        }
+        Shielding.reconcile()
     }
 
     // MARK: DeviceActivity schedule
@@ -94,8 +90,11 @@ final class ScreenTimeManager {
     func armSchedule() {
         guard authorized, isPremiumActive else { stopMonitoring(); return }
         let name = DeviceActivityName(AppConfig.morningScheduleName)
-        center.stopMonitoring([name])
-        guard hasSelection else { return }
+        guard hasSelection else { center.stopMonitoring([name]); return }
+        // Already armed → leave it alone. Stop/start churn (this runs on every cold launch) is a
+        // known source of missed DeviceActivity callbacks, and the schedule itself never changes.
+        // If the window hours ever do change, rename `morningScheduleName` so stale schedules die.
+        guard !center.activities.contains(name) else { return }
         let schedule = DeviceActivitySchedule(
             intervalStart: DateComponents(hour: AppConfig.blockStartHour, minute: AppConfig.blockStartMinute),
             intervalEnd:   DateComponents(hour: AppConfig.blockEndHour,   minute: AppConfig.blockEndMinute),
@@ -110,10 +109,6 @@ final class ScreenTimeManager {
 
     // MARK: Window helper
     func isWithinMorningWindow(_ date: Date = Date()) -> Bool {
-        let c = Calendar.current.dateComponents([.hour, .minute], from: date)
-        let mins = (c.hour ?? 0) * 60 + (c.minute ?? 0)
-        let start = AppConfig.blockStartHour * 60 + AppConfig.blockStartMinute
-        let end = AppConfig.blockEndHour * 60 + AppConfig.blockEndMinute
-        return mins >= start && mins <= end
+        AppConfig.isWithinBlockWindow(date)
     }
 }

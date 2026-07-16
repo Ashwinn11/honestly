@@ -4,7 +4,8 @@ import UserNotifications
 /// One notification per affirmation actually written today, each quoting that specific line —
 /// so writing 1 affirmation sends 1 notification, writing 5 sends 5. If today has none (ritual
 /// skipped, or completed with the affirmation field left blank), sends a single generic
-/// "come write today" reminder instead — fired at most once per day.
+/// "come write today" reminder instead — fired at most once per day. Nothing here ever fires
+/// past 8pm: a late-evening ritual just gets fewer (or no) echoes rather than 2am pings.
 enum AffirmationNudge {
     private static let reminderID = "honestly.affirmation.reminder"
     private static let echoIDPrefix = "honestly.affirmation.echo."
@@ -21,6 +22,17 @@ enum AffirmationNudge {
     private static let intervalHours = 2.0
     private static func delay(forSlot slot: Int) -> TimeInterval {
         Double(slot + 1) * intervalHours * 3600
+    }
+
+    /// The block window runs to 23:59, so a late ritual would otherwise queue echoes deep into
+    /// the night (a 9pm write → 11pm/1am/3am…). Nothing fires past 8pm — the same hour as the
+    /// unwritten-day reminder — slots that would land later are dropped, not rescheduled.
+    private static let echoCutoffHour = 20
+    private static func landsByCutoff(_ seconds: TimeInterval, now: Date = Date()) -> Bool {
+        let cal = Calendar.current
+        guard let cutoff = cal.date(byAdding: .hour, value: echoCutoffHour, to: cal.startOfDay(for: now))
+        else { return true }
+        return now.addingTimeInterval(seconds) <= cutoff
     }
 
     /// Nudges are a premium feature: OFF until a premium user flips the profile toggle (which
@@ -65,12 +77,13 @@ enum AffirmationNudge {
             sendImmediateReminder(center: center)
         } else {
             for (i, line) in lines.prefix(maxEchoes).enumerated() {
+                let seconds = delay(forSlot: i)
+                guard landsByCutoff(seconds) else { break }   // slots only get later — none after this fit
                 let content = UNMutableNotificationContent()
                 // Not SwiftUI here, so `Text(loc:)` doesn't apply — do the String Catalog lookup directly.
                 content.title = String(localized: "Today's affirmation")
                 content.body = line   // the user's own words — never translated/rewritten
                 content.sound = .default
-                let seconds = delay(forSlot: i)
                 let trigger = UNTimeIntervalNotificationTrigger(timeInterval: seconds, repeats: false)
                 center.add(UNNotificationRequest(identifier: echoIDPrefix + "\(i)", content: content, trigger: trigger))
             }
@@ -112,6 +125,7 @@ enum AffirmationNudge {
         content.body = String(localized: "Write today's page — a few quiet minutes, just for you.")
         content.sound = .default
         let seconds = delay(forSlot: 0)   // a lone reminder is always the first (and only) slot
+        guard landsByCutoff(seconds) else { return }   // same 8pm cutoff as the echoes
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: seconds, repeats: false)
         center.add(UNNotificationRequest(identifier: reminderID, content: content, trigger: trigger))
     }

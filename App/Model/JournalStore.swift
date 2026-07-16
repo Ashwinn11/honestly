@@ -33,6 +33,17 @@ final class JournalStore {
         }
         entries = kept
         syncWidgetData()
+        healRitualFlag()
+    }
+
+    /// The app-group flag (`lastRitualDay`) is what the selection commit and the 04:00 extension
+    /// read — but the database is the truth, and the two can diverge (a reinstall keeps app-group
+    /// defaults while the store resets, leaving a stale "done today" that silently blocks
+    /// re-shielding). Force the flag to match the database on every reload.
+    private func healRitualFlag() {
+        let done = todayEntry != nil
+        guard done != SharedState.ritualCompleted() else { return }
+        SharedState.lastRitualDay = done ? todayKey : nil
     }
 
     /// Keeps the widget's cross-process cache (`SharedState.todayAffirmations`) in step with the
@@ -153,15 +164,26 @@ final class JournalStore {
 
         SharedState.markRitualComplete(mood: face.storageKey)
         SharedState.streak = streak
-        Shielding.clear()
+        Shielding.reconcile()
         AffirmationNudge.scheduleForToday()
         return entry
     }
 
+    /// Deleting today's page rewinds the day to "not written yet": the completion flag and the
+    /// queued echo notifications are cleared before `reload()` so the widget rebuild sees a
+    /// consistent state, and the shield comes back if blocking would be active right now —
+    /// otherwise the home screen says "your page is waiting" while the apps stay unlocked.
     func delete(_ entry: JournalEntry) {
+        let wasToday = entry.dayKey == todayKey
+        if wasToday {
+            SharedState.lastRitualDay = nil
+            SharedState.todayMoodKey = nil
+            AffirmationNudge.cancel()
+        }
         context.delete(entry)
         try? context.save()
         reload()
+        if wasToday { Shielding.reconcile() }
     }
 
     func deleteAll() {

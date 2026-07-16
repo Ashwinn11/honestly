@@ -17,6 +17,14 @@ enum AppConfig {
     static let blockStartMinute = 0
     static let blockEndHour     = 23
     static let blockEndMinute   = 59
+
+    /// True when `date` falls inside the daily block window above.
+    static func isWithinBlockWindow(_ date: Date = Date()) -> Bool {
+        let c = Calendar.current.dateComponents([.hour, .minute], from: date)
+        let mins = (c.hour ?? 0) * 60 + (c.minute ?? 0)
+        return mins >= blockStartHour * 60 + blockStartMinute
+            && mins <= blockEndHour * 60 + blockEndMinute
+    }
 }
 
 /// App-group–backed state shared between the app and its extensions.
