@@ -9,6 +9,7 @@ struct HonestlyApp: App {
     @State private var flow = AppFlow()
     @State private var l10n = LocalizationManager()
     @State private var store: JournalStore
+    @Environment(\.scenePhase) private var scenePhase
     private let container: ModelContainer
 
     init() {
@@ -66,6 +67,19 @@ struct HonestlyApp: App {
                 .onChange(of: premium.isPremium) { _, isPremium in
                     // Fires once in the app's life: the moment the lifetime unlock ratchets on.
                     screenTime.isPremiumActive = isPremium
+                    Shielding.reconcile()
+                }
+                .onChange(of: scenePhase) { _, phase in
+                    // A warm resume redraws nothing on its own: if the day rolled over while the
+                    // app sat suspended, Home still shows yesterday's "done" card (no observed
+                    // state changed — only the clock did) while the 04:00 extension has already
+                    // re-shielded. Re-derive everything date-dependent on every return to the
+                    // foreground: `reload()` re-publishes `entries` (forcing date-computed views
+                    // to re-evaluate) and `reconcile()` doubles as the fallback for the days iOS
+                    // drops the 04:00 DeviceActivity callback entirely.
+                    guard phase == .active else { return }
+                    store.reload()
+                    screenTime.refreshAuthStatus()
                     Shielding.reconcile()
                 }
         }
