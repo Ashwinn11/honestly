@@ -2,13 +2,45 @@ import Foundation
 
 /// A single entry serialized for the backup payload (mirrors the production fields; `JournalEntry`
 /// isn't itself Codable).
+///
+/// Deliberately does **not** carry affirmations — they're never displayed for any entry but
+/// today's (`HomeView`'s "Today's affirmations"), and past entries only ever surface a bare count
+/// (`HistoryView`'s `EntryScore`), never the text itself. That count is a "you showed up" signal,
+/// not recoverable content, so it's not worth the payload weight here. The primary sync path —
+/// SwiftData's automatic CloudKit mirroring — still carries `JournalEntry.affirmationsRaw` in
+/// full; this is only the secondary, explicit "back up / restore" snapshot.
 struct EntrySnapshot: Codable {
     var id: UUID
     var content: String
     var mood: String
-    var gratitude: String
     var wordCount: Int
     var createdAt: Date
+    var tags: [String] = []
+
+    // Manual init(from:) so older backups (written before `tags` existed) still decode — a plain
+    // default value on the property doesn't help here, since synthesized Codable would otherwise
+    // require the key to be present. Older backups carrying now-unrecognized keys (e.g. a legacy
+    // affirmations field) decode fine too — Codable silently ignores keys a struct doesn't declare.
+    enum CodingKeys: String, CodingKey { case id, content, mood, wordCount, createdAt, tags }
+
+    init(id: UUID, content: String, mood: String, wordCount: Int, createdAt: Date, tags: [String] = []) {
+        self.id = id
+        self.content = content
+        self.mood = mood
+        self.wordCount = wordCount
+        self.createdAt = createdAt
+        self.tags = tags
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(UUID.self, forKey: .id)
+        content = try c.decode(String.self, forKey: .content)
+        mood = try c.decode(String.self, forKey: .mood)
+        wordCount = try c.decode(Int.self, forKey: .wordCount)
+        createdAt = try c.decode(Date.self, forKey: .createdAt)
+        tags = try c.decodeIfPresent([String].self, forKey: .tags) ?? []
+    }
 }
 
 struct BackupPayload: Codable {

@@ -355,7 +355,7 @@ struct OnboardingView: View {
         answers.persist()
         if answers.demoReady {
             store.saveRitual(mood: answers.demoMood ?? 2, journal: answers.demoLine,
-                              gratitudes: [answers.demoAffirmation])
+                              affirmations: [answers.demoAffirmation])
         }
         SharedState.onboardingComplete = true
         Haptics.success()

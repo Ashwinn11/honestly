@@ -1,27 +1,35 @@
 import Foundation
 import SwiftData
 
-/// One morning page. **Exactly matches the live production Core Data model** (verified by decoding a
-/// real `default.store` entry), so the new SwiftData app *adopts* the existing store with zero
-/// migration — every local entry loads, and CloudKit sync continues from the store's own state.
-/// Six fields only, `id` is a `UUID`, `mood` is a Capitalized label ("Sad"). No `intention`/`tasks`.
+/// One morning page. Originally matched the live production Core Data model field-for-field so
+/// the SwiftData app could adopt the existing store with zero migration. One deliberate
+/// divergence since: `affirmationsRaw` (production's single "gratitude" note, later repurposed to
+/// pack 5 affirmations) no longer preserves that column across the schema change — affirmations
+/// only matter for the day they're written (Home, notifications, the widget); losing one day's
+/// worth at the moment of an update isn't worth carrying the legacy name forever.
 @Model
 final class JournalEntry {
     var content: String = ""       // the journal text
-    var gratitude: String = ""     // one free-text string (old = 1 note; redesign packs its 5, newline-joined)
+    var affirmationsRaw: String = ""   // 5 affirmations, newline-joined — see `affirmations` below
     var mood: String = ""          // Capitalized label, e.g. "Sad"
     var wordCount: Int = 0
     var createdAt: Date = Date()
     var id: UUID = UUID()
 
-    init(content: String, gratitude: String, mood: String, wordCount: Int,
-         createdAt: Date = Date(), id: UUID = UUID()) {
+    // Added post-production — both default so legacy CloudKit records without them decode cleanly.
+    @Attribute(.externalStorage) var richContent: Data? = nil   // RTFD blob: formatted text + inline images
+    var tags: [String] = []
+
+    init(content: String, affirmationsRaw: String, mood: String, wordCount: Int,
+         createdAt: Date = Date(), id: UUID = UUID(), richContent: Data? = nil, tags: [String] = []) {
         self.content = content
-        self.gratitude = gratitude
+        self.affirmationsRaw = affirmationsRaw
         self.mood = mood
         self.wordCount = wordCount
         self.createdAt = createdAt
         self.id = id
+        self.richContent = richContent
+        self.tags = tags
     }
 
     // MARK: - UI bridges (keep the screens reading the same shape)
@@ -30,16 +38,16 @@ final class JournalEntry {
     var dayKey: String { SharedState.dayKey(for: createdAt) }
     var moodValue: Mood { Mood(stored: mood) }
     var moodRaw: Int { moodValue.rawValue }
-    var gratitudes: [String] { JournalEntry.unpackGratitude(gratitude) }
-    var gratitudeCount: Int { gratitudes.count }
+    var affirmations: [String] { JournalEntry.unpackAffirmations(affirmationsRaw) }
+    var affirmationCount: Int { affirmations.count }
 
     // MARK: - Encoding helpers
-    static func unpackGratitude(_ s: String) -> [String] {
+    static func unpackAffirmations(_ s: String) -> [String] {
         s.split(separator: "\n", omittingEmptySubsequences: true)
             .map { $0.trimmingCharacters(in: .whitespaces) }
             .filter { !$0.isEmpty }
     }
-    static func packGratitude(_ items: [String]) -> String {
+    static func packAffirmations(_ items: [String]) -> String {
         items.map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }.joined(separator: "\n")
     }
     static func wordCount(of text: String) -> Int {

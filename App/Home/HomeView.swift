@@ -181,9 +181,9 @@ struct HomeView: View {
                 .underlineSquiggle(Palette.sunDisc, weight: 3.5, height: 8)
                 .padding(.bottom, 13)
 
-            if let today = store.todayEntry, !today.gratitudes.isEmpty {
+            if let today = store.todayEntry, !today.affirmations.isEmpty {
                 VStack(spacing: 10) {
-                    ForEach(Array(today.gratitudes.enumerated()), id: \.offset) { i, line in
+                    ForEach(Array(today.affirmations.enumerated()), id: \.offset) { i, line in
                         HStack(spacing: 12) {
                             SunMark(size: 22, rays: false)
                             Text(line).font(Fonts.ui(14.5, .semibold)).foregroundStyle(Palette.ink)

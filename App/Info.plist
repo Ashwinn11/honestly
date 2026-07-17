@@ -48,6 +48,8 @@
 	<array>
 		<string>remote-notification</string>
 	</array>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Honestly uses your photo library so you can add a photo to your journal page.</string>
 	<key>UIAppFonts</key>
 	<array>
 		<string>Nunito-Regular.ttf</string>

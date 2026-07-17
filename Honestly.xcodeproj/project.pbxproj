@@ -50,6 +50,7 @@
 		5145436BAE9F2CD530F4E1AE /* BigWinsWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 9CEA6ADF607D55801B9690D1 /* BigWinsWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		51C5B6F36C0547625270F6A0 /* Backup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D8C8B54E984DE62A67164B8 /* Backup.swift */; };
 		53E8B4CD700613393577B7DC /* LocalizationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77CDFB3F703870DC1CE73921 /* LocalizationManager.swift */; };
+		56477181DB2C4DD9B499232F /* TagInput.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D8582DBEAC506ED9F8A8267 /* TagInput.swift */; };
 		568FB0609EEB89B8F3D3AA3B /* EntryRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 648F0CEFF87B8130349F71E9 /* EntryRow.swift */; };
 		56AC14AD0195A02943530001 /* Color+Hex.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82D4B1B0AFB7A70426A5B632 /* Color+Hex.swift */; };
 		5DDFBA31292A92A52C7C7E4E /* Color+Hex.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82D4B1B0AFB7A70426A5B632 /* Color+Hex.swift */; };
@@ -65,8 +66,11 @@
 		6D009AB54CDDF82869DC6EBD /* TextLocalization.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4503890E8EE490EB68F8AE82 /* TextLocalization.swift */; };
 		6D674A8E3EE8C314F7DEEC31 /* BlockingCodec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 061ECF0CF39440C344FB8DE7 /* BlockingCodec.swift */; };
 		707629C47E4B9B1D6986F8EA /* ShieldActionExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 2B50BFB4245FC077633028D0 /* ShieldActionExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		7167B158EB25377DB7C95B4F /* RichTextEditor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80CA4D36AD37AECEA188870F /* RichTextEditor.swift */; };
+		71FFBAC933FE6F5371FF3564 /* RTFDCodec.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9F6EE1F587ACD879C6B1DEC /* RTFDCodec.swift */; };
 		774E4E089AC052150791360D /* ShantellSans-ExtraBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = BAF9F7C84F8C7EA7FCC8557F /* ShantellSans-ExtraBold.ttf */; };
 		78F119DBC218F151472A0FC1 /* Shielding.swift in Sources */ = {isa = PBXBuildFile; fileRef = 468C6373F86CE0AF2AEB0E30 /* Shielding.swift */; };
+		7A181EE71AB2C34D71AE078F /* RichContentRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A039D2E1F6BF84F1D6176FDB /* RichContentRenderer.swift */; };
 		7B035CF85A9BDDC085DBA801 /* TextLocalization.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4503890E8EE490EB68F8AE82 /* TextLocalization.swift */; };
 		7BFEE1299CAED32930892C56 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4A3D37C7B52DE1DBED46882F /* RootView.swift */; };
 		7C50797C16E7C8D4BAB3A740 /* MainTabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 089B46770C57486A7908F0F1 /* MainTabView.swift */; };
@@ -213,11 +217,13 @@
 		63026289A9B435B7E6E96F77 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		63563974992526601280DCAD /* ReviewPrompt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewPrompt.swift; sourceTree = "<group>"; };
 		648F0CEFF87B8130349F71E9 /* EntryRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntryRow.swift; sourceTree = "<group>"; };
+		6D8582DBEAC506ED9F8A8267 /* TagInput.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagInput.swift; sourceTree = "<group>"; };
 		709968D401543989FC525E5F /* ShieldConfigurationExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShieldConfigurationExtension.swift; sourceTree = "<group>"; };
 		70B8CEB96504686736E4C105 /* ShieldConfigurationExtension.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = ShieldConfigurationExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		75EA0C8F0C89FF7486F8B2B7 /* ConfettiBurst.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfettiBurst.swift; sourceTree = "<group>"; };
 		77CDFB3F703870DC1CE73921 /* LocalizationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalizationManager.swift; sourceTree = "<group>"; };
 		7EAEF9CA555EF0E0854B3DFA /* Dates.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Dates.swift; sourceTree = "<group>"; };
+		80CA4D36AD37AECEA188870F /* RichTextEditor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RichTextEditor.swift; sourceTree = "<group>"; };
 		82A742134D7171635C201115 /* PremiumManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PremiumManager.swift; sourceTree = "<group>"; };
 		82D4B1B0AFB7A70426A5B632 /* Color+Hex.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+Hex.swift"; sourceTree = "<group>"; };
 		8322FCAA7522A753DC83ADCA /* BigWinsProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BigWinsProvider.swift; sourceTree = "<group>"; };
@@ -233,6 +239,7 @@
 		9C9DDC1B23DD34ADAB78D508 /* JournalEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JournalEntry.swift; sourceTree = "<group>"; };
 		9CEA6ADF607D55801B9690D1 /* BigWinsWidget.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = BigWinsWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		9D194ACB3AE2A39ACE237561 /* ActivityMonitorExtension.appex */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = "wrapper.app-extension"; path = ActivityMonitorExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		A039D2E1F6BF84F1D6176FDB /* RichContentRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RichContentRenderer.swift; sourceTree = "<group>"; };
 		A49C0FED24781FD5206E0096 /* Haptics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Haptics.swift; sourceTree = "<group>"; };
 		AF164F831010121FD3462201 /* HonestlyApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HonestlyApp.swift; sourceTree = "<group>"; };
 		B01A03199CBD06C13791F948 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -259,6 +266,7 @@
 		EFE4B1956ADF5CD1A7B3D0BF /* Nunito-SemiBold.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Nunito-SemiBold.ttf"; sourceTree = "<group>"; };
 		F0016A10DEE93AECEB182329 /* BigWinsWidgetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BigWinsWidgetView.swift; sourceTree = "<group>"; };
 		F2819934AC103D0617EBA0D3 /* ShieldActionExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShieldActionExtension.swift; sourceTree = "<group>"; };
+		F9F6EE1F587ACD879C6B1DEC /* RTFDCodec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RTFDCodec.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -367,6 +375,7 @@
 				A49C0FED24781FD5206E0096 /* Haptics.swift */,
 				BDA932EF9A5D58094E84FD80 /* Motion.swift */,
 				63563974992526601280DCAD /* ReviewPrompt.swift */,
+				F9F6EE1F587ACD879C6B1DEC /* RTFDCodec.swift */,
 				2B9553E4DD57CB774D53CCB2 /* Shaders.metal */,
 			);
 			path = Support;
@@ -406,9 +415,12 @@
 				648F0CEFF87B8130349F71E9 /* EntryRow.swift */,
 				537AFEF703575D2C77812527 /* MoodFace.swift */,
 				DDBB946391405B3F3596EA71 /* PaperBackground.swift */,
+				A039D2E1F6BF84F1D6176FDB /* RichContentRenderer.swift */,
+				80CA4D36AD37AECEA188870F /* RichTextEditor.swift */,
 				42206DAF7F5357DD6A9533F6 /* RuledPaper.swift */,
 				85B17D14C6A082AD8E7BAAFF /* ScreenScaffold.swift */,
 				C1595CC7F851FF4B3DCAD21F /* SunMark.swift */,
+				6D8582DBEAC506ED9F8A8267 /* TagInput.swift */,
 				4D87E8ECDBB0934F4926E6EF /* Typography.swift */,
 			);
 			path = DesignSystem;
@@ -846,7 +858,10 @@
 				E21CA905CFC814A588AF3BB8 /* PremiumLockOverlay.swift in Sources */,
 				836D381DB5BFB2E28B5D29D9 /* PremiumManager.swift in Sources */,
 				3FD789076280242F2E6B1547 /* ProfileView.swift in Sources */,
+				71FFBAC933FE6F5371FF3564 /* RTFDCodec.swift in Sources */,
 				E756D52A3BF6CF6BFBDC1EA2 /* ReviewPrompt.swift in Sources */,
+				7A181EE71AB2C34D71AE078F /* RichContentRenderer.swift in Sources */,
+				7167B158EB25377DB7C95B4F /* RichTextEditor.swift in Sources */,
 				B77B34398C972D7083FBB6FA /* RitualView.swift in Sources */,
 				7BFEE1299CAED32930892C56 /* RootView.swift in Sources */,
 				C59C56B67CAE9838F71CB87B /* RuledPaper.swift in Sources */,
@@ -857,6 +872,7 @@
 				6168B885D71E0821738F33CB /* Shielding.swift in Sources */,
 				4095E7BFEE1927AE3D9E2BE1 /* SplashView.swift in Sources */,
 				EB61FBDE11D953043FBF2E39 /* SunMark.swift in Sources */,
+				56477181DB2C4DD9B499232F /* TagInput.swift in Sources */,
 				7B035CF85A9BDDC085DBA801 /* TextLocalization.swift in Sources */,
 				116E4BE8B866DEBF08C9D8E1 /* Typography.swift in Sources */,
 			);

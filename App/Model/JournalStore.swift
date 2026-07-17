@@ -52,7 +52,7 @@ final class JournalStore {
     /// is deleted, rather than only ever refreshing it on a fresh save.
     private func syncWidgetData() {
         let today = entries.first { $0.dayKey == SharedState.dayKey() }
-        let lines = today?.gratitudes ?? []
+        let lines = today?.affirmations ?? []
         guard lines != SharedState.todayAffirmations else { return }   // avoid needless widget reloads
         SharedState.todayAffirmations = lines
         SharedState.todayAffirmationsSetAt = lines.isEmpty ? nil : Date()
@@ -140,24 +140,27 @@ final class JournalStore {
 
     /// Create or update today's page, then sync completion out to the app group + shield.
     @discardableResult
-    func saveRitual(mood: Int, journal: String, gratitudes: [String]) -> JournalEntry {
+    func saveRitual(mood: Int, journal: String, affirmations: [String],
+                     richContent: Data? = nil, tags: [String] = []) -> JournalEntry {
         let face = Mood(rawValue: mood) ?? .sad
         let trimmed = journal.trimmingCharacters(in: .whitespacesAndNewlines)
         let content = trimmed.isEmpty ? AppContent.emptyJournalFallback : trimmed
-        let grat = JournalEntry.packGratitude(gratitudes)
+        let packed = JournalEntry.packAffirmations(affirmations)
 
         let entry: JournalEntry
         if let existing = todayEntry {
             entry = existing
         } else {
-            entry = JournalEntry(content: content, gratitude: grat, mood: face.storageKey,
+            entry = JournalEntry(content: content, affirmationsRaw: packed, mood: face.storageKey,
                                  wordCount: JournalEntry.wordCount(of: content), createdAt: Date())
             context.insert(entry)
         }
         entry.content = content
-        entry.gratitude = grat
+        entry.affirmationsRaw = packed
         entry.mood = face.storageKey
         entry.wordCount = JournalEntry.wordCount(of: content)
+        entry.richContent = richContent
+        entry.tags = tags
 
         try? context.save()
         reload()
@@ -208,10 +211,11 @@ final class JournalStore {
 
     private func makeBackupData() -> Data {
         let snaps = entries.map {
-            EntrySnapshot(id: $0.id, content: $0.content, mood: $0.mood, gratitude: $0.gratitude,
-                          wordCount: $0.wordCount, createdAt: $0.createdAt)
+            EntrySnapshot(id: $0.id, content: $0.content, mood: $0.mood,
+                          wordCount: $0.wordCount, createdAt: $0.createdAt, tags: $0.tags)
         }
-        // Bare JSON array — the exact shape the production app reads/writes.
+        // Bare JSON array — the exact shape the production app reads/writes. `richContent` is
+        // deliberately not carried here — see CloudBackup's doc comment for why.
         return (try? JSONEncoder().encode(snaps)) ?? Data()
     }
 
@@ -241,8 +245,12 @@ final class JournalStore {
         for snap in snaps {
             let day = SharedState.dayKey(for: snap.createdAt)
             guard !existingIds.contains(snap.id), !filledDays.contains(day) else { continue }
-            context.insert(JournalEntry(content: snap.content, gratitude: snap.gratitude, mood: snap.mood,
-                                        wordCount: snap.wordCount, createdAt: snap.createdAt, id: snap.id))
+            // Affirmations aren't carried in the snapshot (see EntrySnapshot's doc comment) —
+            // restored entries land with none, same as any entry whose affirmations were never
+            // the point of restoring.
+            context.insert(JournalEntry(content: snap.content, affirmationsRaw: "", mood: snap.mood,
+                                        wordCount: snap.wordCount, createdAt: snap.createdAt, id: snap.id,
+                                        tags: snap.tags))
             filledDays.insert(day)
             added += 1
         }

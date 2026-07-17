@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct RitualView: View {
     var onClose: () -> Void
@@ -8,14 +9,19 @@ struct RitualView: View {
 
     @State private var step = 0
     @State private var mood: Int? = nil
-    @State private var journal = ""
+    @State private var richText = NSAttributedString()
+    @State private var selectedRange = NSRange(location: 0, length: 0)
     @State private var affirmations = ["", "", "", "", ""]
+    @State private var tags: [String] = []
     @FocusState private var journalFocused: Bool
     @State private var promptIndex: Int = 0
-    @State private var promptDismissed: Bool = false
+    @State private var showImagePicker = false
+    @State private var showTextColorPicker = false
+    @State private var showHighlightPicker = false
 
+    private var journalText: String { richText.string }
     private var wordCount: Int {
-        journal.split(whereSeparator: { $0.isWhitespace || $0.isNewline }).count
+        journalText.split(whereSeparator: { $0.isWhitespace || $0.isNewline }).count
     }
     private var affirmCount: Int { affirmations.filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }.count }
 
@@ -45,15 +51,15 @@ struct RitualView: View {
                     topBar.capWidth(Metrics.maxContentWidth)
                     GeometryReader { proxy in
                         ScrollView {
-                            // One continuous page for the whole ritual — no per-step cards. minHeight
-                            // keeps the cream/ruled fill covering the full viewport even on short steps
-                            // (mirrors EntryDetailView's JournalReaderPage), so there's no seam where
-                            // paper peeks through below a short step.
-                            JournalPageSurface(lineHeight: 32, cornerRadius: 0, showsMargin: false,
-                                               showsBinderHoles: false, bordered: false) {
-                                stepBody
+                            // One continuous page for the whole ritual — no per-step cards. Most
+                            // steps size to their actual content; the journal step alone claims the
+                            // viewport so the writing surface does not collapse after the keyboard
+                            // is dismissed.
+                            JournalPageSurface(cornerRadius: 0, showsBinderHoles: false, bordered: false) {
+                                stepBody(viewportHeight: proxy.size.height)
                                     .padding(EdgeInsets(top: 14, leading: 22, bottom: 24, trailing: 20))
-                                    .frame(minHeight: proxy.size.height, alignment: .topLeading)
+                                    .frame(minHeight: step == 1 ? proxy.size.height : nil,
+                                           alignment: .topLeading)
                             }
                             .capWidth(Metrics.maxContentWidth)
                         }
@@ -63,11 +69,20 @@ struct RitualView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                 .background(PaperBackground())
                 .safeAreaInset(edge: .bottom) {
-                    footer
-                        .padding(.horizontal, 22)
-                        .padding(.top, 8)
-                        .padding(.bottom, 14)
-                        .background(Palette.cream)   // matches the page fill — no seam below the CTA
+                    // While the editor has focus, the footer becomes the formatting toolbar instead
+                    // of the step CTA — same slot, same pattern as the rest of the ritual's chrome.
+                    // The toolbar itself runs edge-to-edge (no horizontal margin) so its scrollable
+                    // row gets full width; the CTA button keeps the page's usual side margin.
+                    Group {
+                        if journalFocused {
+                            formattingToolbar
+                        } else {
+                            footer
+                                .padding(.horizontal, 22)
+                        }
+                    }
+                    .padding(.top, 8)
+                    .padding(.bottom, 14)
                 }
             }
         }
@@ -78,42 +93,80 @@ struct RitualView: View {
         .fullScreenCover(isPresented: $flow.paywallPresented) {
             PaywallView(onClose: { flow.paywallPresented = false })
         }
+        // Anchored here — not on the toolbar's photo button — because presenting this sheet steals
+        // first-responder from the journal's UITextView, which flips `journalFocused` to false via
+        // the `.focused()` binding. That swaps `formattingToolbar` (and the button this sheet used
+        // to live on) out of the tree while `showImagePicker` is still true, tearing down the
+        // presentation mid-flight and re-triggering it the moment the toolbar reappears — an
+        // infinite present/dismiss loop. This root view never disappears, so the presentation is stable.
+        .sheet(isPresented: $showImagePicker) {
+            ImagePickerWithCrop(
+                onImagePicked: { image in
+                    insertPickedImage(image)
+                    showImagePicker = false
+                },
+                onCancel: { showImagePicker = false }
+            )
+            .ignoresSafeArea()
+        }
     }
 
 
-    // MARK: Top bar — close icon + (for mood/affirm steps only) the step title. Nothing else: no
+    // MARK: Top bar — close icon + step title. On the journal step, the title slot becomes the
+    // prompt itself (tap to shuffle) instead of a generic label — it doesn't compete with the
+    // writing area below anymore, and it's real page content, unlike a title would be. No
     // progress dots, no mood badge here — the date/mood live on the page itself, below.
     private var topBar: some View {
         HStack(spacing: 12) {
             IconTileButton(icon: "xmark", size: 38, iconSize: 13) { onClose() }
-            if let topBarTitle {
-                Text(loc: topBarTitle)
-                    .font(Fonts.display(19, .bold))
-                    .foregroundStyle(Palette.ink)
-                    .lineLimit(1)
-                    .transition(.opacity)
-            }
+            topBarTitleView
             Spacer(minLength: 0)
         }
         .padding(.horizontal, 20)
         .padding(.top, 10)
         .padding(.bottom, 10)
         .animation(Motion.gentle, value: step)
+        .animation(Motion.snappy, value: promptIndex)
+    }
+
+    @ViewBuilder private var topBarTitleView: some View {
+        if step == 1 {
+            Button {
+                if premium.isPremium { shufflePrompt() } else { flow.showPaywall() }
+            } label: {
+                Text(loc: premium.isPremium ? currentPromptText : "Unlock daily morning prompts")
+                    .font(Fonts.display(14, .bold))
+                    .foregroundStyle(premium.isPremium ? Palette.ink : Palette.inkSofter)
+                    .lineSpacing(1)
+                    .multilineTextAlignment(.leading)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .buttonStyle(.plain)
+            .transition(.opacity)
+        } else if let topBarTitle {
+            Text(loc: topBarTitle)
+                .font(Fonts.display(19, .bold))
+                .foregroundStyle(Palette.ink)
+                .lineLimit(1)
+                .transition(.opacity)
+        }
     }
 
     private var topBarTitle: String? {
         switch step {
         case 0: return "How are you, really?"
-        case 1: return "Write what's true"
-        default: return "Affirm yourself"
+        case 2: return "Affirm yourself"
+        default: return nil
         }
     }
 
     // MARK: Scrollable content per step
-    @ViewBuilder private var stepBody: some View {
+    @ViewBuilder private func stepBody(viewportHeight: CGFloat) -> some View {
         switch step {
         case 0: moodBody
-        case 1: journalBody
+        case 1: journalBody(viewportHeight: viewportHeight)
         default: affirmationBody
         }
     }
@@ -128,7 +181,7 @@ struct RitualView: View {
             }
         case 1:
             PrimaryButton(title: "Almost there",
-                          enabled: !journal.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) {
+                          enabled: !journalText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) {
                 journalFocused = false
                 withAnimation(Motion.gentle) { step = 2 }
             }
@@ -172,27 +225,19 @@ struct RitualView: View {
         .animation(Motion.snappy, value: mood)
     }
 
-    // MARK: Step 1 — journal
-    private var journalBody: some View {
+    // MARK: Step 1 — journal (the prompt lives in the top bar now — see topBarTitleView — so it
+    // never competes with the writing area for space)
+    private func journalBody(viewportHeight: CGFloat) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             PageDateRow(date: Date(), mood: mood)
 
-            // Prompt: hidden once the user starts writing (premium) or on explicit dismiss. Free
-            // users see a locked teaser that opens the paywall on tap. No card — just page text.
-            if !promptDismissed && !(premium.isPremium && wordCount > 0) {
-                JournalPromptChip(
-                    text: currentPromptText,
-                    isPremium: premium.isPremium,
-                    onShuffle: shufflePrompt,
-                    onDismiss: { withAnimation(Motion.gentle) { promptDismissed = true } },
-                    onLockTap: { flow.showPaywall() }
-                )
-                .padding(.top, 18)
-                .transition(.opacity.combined(with: .move(edge: .top)))
-            }
-
-            RuledJournalEditor(text: $journal)
+            RichTextEditor(attributedText: $richText, isEditingAllowed: premium.isPremium,
+                           selectedRange: $selectedRange, placeholder: "Start writing…")
                 .focused($journalFocused)
+                .frame(height: journalEditorHeight(for: viewportHeight))
+                .padding(.top, 16)
+
+            TagEditorRow(tags: $tags, isPremium: premium.isPremium, onLockTap: { flow.showPaywall() })
                 .padding(.top, 16)
 
             // Only shown once there's something to report — the prompt above is the only guidance
@@ -200,15 +245,32 @@ struct RitualView: View {
             if wordCount > 0 {
                 Text("\(wordCount) words — nice")
                     .font(Fonts.ui(12.5, .semibold)).foregroundStyle(Palette.inkSofter)
-                    .padding(.top, 8)
+                    .padding(.top, 10)
             }
         }
         .onAppear {
             // Seed with today's daily prompt for this mood pool — stable all session, rotates daily.
             promptIndex = AppContent.dailyPromptIndex(in: promptPool)
-            promptDismissed = false
         }
         .animation(Motion.gentle, value: wordCount > 0)
+    }
+
+    private func journalEditorHeight(for viewportHeight: CGFloat) -> CGFloat {
+        let verticalPadding: CGFloat = 14 + 24
+        let dateRowHeight: CGFloat = 24
+        let editorTopPadding: CGFloat = 16
+        let tagTopPadding: CGFloat = 16
+        let tagRowHeight: CGFloat = 34
+        let wordCounterHeight: CGFloat = wordCount > 0 ? 28 : 0
+        let availableHeight = viewportHeight
+            - verticalPadding
+            - dateRowHeight
+            - editorTopPadding
+            - tagTopPadding
+            - tagRowHeight
+            - wordCounterHeight
+
+        return max(220, availableHeight)
     }
 
     // MARK: Step 2 — affirmations
@@ -263,103 +325,165 @@ struct RitualView: View {
 
     // MARK: Finish
     private func finish() {
-        store.saveRitual(mood: mood ?? 2, journal: journal, gratitudes: affirmations)
+        store.saveRitual(mood: mood ?? 2, journal: journalText, affirmations: affirmations,
+                          richContent: richText.rtfdData(), tags: tags)
         Haptics.success()
         withAnimation(Motion.gentle) { step = 3 }
     }
-}
 
-// MARK: - Journal prompt (premium: the question itself, printed plainly · free: locked teaser)
-// No card, no icon — a real journal page doesn't box or decorate its own printed question, it's
-// just posed to you directly on the paper.
-
-private struct JournalPromptChip: View {
-    let text: String
-    let isPremium: Bool
-    let onShuffle: () -> Void
-    let onDismiss: () -> Void
-    let onLockTap: () -> Void
-
-    var body: some View {
-        if isPremium {
-            premiumPrompt
+    // MARK: Formatting toolbar — swapped into the footer slot while the editor has focus.
+    // Premium-gated exactly like the rest of the ritual: unlocked users get the real controls,
+    // free users get a single locked row that opens the paywall.
+    @ViewBuilder private var formattingToolbar: some View {
+        if premium.isPremium {
+            unlockedToolbar
         } else {
-            lockedPrompt
+            lockedToolbar
         }
     }
 
-    // The question, bold ink, given real weight — with quiet shuffle/dismiss controls alongside
-    private var premiumPrompt: some View {
-        HStack(alignment: .top, spacing: 10) {
-            Text(loc: text)
-                .font(Fonts.ui(16.5, .bold))
-                .foregroundStyle(Palette.ink)
-                .lineSpacing(3)
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-            VStack(spacing: 12) {
-                Button(action: onShuffle) {
-                    Image(systemName: "arrow.2.squarepath")
-                        .font(.system(size: 12, weight: .bold))
-                        .foregroundStyle(Palette.inkSofter)
+    private var unlockedToolbar: some View {
+        HStack(spacing: 12) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    toolbarButton(icon: "bold") { applyFormat { RichTextFormatting.toggleBold($0, range: $1) } }
+                    toolbarButton(icon: "italic") { applyFormat { RichTextFormatting.toggleItalic($0, range: $1) } }
+                    toolbarButton(icon: "underline") { applyFormat { RichTextFormatting.toggleUnderline($0, range: $1) } }
+                    fontMenu
+                    textColorMenu
+                    highlightMenu
+                    toolbarButton(icon: "photo") { showImagePicker = true }
                 }
-                .buttonStyle(PressableStyle(scale: 0.88))
-
-                Button(action: onDismiss) {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundStyle(Palette.inkSofter)
-                }
-                .buttonStyle(PressableStyle(scale: 0.88))
+                // Scrolls away with the content (standard content-inset idiom) — matching leading
+                // and trailing insets so the first (bold) and last (image) buttons both get the
+                // same breathing room the rest of the row has between buttons.
+                .padding(.horizontal, 16)
             }
-            .padding(.top, 3)
+            // Fixed, not scrolled — always reachable regardless of scroll position, since closing
+            // the keyboard is a reliable action people expect to always be in the same spot. No
+            // divider — the HStack spacing alone separates it cleanly from the image button.
+            toolbarButton(icon: "keyboard.chevron.compact.down") { journalFocused = false }
+                .padding(.trailing, 16)
         }
     }
 
-    // Same plain-text layout, just locked — tap anywhere opens the paywall
-    private var lockedPrompt: some View {
-        Button(action: onLockTap) {
-            HStack(alignment: .center, spacing: 10) {
+    private var lockedToolbar: some View {
+        Button { flow.showPaywall() } label: {
+            HStack(spacing: 10) {
                 Image(systemName: "lock.fill")
-                    .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(Palette.inkSofter)
-
-                Text(loc: "Unlock daily morning prompts")
-                    .font(Fonts.ui(15, .semibold))
-                    .foregroundStyle(Palette.inkSofter)
-
+                    .font(.system(size: 13, weight: .bold)).foregroundStyle(Palette.inkSofter)
+                Text(loc: "Unlock rich formatting — bold, colors, images")
+                    .font(Fonts.ui(14, .semibold)).foregroundStyle(Palette.inkSofter)
                 Spacer(minLength: 0)
-
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(Palette.hairline)
+                    .font(.system(size: 12, weight: .bold)).foregroundStyle(Palette.hairline)
             }
+            .padding(.vertical, 6)
             .contentShape(Rectangle())
         }
         .buttonStyle(PressableStyle(scale: 0.98))
     }
-}
 
-// MARK: - Ruled journal editor — the writing surface, laid directly on the shared page
-
-private struct RuledJournalEditor: View {
-    @Binding var text: String
-    static let lineHeight: CGFloat = 32
-    static let height: CGFloat = 220      // fixed — the field scrolls internally instead of growing
-
-    // No placeholder — the prompt above already poses the question. An empty-state line here
-    // would just repeat it.
-    var body: some View {
-        TextEditor(text: $text)
-            .font(Fonts.ui(16, .semibold))
+    private func toolbarIcon(_ systemName: String) -> some View {
+        Image(systemName: systemName)
+            .font(.system(size: 14, weight: .bold))
             .foregroundStyle(Palette.ink)
-            .lineSpacing(Self.lineHeight - 20)
-            .tint(Palette.amber)
-            .scrollContentBackground(.hidden)   // let the journal page show through
-            .padding(.horizontal, 11)           // + TextEditor's 5pt fragment inset ≈ 16
-            .padding(.vertical, 4)
-            .frame(height: Self.height)
+            .frame(width: 36, height: 36)
+            .background(Palette.paper, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(Palette.outlineSoft, lineWidth: 1.2))
+    }
+
+    private func toolbarButton(icon: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) { toolbarIcon(icon) }
+            .buttonStyle(PressableStyle(scale: 0.9))
+    }
+
+    private var fontMenu: some View {
+        Menu {
+            ForEach(FontChoice.allCases) { choice in
+                Button(choice.rawValue) {
+                    applyFormat { RichTextFormatting.setFont(choice, in: $0, range: $1) }
+                }
+            }
+        } label: {
+            toolbarIcon("textformat")
+        }
+    }
+
+    // `Menu` forces its item icons to a monochrome system tint on iOS regardless of any
+    // `.foregroundStyle` applied — a platform limitation, not something fixable within Menu. A
+    // real popover with plain SwiftUI circles renders true colors instead.
+    private var textColorMenu: some View {
+        Button { showTextColorPicker = true } label: { toolbarIcon("character") }
+            .buttonStyle(PressableStyle(scale: 0.9))
+            .popover(isPresented: $showTextColorPicker, arrowEdge: .bottom) {
+                colorSwatchRow(Self.textColorSwatches) { color in
+                    applyFormat { RichTextFormatting.setTextColor(UIColor(color), in: $0, range: $1) }
+                    showTextColorPicker = false
+                }
+                .padding(16)
+                .presentationCompactAdaptation(.popover)
+            }
+    }
+
+    private var highlightMenu: some View {
+        Button { showHighlightPicker = true } label: { toolbarIcon("highlighter") }
+            .buttonStyle(PressableStyle(scale: 0.9))
+            .popover(isPresented: $showHighlightPicker, arrowEdge: .bottom) {
+                HStack(spacing: 14) {
+                    colorSwatchRow(Self.highlightSwatches) { color in
+                        applyFormat { RichTextFormatting.setHighlight(UIColor(color), in: $0, range: $1) }
+                        showHighlightPicker = false
+                    }
+                    Button {
+                        applyFormat { RichTextFormatting.setHighlight(nil, in: $0, range: $1) }
+                        showHighlightPicker = false
+                    } label: {
+                        Image(systemName: "circle.slash")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundStyle(Palette.inkSofter)
+                            .frame(width: 28, height: 28)
+                            .overlay(Circle().stroke(Palette.ink.opacity(0.18), lineWidth: 1))
+                    }
+                    .buttonStyle(PressableStyle(scale: 0.85))
+                }
+                .padding(16)
+                .presentationCompactAdaptation(.popover)
+            }
+    }
+
+    // No padding here — callers apply their own, since this is sometimes the sole popover
+    // content (textColorMenu) and sometimes one of several siblings sharing an outer padded
+    // HStack (highlightMenu). Padding baked in here doubled up in the latter case.
+    private func colorSwatchRow(_ swatches: [Color], onPick: @escaping (Color) -> Void) -> some View {
+        HStack(spacing: 14) {
+            ForEach(Array(swatches.enumerated()), id: \.offset) { _, color in
+                Button { onPick(color) } label: {
+                    Circle()
+                        .fill(color)
+                        .frame(width: 28, height: 28)
+                        .overlay(Circle().stroke(Palette.ink.opacity(0.18), lineWidth: 1))
+                }
+                .buttonStyle(PressableStyle(scale: 0.85))
+            }
+        }
+    }
+
+    private static let textColorSwatches: [Color] = [Palette.ink, Palette.amberDeep, Palette.danger, Palette.success]
+    private static let highlightSwatches: [Color] =
+        [Palette.sunDisc.opacity(0.4), Palette.mood(3).opacity(0.5), Palette.mood(4).opacity(0.4)]
+
+    private func applyFormat(_ transform: (NSAttributedString, NSRange) -> NSAttributedString) {
+        guard selectedRange.length > 0 else { return }
+        richText = transform(richText, selectedRange)
+        Haptics.select()
+    }
+
+    private func insertPickedImage(_ image: UIImage) {
+        let resized = image.downscaledForJournal()
+        let containerWidth = Metrics.maxContentWidth - 44   // approximates the editor's content width
+        richText = RichTextFormatting.insertImage(resized, at: selectedRange.location,
+                                                   containerWidth: containerWidth, in: richText)
     }
 }
 

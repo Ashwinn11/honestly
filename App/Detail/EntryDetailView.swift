@@ -78,35 +78,48 @@ private struct JournalReaderPage: View {
     let entry: JournalEntry
 
     var body: some View {
-        GeometryReader { proxy in
-            ScrollView {
-                // Full-bleed, no card border/shadow — same continuous-page treatment as RitualView,
-                // so writing and reading feel like the same physical object.
-                JournalPageSurface(lineHeight: 33,
-                                   cornerRadius: 0,
-                                   showsMargin: false,
-                                   showsBinderHoles: false,
-                                   bordered: false) {
-                    VStack(alignment: .leading, spacing: 0) {
-                        PageDateRow(date: entry.date, mood: entry.moodRaw)
-                            .padding(.bottom, 20)
+        ScrollView {
+            // Full-bleed, no card border/shadow — same continuous-page treatment as RitualView, so
+            // writing and reading feel like the same physical object. Sized to its actual content,
+            // not forced to fill the screen — see RitualView's body for why (forcing it left a
+            // large dead gap below short entries instead of the barely-visible seam it avoided).
+            JournalPageSurface(cornerRadius: 0,
+                               showsBinderHoles: false,
+                               bordered: false) {
+                VStack(alignment: .leading, spacing: 0) {
+                    PageDateRow(date: entry.date, mood: entry.moodRaw)
+                        .padding(.bottom, 20)
 
-                        Text(entry.journal)
-                            .font(Fonts.ui(16.5, .semibold))
-                            .foregroundStyle(Palette.inkBody)
-                            .lineSpacing(11)
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                    journalContent
 
-                        Spacer(minLength: 32)
-
-                        pageFooter
+                    if !entry.tags.isEmpty {
+                        TagRow(tags: entry.tags)
+                            .padding(.top, 18)
                     }
-                    .padding(EdgeInsets(top: 22, leading: 22, bottom: 24, trailing: 22))
-                    .frame(minHeight: proxy.size.height, alignment: .topLeading)
+
+                    Spacer(minLength: 32)
+
+                    pageFooter
                 }
-                .capWidth(Metrics.maxContentWidth)
+                .padding(EdgeInsets(top: 22, leading: 22, bottom: 24, trailing: 22))
             }
-            .scrollIndicators(.hidden)
+            .capWidth(Metrics.maxContentWidth)
+        }
+        .scrollIndicators(.hidden)
+    }
+
+    // Rich (formatted text + inline images) for entries written after this feature shipped;
+    // plain text fallback for every entry written before it — `richContent` is nil there.
+    @ViewBuilder private var journalContent: some View {
+        if let data = entry.richContent, let attributed = NSAttributedString.from(rtfdData: data),
+           attributed.length > 0 {
+            RichContentRenderer(attributedText: attributed)
+        } else {
+            Text(entry.journal)
+                .font(Fonts.ui(16.5, .semibold))
+                .foregroundStyle(Palette.inkBody)
+                .lineSpacing(11)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
     }
 
