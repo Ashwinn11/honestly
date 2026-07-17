@@ -42,15 +42,23 @@ struct RitualView: View {
                                 words: wordCount, affirmCount: affirmCount, onStart: onClose)
             } else {
                 VStack(spacing: 0) {
-                    header.capWidth(Metrics.maxContentWidth)
-                    ScrollView {
-                        stepBody
-                            .padding(.horizontal, 22)
-                            .padding(.top, 6)
-                            .padding(.bottom, 8)
-                            .capWidth(Metrics.maxContentWidth)   // centered column; PaperBackground stays full
+                    topBar.capWidth(Metrics.maxContentWidth)
+                    GeometryReader { proxy in
+                        ScrollView {
+                            // One continuous page for the whole ritual — no per-step cards. minHeight
+                            // keeps the cream/ruled fill covering the full viewport even on short steps
+                            // (mirrors EntryDetailView's JournalReaderPage), so there's no seam where
+                            // paper peeks through below a short step.
+                            JournalPageSurface(lineHeight: 32, cornerRadius: 0, showsMargin: false,
+                                               showsBinderHoles: false, bordered: false) {
+                                stepBody
+                                    .padding(EdgeInsets(top: 14, leading: 22, bottom: 24, trailing: 20))
+                                    .frame(minHeight: proxy.size.height, alignment: .topLeading)
+                            }
+                            .capWidth(Metrics.maxContentWidth)
+                        }
+                        .scrollDismissesKeyboard(.interactively)
                     }
-                    .scrollDismissesKeyboard(.interactively)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                 .background(PaperBackground())
@@ -59,7 +67,7 @@ struct RitualView: View {
                         .padding(.horizontal, 22)
                         .padding(.top, 8)
                         .padding(.bottom, 14)
-                        .background(Palette.paper)
+                        .background(Palette.cream)   // matches the page fill — no seam below the CTA
                 }
             }
         }
@@ -73,16 +81,32 @@ struct RitualView: View {
     }
 
 
-    // MARK: Header (close + progress) — pinned at the top
-    private var header: some View {
-        HStack(spacing: 14) {
+    // MARK: Top bar — close icon + (for mood/affirm steps only) the step title. Nothing else: no
+    // progress dots, no mood badge here — the date/mood live on the page itself, below.
+    private var topBar: some View {
+        HStack(spacing: 12) {
             IconTileButton(icon: "xmark", size: 38, iconSize: 13) { onClose() }
-            RitualPips(step: step)
-            Color.clear.frame(width: 38, height: 38)   // balances the close button (fixed height!)
+            if let topBarTitle {
+                Text(loc: topBarTitle)
+                    .font(Fonts.display(19, .bold))
+                    .foregroundStyle(Palette.ink)
+                    .lineLimit(1)
+                    .transition(.opacity)
+            }
+            Spacer(minLength: 0)
         }
         .padding(.horizontal, 20)
-        .padding(.top, 8)
+        .padding(.top, 10)
         .padding(.bottom, 10)
+        .animation(Motion.gentle, value: step)
+    }
+
+    private var topBarTitle: String? {
+        switch step {
+        case 0: return "How are you, really?"
+        case 1: return "Write what's true"
+        default: return "Affirm yourself"
+        }
     }
 
     // MARK: Scrollable content per step
@@ -117,16 +141,13 @@ struct RitualView: View {
     // MARK: Step 0 — mood
     private var moodBody: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text("How are you, really?").font(Fonts.display(31, .bold)).foregroundStyle(Palette.ink)
-            Text("Before the day has an opinion. Tap what fits.")
-                .font(Fonts.ui(15, .semibold)).foregroundStyle(Palette.inkSoft).padding(.top, 8)
+            PageDateRow(date: Date(), mood: mood)
             HStack(spacing: 4) {
                 ForEach(0..<5, id: \.self) { i in moodChoice(i) }
             }
             .frame(maxWidth: .infinity)
-            .padding(.top, 44)
+            .padding(.top, 28)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private func moodChoice(_ i: Int) -> some View {
@@ -154,12 +175,10 @@ struct RitualView: View {
     // MARK: Step 1 — journal
     private var journalBody: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text("Empty your head").font(Fonts.display(29, .bold)).foregroundStyle(Palette.ink)
-            Text("No prompts, no rules. Just write.")
-                .font(Fonts.ui(15, .semibold)).foregroundStyle(Palette.inkSoft).padding(.top, 7)
+            PageDateRow(date: Date(), mood: mood)
 
-            // Prompt chip: hidden once the user starts writing (premium) or on explicit dismiss.
-            // Free users see a blurred teaser that opens the paywall on tap.
+            // Prompt: hidden once the user starts writing (premium) or on explicit dismiss. Free
+            // users see a locked teaser that opens the paywall on tap. No card — just page text.
             if !promptDismissed && !(premium.isPremium && wordCount > 0) {
                 JournalPromptChip(
                     text: currentPromptText,
@@ -168,39 +187,39 @@ struct RitualView: View {
                     onDismiss: { withAnimation(Motion.gentle) { promptDismissed = true } },
                     onLockTap: { flow.showPaywall() }
                 )
-                .padding(.top, 16)
+                .padding(.top, 18)
                 .transition(.opacity.combined(with: .move(edge: .top)))
             }
 
-            RuledTextEditor(text: $journal, placeholder: AppContent.journalPlaceholder)
+            RuledJournalEditor(text: $journal)
                 .focused($journalFocused)
-                .padding(.top, 20)
+                .padding(.top, 16)
 
-            (wordCount == 0 ? Text("This page is just for you.") : Text("\(wordCount) words — nice"))
-                .font(Fonts.ui(12.5, .semibold)).foregroundStyle(Palette.inkSofter)
-                .padding(.top, 12).padding(.horizontal, 2)
+            // Only shown once there's something to report — the prompt above is the only guidance
+            // the empty page needs.
+            if wordCount > 0 {
+                Text("\(wordCount) words — nice")
+                    .font(Fonts.ui(12.5, .semibold)).foregroundStyle(Palette.inkSofter)
+                    .padding(.top, 8)
+            }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
         .onAppear {
             // Seed with today's daily prompt for this mood pool — stable all session, rotates daily.
             promptIndex = AppContent.dailyPromptIndex(in: promptPool)
             promptDismissed = false
         }
-        .animation(Motion.gentle, value: wordCount == 0)
+        .animation(Motion.gentle, value: wordCount > 0)
     }
 
     // MARK: Step 2 — affirmations
     private var affirmationBody: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text("Affirm yourself").font(Fonts.display(29, .bold)).foregroundStyle(Palette.ink)
-            Text("Say it like you already believe it.")
-                .font(Fonts.ui(15, .semibold)).foregroundStyle(Palette.inkSoft).padding(.top, 7)
+            PageDateRow(date: Date(), mood: mood)
             VStack(spacing: 10) {
                 ForEach(0..<5, id: \.self) { i in affirmationRow(i) }
             }
-            .padding(.top, 22)
+            .padding(.top, 20)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     @ViewBuilder
@@ -218,7 +237,7 @@ struct RitualView: View {
                     .submitLabel(.next)
             }
             .padding(EdgeInsets(top: 12, leading: 14, bottom: 12, trailing: 14))
-            .background(lit ? Palette.cream : .white, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .background(lit ? Palette.iconTile : .white, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .stroke(lit ? Palette.outlineSoft : Palette.ink.opacity(0.12), lineWidth: 1.5))
         }
@@ -250,7 +269,9 @@ struct RitualView: View {
     }
 }
 
-// MARK: - Journal prompt chip (premium: readable + shuffle/dismiss · free: blurred teaser → paywall)
+// MARK: - Journal prompt (premium: the question itself, printed plainly · free: locked teaser)
+// No card, no icon — a real journal page doesn't box or decorate its own printed question, it's
+// just posed to you directly on the paper.
 
 private struct JournalPromptChip: View {
     let text: String
@@ -261,113 +282,84 @@ private struct JournalPromptChip: View {
 
     var body: some View {
         if isPremium {
-            premiumChip
+            premiumPrompt
         } else {
-            lockedChip
+            lockedPrompt
         }
     }
 
-    // Amber-tinted chip with shuffle + dismiss controls
-    private var premiumChip: some View {
+    // The question, bold ink, given real weight — with quiet shuffle/dismiss controls alongside
+    private var premiumPrompt: some View {
         HStack(alignment: .top, spacing: 10) {
-            InkGlyph(kind: .sparkle, size: 14, fill: Palette.amber, lineWidth: 1.2)
-                .frame(width: 18, height: 18)
-                .padding(.top, 1)
-
             Text(loc: text)
-                .font(Fonts.ui(13.5, .semibold))
+                .font(Fonts.ui(16.5, .bold))
                 .foregroundStyle(Palette.ink)
-                .lineSpacing(2)
+                .lineSpacing(3)
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .contentShape(Rectangle())
 
-            HStack(spacing: 12) {
+            VStack(spacing: 12) {
                 Button(action: onShuffle) {
                     Image(systemName: "arrow.2.squarepath")
-                        .font(.system(size: 13, weight: .bold))
+                        .font(.system(size: 12, weight: .bold))
                         .foregroundStyle(Palette.inkSofter)
                 }
                 .buttonStyle(PressableStyle(scale: 0.88))
 
                 Button(action: onDismiss) {
                     Image(systemName: "xmark")
-                        .font(.system(size: 11, weight: .bold))
+                        .font(.system(size: 10, weight: .bold))
                         .foregroundStyle(Palette.inkSofter)
                 }
                 .buttonStyle(PressableStyle(scale: 0.88))
             }
+            .padding(.top, 3)
         }
-        .padding(EdgeInsets(top: 12, leading: 14, bottom: 12, trailing: 14))
-        .background(Palette.cream, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(Palette.outlineSoft, lineWidth: 1.5)
-        )
     }
 
-    // Same layout but text blurred — tap anywhere opens paywall
-    private var lockedChip: some View {
+    // Same plain-text layout, just locked — tap anywhere opens the paywall
+    private var lockedPrompt: some View {
         Button(action: onLockTap) {
-            HStack(alignment: .center, spacing: 12) {
+            HStack(alignment: .center, spacing: 10) {
                 Image(systemName: "lock.fill")
-                    .font(.system(size: 13, weight: .bold))
+                    .font(.system(size: 12, weight: .bold))
                     .foregroundStyle(Palette.inkSofter)
-                    .frame(width: 18, height: 18)
 
                 Text(loc: "Unlock daily morning prompts")
-                    .font(Fonts.ui(14.5, .semibold))
+                    .font(Fonts.ui(15, .semibold))
                     .foregroundStyle(Palette.inkSofter)
 
                 Spacer(minLength: 0)
 
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .bold))
+                    .font(.system(size: 11, weight: .bold))
                     .foregroundStyle(Palette.hairline)
             }
-            .padding(EdgeInsets(top: 12, leading: 14, bottom: 12, trailing: 14))
-            .background(Palette.cream, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .stroke(Palette.ink.opacity(0.12), lineWidth: 1.5)
-            )
             .contentShape(Rectangle())
         }
         .buttonStyle(PressableStyle(scale: 0.98))
     }
 }
 
-// MARK: - Ruled journal editor — the editable form of the shared `RuledPaper`
+// MARK: - Ruled journal editor — the writing surface, laid directly on the shared page
 
-private struct RuledTextEditor: View {
+private struct RuledJournalEditor: View {
     @Binding var text: String
-    let placeholder: String
     static let lineHeight: CGFloat = 32
-    static let height: CGFloat = 176      // fixed — the field scrolls internally instead of growing
+    static let height: CGFloat = 220      // fixed — the field scrolls internally instead of growing
 
+    // No placeholder — the prompt above already poses the question. An empty-state line here
+    // would just repeat it.
     var body: some View {
-        RuledPaper(lineHeight: Self.lineHeight) {
-            ZStack(alignment: .topLeading) {
-                TextEditor(text: $text)
-                    .font(Fonts.ui(16, .semibold))
-                    .foregroundStyle(Palette.ink)
-                    .lineSpacing(Self.lineHeight - 20)
-                    .tint(Palette.amber)
-                    .scrollContentBackground(.hidden)   // let the ruled paper show through
-                    .padding(.horizontal, 11)           // + TextEditor's 5pt fragment inset ≈ 16
-                    .padding(.vertical, 8)
-                    .frame(height: Self.height)
-
-                if text.isEmpty {
-                    Text(loc: placeholder)
-                        .font(Fonts.ui(16, .semibold))
-                        .foregroundStyle(Palette.inkSofter)
-                        .padding(.horizontal, 16)
-                        .padding(.top, 16)
-                        .allowsHitTesting(false)
-                }
-            }
-        }
+        TextEditor(text: $text)
+            .font(Fonts.ui(16, .semibold))
+            .foregroundStyle(Palette.ink)
+            .lineSpacing(Self.lineHeight - 20)
+            .tint(Palette.amber)
+            .scrollContentBackground(.hidden)   // let the journal page show through
+            .padding(.horizontal, 11)           // + TextEditor's 5pt fragment inset ≈ 16
+            .padding(.vertical, 4)
+            .frame(height: Self.height)
     }
 }
 

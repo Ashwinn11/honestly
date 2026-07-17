@@ -14,6 +14,7 @@ enum HDate {
 
     static func homeHeader(_ d: Date) -> String { fmt("EEE '·' MMM d").string(from: d) }   // Sat · Jul 4
     static func monthDay(_ d: Date) -> String { fmt("MMM d").string(from: d) }               // Jul 4
+    static func dayMonthYear(_ d: Date) -> String { fmt("d MMM, yyyy").string(from: d) }     // 17 Jul, 2026
     static func weekdayFull(_ d: Date) -> String { fmt("EEEE").string(from: d) }              // Saturday
     static func monthTitle(_ d: Date) -> String { fmt("MMMM yyyy").string(from: d) }          // July 2026
     static func monthShort(_ d: Date) -> String { fmt("MMM").string(from: d) }                // Jul

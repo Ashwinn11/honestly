@@ -173,20 +173,32 @@ struct SoftCircleButton: View {
     }
 }
 
-// MARK: - Progress indicators
+// MARK: - Page date row — one line of date text with the mood parallel to it on the right,
+// bottom-aligned so both visually rest on the page's first rule. Shared by RitualView (today)
+// and EntryDetailView (a past entry's date) so writing and reading read as the same page.
+struct PageDateRow: View {
+    let date: Date
+    let mood: Int?   // nil shows an empty placeholder (RitualView step 0, before mood is picked)
 
-struct RitualPips: View {
-    let step: Int          // 0…2 are lit as reached
     var body: some View {
-        HStack(spacing: 7) {
-            ForEach(0..<3, id: \.self) { i in
-                Capsule()
-                    .fill(i <= step ? Palette.amber : Palette.ink.opacity(0.10))
-                    .frame(height: DesignScale.s(6))
-                    .frame(maxWidth: .infinity)
-            }
+        HStack(alignment: .bottom, spacing: 12) {
+            Text(HDate.dayMonthYear(date))
+                .font(Fonts.ui(14, .heavy))
+                .foregroundStyle(Palette.inkSoft)
+            Spacer(minLength: 8)
+            moodIcon
         }
-        .animation(Motion.snappy, value: step)
+    }
+
+    // No placeholder border when mood isn't picked yet — the ruled page is already enough
+    // texture; an empty decorative circle just competes with it.
+    @ViewBuilder private var moodIcon: some View {
+        if let mood {
+            MoodFace(mood: mood, size: 24)
+                .transition(.scale.combined(with: .opacity))
+        } else {
+            Color.clear.frame(width: 24, height: 24)
+        }
     }
 }
 

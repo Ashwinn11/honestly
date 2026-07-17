@@ -383,6 +383,16 @@
         }
       }
     },
+    "%@ · %lld %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ · %2$lld %3$@"
+          }
+        }
+      }
+    },
     "%@ · %lld affirmations" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -461,6 +471,7 @@
       }
     },
     "%@, %@" : {
+      "extractionState" : "stale",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
@@ -768,6 +779,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%lld 個早晨，還在繼續。"
+          }
+        }
+      }
+    },
+    "%lld of %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld of %2$lld"
           }
         }
       }
@@ -3853,83 +3874,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "已將 1 頁備份到 iCloud。"
-          }
-        }
-      }
-    },
-    "Before the day has an opinion. Tap what fits." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "قبل أن يكوّن اليوم رأيًا. اختر ما يناسبك."
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bevor der Tag urteilt. Tippe, was passt."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Antes de que el día opine. Toca lo que encaje."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Avant que le jour n’ait un avis. Touchez ce qui colle."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Prima che il giorno abbia un’opinione. Tocca ciò che senti."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "一日が意見を持つ前に。合うものをタップ。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "하루가 판단하기 전에. 맞는 걸 탭하세요."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Voor de dag een mening heeft. Tik wat past."
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Antes que o dia opine. Toque no que combina."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Пока день не судит. Выбери, что подходит."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "趁一天还没评判。点选贴合的。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "趁一天還沒評判。點選貼合的。"
           }
         }
       }
@@ -10785,6 +10729,9 @@
         }
       }
     },
+    "morning page" : {
+
+    },
     "Morning window" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -14012,83 +13959,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "至少說一句"
-          }
-        }
-      }
-    },
-    "Say it like you already believe it." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "قلها وكأنك تؤمن بها بالفعل."
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sag es, als würdest du es schon glauben."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dilo como si ya lo creyeras."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dis-le comme si tu y croyais déjà."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Dillo come se ci credessi già."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "もう信じているかのように言おう。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "이미 믿는 것처럼 말해보세요."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Zeg het alsof je het al gelooft."
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Diga como se já acreditasse nisso."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Скажи это так, будто уже веришь в это."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "把它说得像你已经相信了一样。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "把它說得像你已經相信了一樣。"
           }
         }
       }
@@ -23636,6 +23506,83 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "你的日記頁面屬於你。你保留對所寫一切內容的全部權利。我們不會對你的日記條目、心情或肯定語主張任何所有權或許可。"
+          }
+        }
+      }
+    },
+    "Write what's true" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "اكتب الحقيقة"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schreib, was wahr ist"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escribe lo que es verdad"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Écris ce qui est vrai"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scrivi ciò che è vero"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "本当のことを書こう"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "진심을 적어보세요"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schrijf wat waar is"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escreva o que é verdade"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Напиши, что правда"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "写下真实的想法"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "寫下真實的想法"
           }
         }
       }
