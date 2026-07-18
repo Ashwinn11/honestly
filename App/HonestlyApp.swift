@@ -16,15 +16,19 @@ struct HonestlyApp: App {
         DesignScale.configure(width: UIScreen.main.bounds.width)
         UNUserNotificationCenter.current().delegate = AffirmationNudge.ForegroundPresenter.shared
 
-        // App-group store, mirrored to the existing production CloudKit container so live users'
-        // pages sync into the redesign. (`JournalEntry` maps to the deployed `CD_JournalEntry`.)
-        // Degrade gracefully: CloudKit-synced → local-only disk → in-memory. No force-try.
-        let cloud  = ModelConfiguration(groupContainer: .identifier(AppConfig.appGroupID),
-                                        cloudKitDatabase: .automatic)
-        let disk   = ModelConfiguration(groupContainer: .identifier(AppConfig.appGroupID))
+        // App-group store, local-only. iCloud is never touched automatically — the only sync path
+        // is the explicit "Back up to iCloud" action in Profile (`CloudBackup`). SwiftData's
+        // automatic CloudKit mirroring used to run here too, but it silently and continuously
+        // failed: fields added since the app's original Core Data schema (`affirmationsRaw`,
+        // `richContent`, `tags`) were never deployed to the container's *production* schema, and
+        // CloudKit rejects any client-side schema change there (Development-only, deploy-to-
+        // production is a manual Dashboard step) — every background save attempt errored out.
+        // `cloudKitDatabase` defaults to `.automatic` when omitted — it must be passed as `.none`
+        // explicitly, or the store silently mirrors to CloudKit anyway.
+        // Degrade gracefully: disk → in-memory. No force-try.
+        let disk   = ModelConfiguration(groupContainer: .identifier(AppConfig.appGroupID), cloudKitDatabase: .none)
         let memory = ModelConfiguration(isStoredInMemoryOnly: true)
-        let made = (try? ModelContainer(for: JournalEntry.self, configurations: cloud))
-            ?? (try? ModelContainer(for: JournalEntry.self, configurations: disk))
+        let made = (try? ModelContainer(for: JournalEntry.self, configurations: disk))
             ?? (try? ModelContainer(for: JournalEntry.self, configurations: memory))
 
         guard let made else {

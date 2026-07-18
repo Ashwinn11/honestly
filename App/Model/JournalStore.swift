@@ -202,34 +202,32 @@ final class JournalStore {
         Shielding.clear()
     }
 
-    // MARK: iCloud snapshot backup / restore (CloudKit `JournalBackup` record)
+    // MARK: iCloud snapshot backup / restore (CloudKit `JournalBackup` record) — the only place
+    // this app talks to iCloud; only ever runs from the explicit Profile action, never automatically.
 
-    private func makeBackupData() -> Data {
-        let snaps = entries.map {
-            EntrySnapshot(id: $0.id, content: $0.content, mood: $0.mood,
-                          wordCount: $0.wordCount, createdAt: $0.createdAt, tags: $0.tags)
+    private func makeSnapshots() -> [EntrySnapshot] {
+        entries.map {
+            EntrySnapshot(id: $0.id, content: $0.content, mood: $0.mood, wordCount: $0.wordCount,
+                          createdAt: $0.createdAt, tags: $0.tags, richContent: $0.richContent)
         }
-        // Bare JSON array — the exact shape the production app reads/writes. `richContent` is
-        // deliberately not carried here — see CloudBackup's doc comment for why.
-        return (try? JSONEncoder().encode(snaps)) ?? Data()
     }
 
     @discardableResult
     func backupToCloud() async -> Bool {
-        do { try await CloudBackup.upload(payload: makeBackupData(), entryCount: entries.count); return true }
+        do { try await CloudBackup.upload(entries: makeSnapshots()); return true }
         catch { return false }
     }
 
     func restoreFromCloud() async -> Int? {
-        let data: Data?
-        do { data = try await CloudBackup.latestPayload() } catch { return nil }
-        guard let data else { return nil }
+        let result: (payload: Data, richContent: [UUID: Data])?
+        do { result = try await CloudBackup.latestPayload() } catch { return nil }
+        guard let result else { return nil }
         // Tolerant decode: the production format is a bare array; older new-app builds wrote a
         // `{ version, exportedAt, entries }` wrapper — accept either.
         let snaps: [EntrySnapshot]
-        if let arr = try? JSONDecoder().decode([EntrySnapshot].self, from: data) {
+        if let arr = try? JSONDecoder().decode([EntrySnapshot].self, from: result.payload) {
             snaps = arr
-        } else if let payload = try? JSONDecoder().decode(BackupPayload.self, from: data) {
+        } else if let payload = try? JSONDecoder().decode(BackupPayload.self, from: result.payload) {
             snaps = payload.entries
         } else {
             return nil
@@ -245,7 +243,7 @@ final class JournalStore {
             // the point of restoring.
             context.insert(JournalEntry(content: snap.content, affirmationsRaw: "", mood: snap.mood,
                                         wordCount: snap.wordCount, createdAt: snap.createdAt, id: snap.id,
-                                        tags: snap.tags))
+                                        richContent: result.richContent[snap.id], tags: snap.tags))
             filledDays.insert(day)
             added += 1
         }
