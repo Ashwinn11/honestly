@@ -193,9 +193,7 @@ private struct JournalReaderPage: View {
                             .padding(.top, 18)
                     }
 
-                    Spacer(minLength: 32)
 
-                    pageFooter
                 }
                 .padding(EdgeInsets(top: 22, leading: 22, bottom: 24, trailing: 22))
             }
@@ -219,17 +217,4 @@ private struct JournalReaderPage: View {
         }
     }
 
-    private var pageFooter: some View {
-        HStack(spacing: 8) {
-            Rectangle()
-                .fill(Palette.hairline.opacity(0.7))
-                .frame(height: 1)
-            Text("morning page")
-                .textCase(.uppercase)
-                .font(Fonts.ui(10, .heavy))
-                .tracking(1.2)
-                .foregroundStyle(Palette.inkMuted)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
 }

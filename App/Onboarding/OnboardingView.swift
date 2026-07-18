@@ -209,23 +209,25 @@ struct OnboardingView: View {
             }
             .padding(.bottom, 24)
 
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 16), count: 3), spacing: 18) {
-                ForEach(Array(Brand.allCases.enumerated()), id: \.element) { i, b in
+            let displayBrands: [(Int, Brand)] = Array([Brand.instagram, .tiktok, .whatsapp, .snapchat].enumerated())
+            HStack(spacing: 0) {
+                ForEach(displayBrands, id: \.1) { i, b in
                     let locked = i < lockedCount
-                    VStack(spacing: 7) {
+                    VStack(spacing: 8) {
                         ZStack(alignment: .topTrailing) {
-                            BrandIcon(brand: b, size: 62)
+                            BrandIcon(brand: b, size: 68)
                                 .grayscale(locked ? 1 : 0)
-                                .opacity(locked ? 0.55 : 1)
+                                .opacity(locked ? 0.5 : 1)
                             if locked {
                                 lockBadge.transition(.scale.combined(with: .opacity))
                             }
                         }
                         Text(b.displayName)
-                            .font(Fonts.ui(11.5, .bold))
+                            .font(Fonts.ui(12, .bold))
                             .foregroundStyle(locked ? Palette.inkSofter : Palette.ink)
                     }
                     .animation(Motion.pop, value: locked)
+                    .frame(maxWidth: .infinity)
                 }
             }
         }
@@ -244,10 +246,10 @@ struct OnboardingView: View {
 
     private func animateLocks() async {
         try? await Task.sleep(for: .seconds(0.4))
-        for i in 1...Brand.allCases.count {
+        for i in 1...4 {
             withAnimation(Motion.pop) { lockedCount = i }
             Haptics.tap()
-            try? await Task.sleep(for: .seconds(0.12))
+            try? await Task.sleep(for: .seconds(0.18))
         }
     }
 
@@ -297,7 +299,6 @@ private struct OnbDots: View {
 }
 
 // MARK: - Plan reveal (how the ritual works — no personalization, same for everyone)
-
 private struct OnbPlanView: View {
     var body: some View {
         VStack(spacing: 20) {
