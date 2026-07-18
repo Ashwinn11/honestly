@@ -1,5 +1,9 @@
 import SwiftUI
 
+// Deliberately no image/tag preview here — those belong to the full page in `EntryDetailView`.
+// A History card is a compact index (mood, date, a two-line text snippet); decoding RTFD to pull
+// a thumbnail and rendering tag chips per row bloated both the card's height and the list's
+// per-row work for a scan-the-list surface that doesn't need it.
 struct EntryRow<Trailing: View>: View {
     let entry: JournalEntry
     @ViewBuilder var trailing: () -> Trailing

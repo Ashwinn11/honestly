@@ -30,7 +30,9 @@ struct RichTextEditor: UIViewRepresentable {
         tv.delegate = context.coordinator
 
         let label = UILabel()
-        label.text = placeholder
+        // Not SwiftUI here, so `Text(loc:)` doesn't apply — do the String Catalog lookup directly
+        // (matching `AffirmationNudge.swift`'s pattern for non-SwiftUI localized strings).
+        label.text = String(localized: String.LocalizationValue(placeholder))
         label.font = Self.defaultFont
         label.textColor = UIColor(Palette.inkSofter)
         label.numberOfLines = 0
@@ -55,7 +57,7 @@ struct RichTextEditor: UIViewRepresentable {
         uiView.isOpaque = false
         uiView.allowsEditingTextAttributes = isEditingAllowed
         uiView.smartInsertDeleteType = .no
-        context.coordinator.placeholderLabel?.text = placeholder
+        context.coordinator.placeholderLabel?.text = String(localized: String.LocalizationValue(placeholder))
         context.coordinator.placeholderLabel?.isHidden = !attributedText.string.isEmpty
         guard uiView.attributedText != attributedText else { return }
         let selection = uiView.selectedRange

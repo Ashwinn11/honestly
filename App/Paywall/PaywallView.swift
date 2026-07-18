@@ -12,12 +12,6 @@ struct PaywallView: View {
     @State private var showRestoreAlert = false
     @State private var legal: LegalDoc? = nil
 
-    private var goal: OnbGoal? { OnbGoal(rawValue: SharedState.onboardingGoal) }
-    private var heroTitle: String { goal?.paywallHero ?? "Take your mornings back" }
-    private var reclaimedHours: Int {
-        AppContent.reclaimedHours(scrollMin: SharedState.scrollMinutes, morningsPerWeek: SharedState.weeklyGoal)
-    }
-
     var body: some View {
         ZStack {
             PaperBackground()
@@ -59,20 +53,14 @@ struct PaywallView: View {
     }
 
     // MARK: Hero
-    // The reclaimed-hours line is written as a literal interpolation directly in this `some View`
-    // body (matching RitualView's `"\(wordCount) words — nice"` pattern) — that's what lets Xcode
-    // extract it as a real translatable `%lld` placeholder. Building it elsewhere as a `Text`-typed
-    // property or concatenating separate `Text` values does not extract the same way.
     private var hero: some View {
         VStack(spacing: 10) {
             SunMark(size: 60).floaty()
                 .background { SoftGlow(color: Palette.amber, opacity: 0.15, size: 210) }
-            Text(loc: heroTitle)
+            Text(loc: "Take your mornings back")
                 .display(27, .bold)
                 .multilineTextAlignment(.center)
-            (SharedState.scrollMinutes > 0
-                ? Text("≈\(reclaimedHours) hours reclaimed a month, starting today.")
-                : Text(loc: "Everything you need to keep the ritual."))
+            Text(loc: "Everything you need to keep the ritual.")
                 .ui(13.5, .semibold, color: Palette.inkSoft)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)

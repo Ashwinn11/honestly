@@ -6,6 +6,17 @@ enum Brand: String, CaseIterable, Identifiable {
     var id: String { rawValue }
     var assetName: String { "brand-\(rawValue)" }
     var hasAsset: Bool { UIImage(named: assetName) != nil }
+
+    var displayName: String {
+        switch self {
+        case .instagram: return "Instagram"
+        case .tiktok:    return "TikTok"
+        case .youtube:   return "YouTube"
+        case .snapchat:  return "Snapchat"
+        case .x:         return "X"
+        case .whatsapp:  return "WhatsApp"
+        }
+    }
 }
 
 struct BrandIcon: View {

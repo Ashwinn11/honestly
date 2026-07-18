@@ -3,27 +3,17 @@ import SwiftUI
 struct OnboardingView: View {
     var onFinish: () -> Void
 
-    @Environment(JournalStore.self) private var store
-
-    @State private var answers = OnboardingAnswers()
     @State private var index = 0
     @State private var forward = true
 
     private enum Beat: Int, CaseIterable {
-        case brand, problem, goal, scroll, pain, apps, commitment, building, plan, ritual, social, notif, paywall
+        case brand, problem, lock, plan, social, notif, paywall
     }
     private let beats = Beat.allCases
     private var beat: Beat { beats[index] }
 
     private var dotTotal: Int { beats.count - 1 }
-    private var canGoBack: Bool { index > 0 && beat != .building }
-
-    /// What the notification-permission preview shows: their own demo affirmation, or the default
-    /// until they've written one — matches exactly what `AffirmationNudge` will actually send.
-    private var previewAffirmation: String {
-        let mine = answers.demoAffirmation.trimmingCharacters(in: .whitespacesAndNewlines)
-        return mine.isEmpty ? AppContent.defaultAffirmation : mine
-    }
+    private var canGoBack: Bool { index > 0 }
 
     var body: some View {
         ZStack {
@@ -66,65 +56,14 @@ struct OnboardingView: View {
                 narrative(.noise, title: AppContent.onbProblemTitle, body: AppContent.onbProblemBody)
             }
 
-        case .goal:
-            chrome(primary: .init(title: "Continue", enabled: !answers.goals.isEmpty) { advance() }) {
-                questionColumn(AppContent.goalQuestion, hint: AppContent.goalHint) {
-                    ForEach(OnbGoal.allCases) { g in
-                        OnbOptionRow(label: g.option, selected: answers.isGoalSelected(g), multi: true) {
-                            withAnimation(Motion.snappy) { answers.toggleGoal(g) }
-                            Haptics.select()
-                        }
-                    }
-                }
-            }
-
-        case .scroll:
-            chrome(primary: .init(title: "Continue", enabled: answers.scrollMinutes > 0) { advance() }) {
-                questionColumn(AppContent.scrollQuestion) {
-                    ForEach(AppContent.scrollOptions) { opt in
-                        OnbOptionRow(label: opt.label, note: opt.note,
-                                     selected: answers.scrollMinutes == opt.minutes) {
-                            withAnimation(Motion.snappy) { answers.scrollMinutes = opt.minutes }
-                            Haptics.select()
-                        }
-                    }
-                }
-            }
-
-        case .pain:
-            chrome(primary: .init(title: "Let's fix that") { advance() }) {
-                painReveal
-            }
-
-        case .apps:
+        case .lock:
             chrome(primary: .init(title: "Continue") { advance() }) {
-                appsQuestion
+                lockAnimation
             }
-
-        case .commitment:
-            chrome(primary: .init(title: "Continue") { advance() }) {
-                questionColumn(AppContent.commitQuestion) {
-                    ForEach(AppContent.commitOptions) { opt in
-                        OnbOptionRow(label: opt.label, note: opt.note,
-                                     selected: answers.weeklyGoal == opt.perWeek) {
-                            withAnimation(Motion.snappy) { answers.weeklyGoal = opt.perWeek }
-                            Haptics.select()
-                        }
-                    }
-                }
-            }
-
-        case .building:
-            OnbBuildingView(onDone: advance, dotIndex: index, dotTotal: dotTotal)
 
         case .plan:
             chrome(primary: .init(title: "This is me") { advance() }) {
-                OnbPlanView(answers: answers)
-            }
-
-        case .ritual:
-            chrome(primary: .init(title: "Continue", enabled: answers.demoReady) { advance() }) {
-                OnbRitualDemoView(answers: answers)
+                OnbPlanView()
             }
 
         case .social:
@@ -136,7 +75,7 @@ struct OnboardingView: View {
             chrome(primary: .init(title: "Allow notifications") { requestNotifications() },
                    secondary: .init(title: "Maybe later") { advance() }) {
                 VStack(spacing: 24) {
-                    NotifStack(example: "Today, I choose calm over chaos.", mine: previewAffirmation)
+                    NotifStack(first: AppContent.defaultAffirmation, second: "Today, I choose calm over chaos.")
                     VStack(spacing: 10) {
                         Text(loc: AppContent.notifTitle)
                             .font(Fonts.display(24, .bold)).foregroundStyle(Palette.ink)
@@ -257,73 +196,58 @@ struct OnboardingView: View {
         }
     }
 
-    private func questionColumn<Rows: View>(_ title: String, hint: String? = nil,
-                                            @ViewBuilder rows: () -> Rows) -> some View {
+    // MARK: - App-locking (passive — icons lock themselves, nothing to tap)
+
+    @State private var lockedCount = 0
+
+    private var lockAnimation: some View {
         VStack(alignment: .leading, spacing: 0) {
             VStack(alignment: .leading, spacing: 9) {
-                Text(loc: title)
+                Text(loc: AppContent.lockTitle)
                     .font(Fonts.display(26, .bold)).foregroundStyle(Palette.ink).lineSpacing(2)
-                if let hint {
-                    Text(loc: hint).font(Fonts.ui(14, .semibold)).foregroundStyle(Palette.inkSoft)
-                }
-            }
-            .padding(.bottom, 22)
-
-            VStack(spacing: 10) { rows() }
-        }
-    }
-
-    private var painReveal: some View {
-        VStack(spacing: 0) {
-            Eyebrow(text: "Right now", tracking: 2, size: 13)
-            Text("\(answers.painHours)")
-                .font(Fonts.display(96, .heavy)).foregroundStyle(Palette.amber)
-                .padding(.top, 8)
-                .overlay(alignment: .topTrailing) {
-                    InkGlyph(kind: .sparkle, size: 26, fill: Color(hex: "F6C33F"))
-                        .offset(x: 26, y: 6).floaty(period: 4)
-                }
-            Text("hours a month")
-                .font(Fonts.display(26, .bold)).foregroundStyle(Palette.ink)
-            Text("handed to the scroll — gone before\nyou're even awake.")
-                .font(Fonts.ui(16, .semibold)).foregroundStyle(Palette.inkSoft)
-                .multilineTextAlignment(.center).lineSpacing(4)
-                .padding(.top, 16)
-        }
-        .background { SoftGlow(color: Palette.amber, opacity: 0.14, size: 320) }
-    }
-
-    private var appsQuestion: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            VStack(alignment: .leading, spacing: 9) {
-                Text(loc: AppContent.appsQuestion)
-                    .font(Fonts.display(26, .bold)).foregroundStyle(Palette.ink).lineSpacing(2)
-                Text(loc: AppContent.appsHint).font(Fonts.ui(14, .semibold)).foregroundStyle(Palette.inkSoft)
+                Text(loc: AppContent.lockSubtitle).font(Fonts.ui(14, .semibold)).foregroundStyle(Palette.inkSoft)
             }
             .padding(.bottom, 24)
 
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 16), count: 3), spacing: 18) {
-                ForEach(Brand.allCases) { b in
-                    let picked = answers.isBrandPicked(b)
-                    Button {
-                        Haptics.select()
-                        withAnimation(Motion.snappy) { answers.toggleBrand(b) }
-                    } label: {
-                        VStack(spacing: 7) {
+                ForEach(Array(Brand.allCases.enumerated()), id: \.element) { i, b in
+                    let locked = i < lockedCount
+                    VStack(spacing: 7) {
+                        ZStack(alignment: .topTrailing) {
                             BrandIcon(brand: b, size: 62)
-                                .grayscale(picked ? 0 : 0.7)
-                                .opacity(picked ? 1 : 0.55)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 62 * 0.23, style: .continuous)
-                                        .stroke(Palette.ink, lineWidth: picked ? 3 : 0))
-                            Text(b.displayName)
-                                .font(Fonts.ui(11.5, .bold))
-                                .foregroundStyle(picked ? Palette.ink : Palette.inkSofter)
+                                .grayscale(locked ? 1 : 0)
+                                .opacity(locked ? 0.55 : 1)
+                            if locked {
+                                lockBadge.transition(.scale.combined(with: .opacity))
+                            }
                         }
+                        Text(b.displayName)
+                            .font(Fonts.ui(11.5, .bold))
+                            .foregroundStyle(locked ? Palette.inkSofter : Palette.ink)
                     }
-                    .buttonStyle(PressableStyle())
+                    .animation(Motion.pop, value: locked)
                 }
             }
+        }
+        .task { await animateLocks() }
+    }
+
+    private var lockBadge: some View {
+        Image(systemName: "lock.fill")
+            .font(.system(size: 10, weight: .bold))
+            .foregroundStyle(.white)
+            .frame(width: 20, height: 20)
+            .background(Palette.ink, in: Circle())
+            .overlay(Circle().stroke(Palette.paper, lineWidth: 2))
+            .offset(x: 6, y: -6)
+    }
+
+    private func animateLocks() async {
+        try? await Task.sleep(for: .seconds(0.4))
+        for i in 1...Brand.allCases.count {
+            withAnimation(Motion.pop) { lockedCount = i }
+            Haptics.tap()
+            try? await Task.sleep(for: .seconds(0.12))
         }
     }
 
@@ -333,15 +257,12 @@ struct OnboardingView: View {
         guard index < beats.count - 1 else { return }
         forward = true
         withAnimation(Motion.gentle) { index += 1 }
-        if beat == .building { answers.persist() }   // lock answers in before the paywall reads them
     }
 
     private func back() {
         guard index > 0 else { return }
         forward = false
-        var target = index - 1
-        if beats[target] == .building { target -= 1 }   // don't land on the auto-advancing build beat
-        withAnimation(Motion.gentle) { index = max(0, target) }
+        withAnimation(Motion.gentle) { index = max(0, index - 1) }
     }
 
     private func requestNotifications() {
@@ -352,11 +273,6 @@ struct OnboardingView: View {
     }
 
     private func finish() {
-        answers.persist()
-        if answers.demoReady {
-            store.saveRitual(mood: answers.demoMood ?? 2, journal: answers.demoLine,
-                              affirmations: [answers.demoAffirmation])
-        }
         SharedState.onboardingComplete = true
         Haptics.success()
         onFinish()
@@ -380,157 +296,16 @@ private struct OnbDots: View {
     }
 }
 
-// MARK: - Option row (single = radio, multi = checkbox)
-
-private struct OnbOptionRow: View {
-    let label: String
-    var note: String? = nil
-    let selected: Bool
-    var multi: Bool = false
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 13) {
-                indicator
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(loc: label).font(Fonts.ui(16, .heavy)).foregroundStyle(Palette.ink)
-                    if let note {
-                        Text(loc: note).font(Fonts.ui(12.5, .semibold)).foregroundStyle(Palette.inkSofter)
-                    }
-                }
-                Spacer(minLength: 8)
-            }
-            .padding(15)
-            .background(selected ? Color(hex: "FFF6E7") : Palette.cream,
-                        in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(selected ? Palette.amber : Palette.ink.opacity(0.18), lineWidth: selected ? 2 : 1.5))
-        }
-        .buttonStyle(PressableStyle(scale: 0.98))
-    }
-
-    @ViewBuilder private var indicator: some View {
-        ZStack {
-            if multi {
-                // Checkbox: amber fill + black ink outline when checked
-                RoundedRectangle(cornerRadius: 7, style: .continuous)
-                    .fill(selected ? Palette.amber : .clear)
-                RoundedRectangle(cornerRadius: 7, style: .continuous)
-                    .stroke(selected ? Palette.ink : Palette.ink.opacity(0.3), lineWidth: 2)
-                if selected {
-                    Image(systemName: "checkmark").font(.system(size: 12, weight: .heavy)).foregroundStyle(.white)
-                }
-            } else {
-                // Radio: amber ring + amber dot when selected
-                Circle().stroke(selected ? Palette.amber : Palette.ink.opacity(0.3), lineWidth: 2)
-                if selected { Circle().fill(Palette.amber).frame(width: 11, height: 11) }
-            }
-        }
-        .frame(width: 22, height: 22)
-    }
-}
-
-// MARK: - Building screen
-
-private struct OnbBuildingView: View {
-    var onDone: () -> Void
-    let dotIndex: Int
-    let dotTotal: Int
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var rise = false
-    @State private var visibleTicks = 0
-
-    var body: some View {
-        VStack(spacing: 0) {
-            Spacer()
-            VStack(spacing: 26) {
-                ZStack {
-                    SoftGlow(color: Palette.sunDisc, opacity: 0.18, size: 240)
-                    SunMark(size: 104).spin(period: 22)
-                }
-                .offset(y: rise ? 0 : 26)
-                .opacity(rise ? 1 : 0.15)
-                .floaty(period: 6)
-
-                Text(loc: AppContent.buildingTitle)
-                    .font(Fonts.display(23, .bold)).foregroundStyle(Palette.ink)
-                    .multilineTextAlignment(.center)
-
-                VStack(alignment: .leading, spacing: 13) {
-                    ForEach(Array(AppContent.buildingTicks.enumerated()), id: \.offset) { i, t in
-                        HStack(spacing: 11) {
-                            ZStack {
-                                Circle().fill(i < visibleTicks ? Palette.amber : Color.white)
-                                    .overlay(Circle().stroke(i < visibleTicks ? Palette.ink : Palette.ink.opacity(0.25),
-                                                             lineWidth: 2))
-                                    .frame(width: 26, height: 26)
-                                if i < visibleTicks {
-                                    Image(systemName: "checkmark").font(.system(size: 11, weight: .heavy))
-                                        .foregroundStyle(.white)
-                                }
-                            }
-                            Text(loc: t).font(Fonts.ui(15, .bold))
-                                .foregroundStyle(i < visibleTicks ? Palette.ink : Palette.inkSofter)
-                        }
-                        .opacity(i < visibleTicks ? 1 : 0.5)
-                    }
-                }
-            }
-            Spacer()
-            VStack(spacing: 18) {
-                OnbDots(index: dotIndex, total: dotTotal)
-                // Reserves the same height the CTA button row occupies on every other beat, so the
-                // dots land at the same vertical position here as everywhere else (this screen has
-                // no buttons of its own — it auto-advances).
-                Color.clear.frame(height: DesignScale.s(56))
-            }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .padding(.horizontal, 40)
-        .padding(.top, 8)
-        .padding(.bottom, 30)
-        .task { await run() }
-    }
-
-    private func run() async {
-        if reduceMotion {
-            rise = true; visibleTicks = AppContent.buildingTicks.count
-            try? await Task.sleep(for: .seconds(0.5))
-            onDone(); return
-        }
-        withAnimation(.easeOut(duration: 0.6)) { rise = true }
-        for i in 1...AppContent.buildingTicks.count {
-            try? await Task.sleep(for: .seconds(0.62))
-            withAnimation(Motion.snappy) { visibleTicks = i }
-        }
-        try? await Task.sleep(for: .seconds(0.55))
-        onDone()
-    }
-}
-
-// MARK: - Plan reveal
+// MARK: - Plan reveal (how the ritual works — no personalization, same for everyone)
 
 private struct OnbPlanView: View {
-    let answers: OnboardingAnswers
-
     var body: some View {
         VStack(spacing: 20) {
-            Eyebrow(text: "Your mornings, redesigned", tracking: 1.6, size: 12)
+            Eyebrow(text: "How it works", tracking: 1.6, size: 12)
 
-            VStack(spacing: 3) {
-                Text("≈ \(answers.reclaimedHours) hours")
-                    .font(Fonts.display(48, .heavy)).foregroundStyle(Palette.amber)
-                Text("a month, taken back from the scroll")
-                    .font(Fonts.ui(14.5, .semibold)).foregroundStyle(Palette.inkSoft)
-            }
-            .multilineTextAlignment(.center)
-
-            Text(loc: answers.primaryGoal.planEmpathy)
-                .font(Fonts.display(19, .bold)).foregroundStyle(Palette.ink)
-                .multilineTextAlignment(.center).lineSpacing(2)
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(.horizontal, 4)
+            Text(loc: "Three small things, in order")
+                .font(Fonts.display(24, .bold)).foregroundStyle(Palette.ink)
+                .multilineTextAlignment(.center)
 
             VStack(spacing: 14) {
                 planRow(SunMark(size: 20), "The ritual",
@@ -538,7 +313,7 @@ private struct OnbPlanView: View {
                 planRow(InkGlyph(kind: .moon, size: 20, fill: Palette.sunDisc, lineWidth: 1.6), "The quiet",
                         "Instagram, TikTok & X stay asleep until you've written")
                 planRow(InkGlyph(kind: .flame, size: 19, fill: Palette.sunDisc, lineWidth: 1.6), "The goal",
-                        "\(answers.weeklyGoal) mornings a week · a 30-day streak to make it stick")
+                        "A few mornings a week is enough — streaks build quietly")
             }
             .softCard(padding: 16, radius: 22, emphasized: true)
         }
@@ -558,108 +333,8 @@ private struct OnbPlanView: View {
     }
 }
 
-// MARK: - Ritual demo (one real rep — mood, a line, an affirmation — done live, not narrated)
-
-private struct OnbRitualDemoView: View {
-    @Bindable var answers: OnboardingAnswers
-    @FocusState private var lineFocused: Bool
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            VStack(alignment: .leading, spacing: 9) {
-                Text("Try it, right now")
-                    .font(Fonts.display(27, .bold)).foregroundStyle(Palette.ink)
-                Text("Thirty seconds. This page is already yours.")
-                    .font(Fonts.ui(14.5, .semibold)).foregroundStyle(Palette.inkSoft)
-            }
-            .padding(.bottom, 24)
-
-            VStack(alignment: .leading, spacing: 10) {
-                fieldLabel("How are you, really?")
-                HStack(spacing: 4) {
-                    ForEach(0..<5, id: \.self) { i in moodChoice(i) }
-                }
-            }
-            .padding(.bottom, 22)
-
-            VStack(alignment: .leading, spacing: 10) {
-                fieldLabel("Empty your head — one line")
-
-                // Show a mood-matched prompt chip once the user has picked a mood.
-                // No controls — purely demonstrating the premium feature in context.
-                if let mood = answers.demoMood {
-                    let pool = AppContent.prompts(for: mood)
-                    let prompt = pool[AppContent.dailyPromptIndex(in: pool) % pool.count].text
-                    HStack(alignment: .top, spacing: 10) {
-                        InkGlyph(kind: .sparkle, size: 14, fill: Palette.amber, lineWidth: 1.2)
-                            .frame(width: 18, height: 18)
-                            .padding(.top, 1)
-                        Text(loc: prompt)
-                            .font(Fonts.ui(13.5, .semibold))
-                            .foregroundStyle(Palette.ink)
-                            .lineSpacing(2)
-                            .fixedSize(horizontal: false, vertical: true)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                    .padding(EdgeInsets(top: 12, leading: 14, bottom: 12, trailing: 14))
-                    .background(Palette.cream, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .stroke(Palette.outlineSoft, lineWidth: 1.5))
-                    .transition(.opacity.combined(with: .move(edge: .top)))
-                }
-
-                TextField(LocalizedStringKey(AppContent.journalPlaceholder), text: $answers.demoLine, axis: .vertical)
-                    .font(Fonts.ui(16, .semibold)).foregroundStyle(Palette.ink)
-                    .lineLimit(2...4)
-                    .focused($lineFocused)
-                    .padding(14)
-                    .background(Palette.cream, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .stroke(Palette.ink.opacity(0.15), lineWidth: 1.5))
-            }
-            .padding(.bottom, 22)
-            .animation(Motion.snappy, value: answers.demoMood)
-
-            VStack(alignment: .leading, spacing: 10) {
-                fieldLabel("Affirm yourself")
-                HStack(spacing: 12) {
-                    SunMark(size: 24, muted: answers.demoAffirmation.trimmingCharacters(in: .whitespaces).isEmpty)
-                    TextField(LocalizedStringKey(AppContent.affirmationPlaceholder(0)), text: $answers.demoAffirmation)
-                        .font(Fonts.ui(15, .semibold)).foregroundStyle(Palette.ink)
-                }
-                .padding(14)
-                .background(Palette.cream, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .stroke(Palette.ink.opacity(0.15), lineWidth: 1.5))
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    private func fieldLabel(_ s: String) -> some View {
-        Text(loc: s).font(Fonts.ui(13, .heavy)).foregroundStyle(Palette.inkSofter)
-    }
-
-    private func moodChoice(_ i: Int) -> some View {
-        let selected = answers.demoMood == i
-        return Button {
-            Haptics.select()
-            withAnimation(Motion.pop) { answers.demoMood = i }
-        } label: {
-            MoodFace(mood: i, size: 42, expressive: true)
-                .opacity(answers.demoMood == nil || selected ? 1 : 0.4)
-                .scaleEffect(selected ? 1.12 : 1)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 4)
-        }
-        .buttonStyle(.plain)
-        .animation(Motion.snappy, value: answers.demoMood)
-    }
-}
-
-// MARK: - Notification cards — the original floating-card illustration, shown as a live stack of
-// two: a generic example, then the line from the ritual demo (or the default), each arriving with
-// its own reveal + notification sound.
+// MARK: - Notification cards — a floating-card illustration shown as a live stack of two curated
+// examples (one is the app's default affirmation, sent until the user's written their own).
 
 private struct NotifCard: View {
     let text: String
@@ -692,21 +367,21 @@ private struct NotifCard: View {
 }
 
 private struct NotifStack: View {
-    let example: String
-    let mine: String
-    @State private var showExample = false
-    @State private var showMine = false
+    let first: String
+    let second: String
+    @State private var showFirst = false
+    @State private var showSecond = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         VStack(spacing: 14) {
-            if showMine {
-                NotifCard(text: mine)
+            if showFirst {
+                NotifCard(text: first)
                     .transition(.asymmetric(insertion: .move(edge: .top).combined(with: .opacity),
                                             removal: .opacity))
             }
-            if showExample {
-                NotifCard(text: example)
+            if showSecond {
+                NotifCard(text: second)
                     .transition(.asymmetric(insertion: .move(edge: .top).combined(with: .opacity),
                                             removal: .opacity))
             }
@@ -716,15 +391,15 @@ private struct NotifStack: View {
 
     private func run() async {
         guard !reduceMotion else {
-            showMine = true; showExample = true
+            showFirst = true; showSecond = true
             Haptics.notificationSound()
             return
         }
         try? await Task.sleep(for: .seconds(0.3))
-        withAnimation(Motion.snappy) { showMine = true }
+        withAnimation(Motion.snappy) { showFirst = true }
         Haptics.notificationSound()
         try? await Task.sleep(for: .seconds(1.0))
-        withAnimation(Motion.snappy) { showExample = true }
+        withAnimation(Motion.snappy) { showSecond = true }
         Haptics.notificationSound()
     }
 }
@@ -820,7 +495,7 @@ private struct OnbIllustration: View {
             .padding(.bottom, 22)
             Text("Honestly").font(Fonts.display(52, .heavy)).foregroundStyle(Palette.ink)
                 .underlineSquiggle(Palette.amber, weight: 5, height: 12)
-            Text("The quiet part of the morning — before the world logs on.")
+            Text("The first few minutes of your day, finally yours.")
                 .font(Fonts.ui(16, .semibold)).foregroundStyle(Palette.inkSoft)
                 .multilineTextAlignment(.center).lineSpacing(3)
                 .frame(maxWidth: 280).padding(.top, 18)

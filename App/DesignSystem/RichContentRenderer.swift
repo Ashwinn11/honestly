@@ -45,7 +45,8 @@ struct RichContentRenderer: View {
         var textRun = AttributedString()
 
         attributedText.enumerateAttributes(in: full, options: []) { attrs, range, _ in
-            if let attachment = attrs[.attachment] as? NSTextAttachment, let image = attachment.image {
+            if let attachment = attrs[.attachment] as? NSTextAttachment,
+               let image = Self.image(from: attachment) {
                 if !textRun.characters.isEmpty {
                     result.append(.text(textRun))
                     textRun = AttributedString()
@@ -77,5 +78,14 @@ struct RichContentRenderer: View {
             result.append(.text(textRun))
         }
         return result
+    }
+
+    /// Extracts a `UIImage` from an `NSTextAttachment` regardless of whether the attachment was
+    /// built in-memory (`.image` is set) or decoded from RTFD (image lives in the file wrapper).
+    private static func image(from attachment: NSTextAttachment) -> UIImage? {
+        if let img = attachment.image { return img }
+        if let data = attachment.fileWrapper?.regularFileContents { return UIImage(data: data) }
+        if let data = attachment.contents { return UIImage(data: data) }
+        return nil
     }
 }

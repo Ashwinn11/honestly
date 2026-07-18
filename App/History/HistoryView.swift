@@ -9,9 +9,13 @@ struct HistoryView: View {
 
     private var filtered: [JournalEntry] {
         let q = query.trimmingCharacters(in: .whitespaces)
+        // Strip a leading "#" so searching "#calm" and "calm" both match the tag
+        let tagQuery = q.hasPrefix("#") ? String(q.dropFirst()) : q
         return store.entries.filter { entry in
             (filter == nil || entry.moodRaw == filter) &&
-            (q.isEmpty || entry.content.localizedCaseInsensitiveContains(q))
+            (q.isEmpty ||
+             entry.content.localizedCaseInsensitiveContains(q) ||
+             entry.tags.contains { $0.localizedCaseInsensitiveContains(tagQuery) })
         }
     }
 

@@ -37,6 +37,7 @@ struct TagEditorRow: View {
     let onLockTap: () -> Void
 
     @State private var draft = ""
+    @FocusState private var draftFocused: Bool
 
     private var canAddMore: Bool { tags.count < 5 }
 
@@ -66,7 +67,14 @@ struct TagEditorRow: View {
                         .font(Fonts.ui(12.5, .heavy))
                         .foregroundStyle(Palette.ink)
                         .submitLabel(.done)
+                        .focused($draftFocused)
                         .onSubmit(commitDraft)
+                        // Typing a tag and tapping elsewhere (another field, a toolbar button, the
+                        // CTA) without hitting Return used to silently drop the draft — commit on
+                        // losing focus too, not just on explicit submit.
+                        .onChange(of: draftFocused) { wasFocused, isFocused in
+                            if wasFocused, !isFocused { commitDraft() }
+                        }
                         .frame(width: 70)
                 }
                 .padding(.horizontal, 12)

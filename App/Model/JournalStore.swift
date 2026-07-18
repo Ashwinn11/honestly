@@ -197,12 +197,7 @@ final class JournalStore {
         SharedState.streak = 0
         SharedState.todayMoodKey = nil
         SharedState.onboardingComplete = false
-        SharedState.onboardingGoal = ""
-        SharedState.scrollMinutes = 0
         SharedState.weeklyGoal = 5
-        SharedState.demoMood = -1
-        SharedState.demoLine = ""
-        SharedState.demoAffirmation = ""
         AffirmationNudge.cancel()
         Shielding.clear()
     }

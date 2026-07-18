@@ -42,11 +42,6 @@ enum SharedState {
         static let hasEverBlocked     = "blocking.hasEverConfigured"
         static let streak             = "ritual.streak"
         static let weeklyGoal         = "onboarding.weeklyGoal"     // mornings/week the user committed to
-        static let onboardingGoal     = "onboarding.goal"           // primary stated goal (OnbGoal key)
-        static let scrollMinutes      = "onboarding.scrollMinutes"  // self-reported morning scroll minutes
-        static let demoMood           = "onboarding.demoMood"       // mood face they tapped during the onboarding demo
-        static let demoLine           = "onboarding.demoLine"       // the line they wrote during the onboarding demo
-        static let demoAffirmation    = "onboarding.demoAffirmation" // the affirmation they wrote during the onboarding demo
         static let premiumActive      = "premium.active"             // mirrors PremiumManager.isPremium for the background extension
         static let todayAffirmations  = "ritual.todayAffirmations"   // [String] — today's written affirmations, in order (widget data source)
         static let todayAffirmationsSetAt = "ritual.todayAffirmationsSetAt"  // when they were last saved (widget rotation start time)
@@ -109,38 +104,11 @@ enum SharedState {
         set { defaults.set(newValue, forKey: Key.streak) }
     }
 
-    // MARK: Onboarding answers (drive the personalized plan, paywall, and weekly goal)
+    // MARK: Onboarding — weekly goal (drives the streak-goal progress ring on Home)
 
     static var weeklyGoal: Int {
         get { let v = defaults.integer(forKey: Key.weeklyGoal); return v == 0 ? 5 : v }
         set { defaults.set(newValue, forKey: Key.weeklyGoal) }
-    }
-
-    static var onboardingGoal: String {
-        get { defaults.string(forKey: Key.onboardingGoal) ?? "" }
-        set { defaults.set(newValue, forKey: Key.onboardingGoal) }
-    }
-
-    static var scrollMinutes: Int {
-        get { defaults.integer(forKey: Key.scrollMinutes) }
-        set { defaults.set(newValue, forKey: Key.scrollMinutes) }
-    }
-
-    // MARK: Onboarding demo (the "try it now" morning page — reused to preview what unlocking keeps)
-
-    static var demoMood: Int {
-        get { defaults.object(forKey: Key.demoMood) as? Int ?? -1 }
-        set { defaults.set(newValue, forKey: Key.demoMood) }
-    }
-
-    static var demoLine: String {
-        get { defaults.string(forKey: Key.demoLine) ?? "" }
-        set { defaults.set(newValue, forKey: Key.demoLine) }
-    }
-
-    static var demoAffirmation: String {
-        get { defaults.string(forKey: Key.demoAffirmation) ?? "" }
-        set { defaults.set(newValue, forKey: Key.demoAffirmation) }
     }
 
     // MARK: Premium (mirrored so the background DeviceActivityMonitor extension, which has no
