@@ -35,13 +35,7 @@ struct EntryDetailView: View {
             readerHeader
                 .capWidth(Metrics.maxContentWidth)
 
-            TabView(selection: $selectedKey) {
-                ForEach(entries, id: \.dayKey) { entry in
-                    JournalReaderPage(entry: entry)
-                        .tag(entry.dayKey)
-                }
-            }
-            .tabViewStyle(.page(indexDisplayMode: .never))
+            PageCurlReader(entries: entries, selectedKey: $selectedKey)
         }
         .background(alignment: .topTrailing) {
             SoftGlow(color: Palette.sunDisc, opacity: 0.14, size: 240)
@@ -71,6 +65,108 @@ struct EntryDetailView: View {
             Spacer()
         }
         .padding(.horizontal, 22).padding(.top, 56)
+    }
+}
+
+/// The real paper page-turn (UIKit's `.pageCurl`, the old-iBooks curl) — SwiftUI's
+/// `TabView(.page)` can only slide, so the reader bridges to `UIPageViewController` here.
+/// Lives in this file because it hosts the private `JournalReaderPage`.
+private struct PageCurlReader: UIViewControllerRepresentable {
+    let entries: [JournalEntry]
+    @Binding var selectedKey: String
+
+    func makeCoordinator() -> Coordinator { Coordinator(self) }
+
+    func makeUIViewController(context: Context) -> UIPageViewController {
+        let pvc = UIPageViewController(transitionStyle: .pageCurl, navigationOrientation: .horizontal)
+        pvc.dataSource = context.coordinator
+        pvc.delegate = context.coordinator
+        // The container stays clear so PaperBackground peeks through at the corners during an
+        // over-curl; the pages themselves must be opaque (see PageHost).
+        pvc.view.backgroundColor = .clear
+        if let page = context.coordinator.page(for: selectedKey) {
+            pvc.setViewControllers([page], direction: .forward, animated: false)
+        }
+        return pvc
+    }
+
+    func updateUIViewController(_ pvc: UIPageViewController, context: Context) {
+        context.coordinator.parent = self
+        // Never touch the page stack mid-turn, and only reset when selection moved externally —
+        // the delegate callback lands here too.
+        guard !context.coordinator.isTurning else { return }
+        let visible = (pvc.viewControllers?.first as? PageHost)?.dayKey
+        guard visible != selectedKey, let page = context.coordinator.page(for: selectedKey) else { return }
+        let from = entries.firstIndex { $0.dayKey == visible } ?? 0
+        let to = entries.firstIndex { $0.dayKey == selectedKey } ?? 0
+        pvc.setViewControllers([page], direction: to >= from ? .forward : .reverse, animated: false)
+    }
+
+    final class PageHost: UIHostingController<JournalReaderPage> {
+        let dayKey: String
+        init(entry: JournalEntry) {
+            dayKey = entry.dayKey
+            super.init(rootView: JournalReaderPage(entry: entry))
+            // Must be opaque: the curl deforms a snapshot of this view, and a transparent page
+            // renders as nothing but a bent edge — no visible paper to peel.
+            view.backgroundColor = UIColor(Palette.paper)
+        }
+        @available(*, unavailable) required dynamic init?(coder: NSCoder) { fatalError() }
+    }
+
+    final class Coordinator: NSObject, UIPageViewControllerDataSource, UIPageViewControllerDelegate {
+        var parent: PageCurlReader
+        // One host per page, reused across data-source calls — pageCurl tracks pages by
+        // identity, and handing it a fresh controller for the same page corrupts its
+        // internal transition queue.
+        private var hosts: [String: PageHost] = [:]
+        // True from turn start until the settle animation lands. A swipe that begins during
+        // the settle crashes UIKit's curl ("number of view controllers provided (0)…"),
+        // so the data source reports no neighbours until the turn is done.
+        private(set) var isTurning = false
+
+        init(_ parent: PageCurlReader) { self.parent = parent }
+
+        private func host(for entry: JournalEntry) -> PageHost {
+            if let cached = hosts[entry.dayKey] { return cached }
+            let fresh = PageHost(entry: entry)
+            hosts[entry.dayKey] = fresh
+            return fresh
+        }
+
+        func page(for dayKey: String) -> PageHost? {
+            (parent.entries.first { $0.dayKey == dayKey } ?? parent.entries.first)
+                .map { host(for: $0) }
+        }
+
+        private func index(of vc: UIViewController) -> Int? {
+            guard let key = (vc as? PageHost)?.dayKey else { return nil }
+            return parent.entries.firstIndex { $0.dayKey == key }
+        }
+
+        func pageViewController(_ pvc: UIPageViewController,
+                                viewControllerBefore vc: UIViewController) -> UIViewController? {
+            guard !isTurning, let i = index(of: vc), i > 0 else { return nil }
+            return host(for: parent.entries[i - 1])
+        }
+
+        func pageViewController(_ pvc: UIPageViewController,
+                                viewControllerAfter vc: UIViewController) -> UIViewController? {
+            guard !isTurning, let i = index(of: vc), i < parent.entries.count - 1 else { return nil }
+            return host(for: parent.entries[i + 1])
+        }
+
+        func pageViewController(_ pvc: UIPageViewController,
+                                willTransitionTo pendingViewControllers: [UIViewController]) {
+            isTurning = true
+        }
+
+        func pageViewController(_ pvc: UIPageViewController, didFinishAnimating finished: Bool,
+                                previousViewControllers: [UIViewController], transitionCompleted completed: Bool) {
+            isTurning = false
+            guard completed, let key = (pvc.viewControllers?.first as? PageHost)?.dayKey else { return }
+            parent.selectedKey = key
+        }
     }
 }
 
