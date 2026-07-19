@@ -1,9 +1,7 @@
 import SwiftUI
 
-// Deliberately no image/tag preview here — those belong to the full page in `EntryDetailView`.
-// A History card is a compact index (mood, date, a two-line text snippet); decoding RTFD to pull
-// a thumbnail and rendering tag chips per row bloated both the card's height and the list's
-// per-row work for a scan-the-list surface that doesn't need it.
+// Pre-rendered JPEG thumbnail here resolves the performance objection (no per-row RTFD decoding).
+// A History card remains a compact index, but displays a small photo preview if the entry has one.
 struct EntryRow<Trailing: View>: View {
     let entry: JournalEntry
     @ViewBuilder var trailing: () -> Trailing
@@ -24,6 +22,14 @@ struct EntryRow<Trailing: View>: View {
                     .lineLimit(2).multilineTextAlignment(.leading).lineSpacing(1)
             }
             Spacer(minLength: 6)
+            if let thumbData = entry.thumbnail, let uiImage = UIImage(data: thumbData) {
+                Image(uiImage: uiImage)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .frame(width: 46, height: 46)
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(Palette.outlineSoft, lineWidth: 1))
+            }
             trailing()
         }
         .padding(13)

@@ -5,6 +5,7 @@ struct EntryDetailView: View {
     @Environment(JournalStore.self) private var store
     @Environment(\.dismiss) private var dismiss
     @State private var selectedKey: String
+    @State private var showEditor = false
 
     init(dayKey: String) {
         self.dayKey = dayKey
@@ -28,6 +29,11 @@ struct EntryDetailView: View {
             }
         }
         .onChange(of: selectedKey) { _, _ in Haptics.select() }
+        .fullScreenCover(isPresented: $showEditor) {
+            if let entry = store.entry(for: selectedKey) {
+                EntryEditorView(entry: entry)
+            }
+        }
     }
 
     private var reader: some View {
@@ -50,6 +56,11 @@ struct EntryDetailView: View {
         HStack(spacing: 12) {
             IconTileButton(icon: "chevron.left", size: 38, iconSize: 15) { dismiss() }
             Spacer(minLength: 0)
+            if let entry = store.entry(for: selectedKey) {
+                IconTileButton(icon: "pencil", size: 38, iconSize: 15) {
+                    showEditor = true
+                }
+            }
         }
         .padding(.horizontal, 20)
         .padding(.top, 56)
@@ -92,11 +103,23 @@ private struct PageCurlReader: UIViewControllerRepresentable {
 
     func updateUIViewController(_ pvc: UIPageViewController, context: Context) {
         context.coordinator.parent = self
+        
+        // Sync currently visible page background color
+        if let host = pvc.viewControllers?.first as? PageHost,
+           let entry = entries.first(where: { $0.dayKey == host.dayKey }) {
+            let theme = PageTheme.from(entry.themeID)
+            host.view.backgroundColor = theme.baseUIColor
+        }
+
         // Never touch the page stack mid-turn, and only reset when selection moved externally —
         // the delegate callback lands here too.
         guard !context.coordinator.isTurning else { return }
         let visible = (pvc.viewControllers?.first as? PageHost)?.dayKey
         guard visible != selectedKey, let page = context.coordinator.page(for: selectedKey) else { return }
+        
+        let theme = PageTheme.from(entries.first(where: { $0.dayKey == selectedKey })?.themeID)
+        page.view.backgroundColor = theme.baseUIColor
+        
         let from = entries.firstIndex { $0.dayKey == visible } ?? 0
         let to = entries.firstIndex { $0.dayKey == selectedKey } ?? 0
         pvc.setViewControllers([page], direction: to >= from ? .forward : .reverse, animated: false)
@@ -109,7 +132,8 @@ private struct PageCurlReader: UIViewControllerRepresentable {
             super.init(rootView: JournalReaderPage(entry: entry))
             // Must be opaque: the curl deforms a snapshot of this view, and a transparent page
             // renders as nothing but a bent edge — no visible paper to peel.
-            view.backgroundColor = UIColor(Palette.paper)
+            let theme = PageTheme.from(entry.themeID)
+            view.backgroundColor = theme.baseUIColor
         }
         @available(*, unavailable) required dynamic init?(coder: NSCoder) { fatalError() }
     }
@@ -125,7 +149,17 @@ private struct PageCurlReader: UIViewControllerRepresentable {
         // so the data source reports no neighbours until the turn is done.
         private(set) var isTurning = false
 
-        init(_ parent: PageCurlReader) { self.parent = parent }
+        init(_ parent: PageCurlReader) {
+            self.parent = parent
+            super.init()
+            NotificationCenter.default.addObserver(self, selector: #selector(handleEntryUpdate(_:)),
+                                                   name: .journalEntryDidUpdate, object: nil)
+        }
+
+        @objc private func handleEntryUpdate(_ notification: Notification) {
+            guard let dayKey = notification.object as? String else { return }
+            hosts.removeValue(forKey: dayKey)
+        }
 
         private func host(for entry: JournalEntry) -> PageHost {
             if let cached = hosts[entry.dayKey] { return cached }
@@ -200,6 +234,7 @@ private struct JournalReaderPage: View {
             .capWidth(Metrics.maxContentWidth)
         }
         .scrollIndicators(.hidden)
+        .background(PageThemeBackground(theme: PageTheme.from(entry.themeID)))
     }
 
     // Rich (formatted text + inline images) for entries written after this feature shipped;
@@ -207,7 +242,7 @@ private struct JournalReaderPage: View {
     @ViewBuilder private var journalContent: some View {
         if let data = entry.richContent, let attributed = NSAttributedString.from(rtfdData: data),
            attributed.length > 0 {
-            RichContentRenderer(attributedText: attributed)
+            RichContentView(attributedText: attributed)
         } else {
             Text(entry.journal)
                 .font(Fonts.ui(16.5, .semibold))

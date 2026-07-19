@@ -16,26 +16,28 @@ struct EntrySnapshot: Codable {
     var wordCount: Int
     var createdAt: Date
     var tags: [String] = []
+    var themeID: String = ""     // PageTheme raw value; "" (or a missing key, on old backups) → .paper
     // Formatting + inline images (RTFD blob). Only ever populated on the current per-entry CKAsset
     // backup format — the legacy single-blob production format never carried this, so it decodes
     // to nil there, same as a missing `tags` key on an old backup.
     var richContent: Data? = nil
 
-    // Manual init(from:) so older backups (written before `tags`/`richContent` existed) still
-    // decode — a plain default value on the property doesn't help here, since synthesized Codable
-    // would otherwise require the key to be present. Older backups carrying now-unrecognized keys
-    // (e.g. a legacy affirmations field) decode fine too — Codable silently ignores keys a struct
-    // doesn't declare.
-    enum CodingKeys: String, CodingKey { case id, content, mood, wordCount, createdAt, tags, richContent }
+    // Manual init(from:) so older backups (written before `tags`/`richContent`/`themeID` existed)
+    // still decode — a plain default value on the property doesn't help here, since synthesized
+    // Codable would otherwise require the key to be present. Older backups carrying
+    // now-unrecognized keys (e.g. a legacy affirmations field) decode fine too — Codable silently
+    // ignores keys a struct doesn't declare.
+    enum CodingKeys: String, CodingKey { case id, content, mood, wordCount, createdAt, tags, themeID, richContent }
 
     init(id: UUID, content: String, mood: String, wordCount: Int, createdAt: Date, tags: [String] = [],
-         richContent: Data? = nil) {
+         themeID: String = "", richContent: Data? = nil) {
         self.id = id
         self.content = content
         self.mood = mood
         self.wordCount = wordCount
         self.createdAt = createdAt
         self.tags = tags
+        self.themeID = themeID
         self.richContent = richContent
     }
 
@@ -47,6 +49,7 @@ struct EntrySnapshot: Codable {
         wordCount = try c.decode(Int.self, forKey: .wordCount)
         createdAt = try c.decode(Date.self, forKey: .createdAt)
         tags = try c.decodeIfPresent([String].self, forKey: .tags) ?? []
+        themeID = try c.decodeIfPresent(String.self, forKey: .themeID) ?? ""
         richContent = try c.decodeIfPresent(Data.self, forKey: .richContent)
     }
 }

@@ -141,7 +141,8 @@ final class JournalStore {
     /// Create or update today's page, then sync completion out to the app group + shield.
     @discardableResult
     func saveRitual(mood: Int, journal: String, affirmations: [String],
-                     richContent: Data? = nil, tags: [String] = []) -> JournalEntry {
+                     richContent: Data? = nil, tags: [String] = [],
+                     themeID: String = "", thumbnail: Data? = nil) -> JournalEntry {
         let face = Mood(rawValue: mood) ?? .sad
         let trimmed = journal.trimmingCharacters(in: .whitespacesAndNewlines)
         let content = trimmed.isEmpty ? AppContent.emptyJournalFallback : trimmed
@@ -161,6 +162,8 @@ final class JournalStore {
         entry.wordCount = JournalEntry.wordCount(of: content)
         entry.richContent = richContent
         entry.tags = tags
+        entry.themeID = themeID
+        entry.thumbnail = thumbnail
 
         try? context.save()
         reload()
@@ -169,6 +172,24 @@ final class JournalStore {
         SharedState.streak = streak
         Shielding.reconcile()
         AffirmationNudge.scheduleForToday()
+        return entry
+    }
+
+    /// Edit an already-saved page (any day) from the reader. Content-only: mood, affirmations,
+    /// and all the save-ritual side effects (completion flag, streak, shield, notifications) are
+    /// morning-ritual concerns and deliberately don't re-fire on an edit.
+    @discardableResult
+    func update(_ entry: JournalEntry, journal: String, richContent: Data?, tags: [String],
+                themeID: String, thumbnail: Data?) -> JournalEntry {
+        let trimmed = journal.trimmingCharacters(in: .whitespacesAndNewlines)
+        entry.content = trimmed.isEmpty ? AppContent.emptyJournalFallback : trimmed
+        entry.wordCount = JournalEntry.wordCount(of: entry.content)
+        entry.richContent = richContent
+        entry.tags = tags
+        entry.themeID = themeID
+        entry.thumbnail = thumbnail
+        try? context.save()
+        reload()
         return entry
     }
 
@@ -208,7 +229,8 @@ final class JournalStore {
     private func makeSnapshots() -> [EntrySnapshot] {
         entries.map {
             EntrySnapshot(id: $0.id, content: $0.content, mood: $0.mood, wordCount: $0.wordCount,
-                          createdAt: $0.createdAt, tags: $0.tags, richContent: $0.richContent)
+                          createdAt: $0.createdAt, tags: $0.tags, themeID: $0.themeID,
+                          richContent: $0.richContent)
         }
     }
 
@@ -240,10 +262,14 @@ final class JournalStore {
             guard !existingIds.contains(snap.id), !filledDays.contains(day) else { continue }
             // Affirmations aren't carried in the snapshot (see EntrySnapshot's doc comment) —
             // restored entries land with none, same as any entry whose affirmations were never
-            // the point of restoring.
+            // the point of restoring. The History thumbnail isn't carried either — it's derived
+            // data, regenerated here from the restored rich content (one decode per entry, once).
+            let rich = result.richContent[snap.id]
+            let thumbnail = rich.flatMap { NSAttributedString.from(rtfdData: $0)?.firstPhotoThumbnail() }
             context.insert(JournalEntry(content: snap.content, affirmationsRaw: "", mood: snap.mood,
                                         wordCount: snap.wordCount, createdAt: snap.createdAt, id: snap.id,
-                                        richContent: result.richContent[snap.id], tags: snap.tags))
+                                        richContent: rich, tags: snap.tags,
+                                        themeID: snap.themeID, thumbnail: thumbnail))
             filledDays.insert(day)
             added += 1
         }

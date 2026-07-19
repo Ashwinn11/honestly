@@ -16,10 +16,13 @@ struct RitualView: View {
     @FocusState private var journalFocused: Bool
     @State private var promptIndex: Int = 0
     @State private var showImagePicker = false
-    @State private var showTextColorPicker = false
-    @State private var showHighlightPicker = false
+    @State private var showDoodleSheet = false
+    @State private var showStickerSheet = false
+    @State private var showThemeSheet = false
+    @State private var theme: PageTheme = .paper
+    @State private var containerWidth: CGFloat = Metrics.maxContentWidth - 44
 
-    private var journalText: String { richText.string }
+    private var journalText: String { richText.plainText }
     private var wordCount: Int {
         journalText.split(whereSeparator: { $0.isWhitespace || $0.isNewline }).count
     }
@@ -56,7 +59,7 @@ struct RitualView: View {
                             // viewport so the writing surface does not collapse after the keyboard
                             // is dismissed.
                             JournalPageSurface(cornerRadius: 0, showsBinderHoles: false, bordered: false) {
-                                stepBody(viewportHeight: proxy.size.height)
+                                stepBody(viewportHeight: proxy.size.height, geoWidth: proxy.size.width)
                                     .padding(EdgeInsets(top: 14, leading: 22, bottom: 24, trailing: 20))
                                     .frame(minHeight: step == 1 ? proxy.size.height : nil,
                                            alignment: .topLeading)
@@ -67,7 +70,7 @@ struct RitualView: View {
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                .background(PaperBackground())
+                .background(PageThemeBackground(theme: theme))
                 .safeAreaInset(edge: .bottom) {
                     // While the editor has focus, the footer becomes the formatting toolbar instead
                     // of the step CTA — same slot, same pattern as the rest of the ritual's chrome.
@@ -75,7 +78,15 @@ struct RitualView: View {
                     // row gets full width; the CTA button keeps the page's usual side margin.
                     Group {
                         if journalFocused {
-                            formattingToolbar
+                            EditorToolbar(
+                                text: $richText,
+                                selectedRange: $selectedRange,
+                                onPhoto: { showImagePicker = true },
+                                onDoodle: { showDoodleSheet = true },
+                                onSticker: { showStickerSheet = true },
+                                onTheme: { showThemeSheet = true },
+                                onDismissKeyboard: { journalFocused = false }
+                            )
                         } else {
                             footer
                                 .padding(.horizontal, 22)
@@ -93,12 +104,11 @@ struct RitualView: View {
         .fullScreenCover(isPresented: $flow.paywallPresented) {
             PaywallView(onClose: { flow.paywallPresented = false })
         }
-        // Anchored here — not on the toolbar's photo button — because presenting this sheet steals
-        // first-responder from the journal's UITextView, which flips `journalFocused` to false via
-        // the `.focused()` binding. That swaps `formattingToolbar` (and the button this sheet used
-        // to live on) out of the tree while `showImagePicker` is still true, tearing down the
-        // presentation mid-flight and re-triggering it the moment the toolbar reappears — an
-        // infinite present/dismiss loop. This root view never disappears, so the presentation is stable.
+        // All three media/theme sheets are anchored here — not on the toolbar buttons — for the
+        // same reason as the photo sheet: presenting a sheet steals first-responder from the
+        // UITextView, which flips `journalFocused` false and swaps the EditorToolbar (and its
+        // buttons) out of the tree while the sheet is still presented, causing a present/dismiss
+        // loop. This root view never disappears, so presentations are stable.
         .sheet(isPresented: $showImagePicker) {
             ImagePickerWithCrop(
                 onImagePicked: { image in
@@ -108,6 +118,21 @@ struct RitualView: View {
                 onCancel: { showImagePicker = false }
             )
             .ignoresSafeArea()
+        }
+        .sheet(isPresented: $showDoodleSheet) {
+            DoodleSheet { image in
+                insertPickedImage(image)
+            }
+        }
+        .sheet(isPresented: $showStickerSheet) {
+            StickerPicker { image in
+                let updated = RichTextFormatting.insertSticker(image, at: selectedRange.location,
+                                                               in: richText)
+                richText = updated
+            }
+        }
+        .sheet(isPresented: $showThemeSheet) {
+            ThemePickerSheet(selection: $theme)
         }
     }
 
@@ -163,10 +188,10 @@ struct RitualView: View {
     }
 
     // MARK: Scrollable content per step
-    @ViewBuilder private func stepBody(viewportHeight: CGFloat) -> some View {
+    @ViewBuilder private func stepBody(viewportHeight: CGFloat, geoWidth: CGFloat) -> some View {
         switch step {
         case 0: moodBody
-        case 1: journalBody(viewportHeight: viewportHeight)
+        case 1: journalBody(viewportHeight: viewportHeight, geoWidth: geoWidth)
         default: affirmationBody
         }
     }
@@ -227,7 +252,7 @@ struct RitualView: View {
 
     // MARK: Step 1 — journal (the prompt lives in the top bar now — see topBarTitleView — so it
     // never competes with the writing area for space)
-    private func journalBody(viewportHeight: CGFloat) -> some View {
+    private func journalBody(viewportHeight: CGFloat, geoWidth: CGFloat) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             PageDateRow(date: Date(), mood: mood)
 
@@ -239,6 +264,12 @@ struct RitualView: View {
 
             TagEditorRow(tags: $tags, isPremium: premium.isPremium, onLockTap: { flow.showPaywall() })
                 .padding(.top, 16)
+                .onAppear {
+                    // Capture the real rendered width for image/sticker insertion so the
+                    // container width matches what the UITextView actually lays out in.
+                    // The 44pt accounts for JournalPageSurface's leading+trailing padding.
+                    containerWidth = max(geoWidth - 44, 100)
+                }
 
             // Only shown once there's something to report — the prompt above is the only guidance
             // the empty page needs.
@@ -325,163 +356,16 @@ struct RitualView: View {
 
     // MARK: Finish
     private func finish() {
+        let thumbnail = richText.firstPhotoThumbnail()
         store.saveRitual(mood: mood ?? 2, journal: journalText, affirmations: affirmations,
-                          richContent: richText.rtfdData(), tags: tags)
+                          richContent: richText.rtfdData(), tags: tags,
+                          themeID: theme.rawValue, thumbnail: thumbnail)
         Haptics.success()
         withAnimation(Motion.gentle) { step = 3 }
     }
 
-    // MARK: Formatting toolbar — swapped into the footer slot while the editor has focus.
-    // Premium-gated exactly like the rest of the ritual: unlocked users get the real controls,
-    // free users get a single locked row that opens the paywall.
-    @ViewBuilder private var formattingToolbar: some View {
-        if premium.isPremium {
-            unlockedToolbar
-        } else {
-            lockedToolbar
-        }
-    }
-
-    private var unlockedToolbar: some View {
-        HStack(spacing: 12) {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    toolbarButton(icon: "bold") { applyFormat { RichTextFormatting.toggleBold($0, range: $1) } }
-                    toolbarButton(icon: "italic") { applyFormat { RichTextFormatting.toggleItalic($0, range: $1) } }
-                    toolbarButton(icon: "underline") { applyFormat { RichTextFormatting.toggleUnderline($0, range: $1) } }
-                    fontMenu
-                    textColorMenu
-                    highlightMenu
-                    toolbarButton(icon: "photo") { showImagePicker = true }
-                }
-                // Scrolls away with the content (standard content-inset idiom) — matching leading
-                // and trailing insets so the first (bold) and last (image) buttons both get the
-                // same breathing room the rest of the row has between buttons.
-                .padding(.horizontal, 16)
-            }
-            // Fixed, not scrolled — always reachable regardless of scroll position, since closing
-            // the keyboard is a reliable action people expect to always be in the same spot. No
-            // divider — the HStack spacing alone separates it cleanly from the image button.
-            toolbarButton(icon: "keyboard.chevron.compact.down") { journalFocused = false }
-                .padding(.trailing, 16)
-        }
-    }
-
-    private var lockedToolbar: some View {
-        Button { flow.showPaywall() } label: {
-            HStack(spacing: 10) {
-                Image(systemName: "lock.fill")
-                    .font(.system(size: 13, weight: .bold)).foregroundStyle(Palette.inkSofter)
-                Text(loc: "Unlock rich formatting — bold, colors, images")
-                    .font(Fonts.ui(14, .semibold)).foregroundStyle(Palette.inkSofter)
-                Spacer(minLength: 0)
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 12, weight: .bold)).foregroundStyle(Palette.hairline)
-            }
-            .padding(.vertical, 6)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(PressableStyle(scale: 0.98))
-    }
-
-    private func toolbarIcon(_ systemName: String) -> some View {
-        Image(systemName: systemName)
-            .font(.system(size: 14, weight: .bold))
-            .foregroundStyle(Palette.ink)
-            .frame(width: 36, height: 36)
-            .background(Palette.paper, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(Palette.outlineSoft, lineWidth: 1.2))
-    }
-
-    private func toolbarButton(icon: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) { toolbarIcon(icon) }
-            .buttonStyle(PressableStyle(scale: 0.9))
-    }
-
-    private var fontMenu: some View {
-        Menu {
-            ForEach(FontChoice.allCases) { choice in
-                Button(choice.rawValue) {
-                    applyFormat { RichTextFormatting.setFont(choice, in: $0, range: $1) }
-                }
-            }
-        } label: {
-            toolbarIcon("textformat")
-        }
-    }
-
-    // `Menu` forces its item icons to a monochrome system tint on iOS regardless of any
-    // `.foregroundStyle` applied — a platform limitation, not something fixable within Menu. A
-    // real popover with plain SwiftUI circles renders true colors instead.
-    private var textColorMenu: some View {
-        Button { showTextColorPicker = true } label: { toolbarIcon("character") }
-            .buttonStyle(PressableStyle(scale: 0.9))
-            .popover(isPresented: $showTextColorPicker, arrowEdge: .bottom) {
-                colorSwatchRow(Self.textColorSwatches) { color in
-                    applyFormat { RichTextFormatting.setTextColor(UIColor(color), in: $0, range: $1) }
-                    showTextColorPicker = false
-                }
-                .padding(16)
-                .presentationCompactAdaptation(.popover)
-            }
-    }
-
-    private var highlightMenu: some View {
-        Button { showHighlightPicker = true } label: { toolbarIcon("highlighter") }
-            .buttonStyle(PressableStyle(scale: 0.9))
-            .popover(isPresented: $showHighlightPicker, arrowEdge: .bottom) {
-                HStack(spacing: 14) {
-                    colorSwatchRow(Self.highlightSwatches) { color in
-                        applyFormat { RichTextFormatting.setHighlight(UIColor(color), in: $0, range: $1) }
-                        showHighlightPicker = false
-                    }
-                    Button {
-                        applyFormat { RichTextFormatting.setHighlight(nil, in: $0, range: $1) }
-                        showHighlightPicker = false
-                    } label: {
-                        Image(systemName: "circle.slash")
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundStyle(Palette.inkSofter)
-                            .frame(width: 28, height: 28)
-                            .overlay(Circle().stroke(Palette.ink.opacity(0.18), lineWidth: 1))
-                    }
-                    .buttonStyle(PressableStyle(scale: 0.85))
-                }
-                .padding(16)
-                .presentationCompactAdaptation(.popover)
-            }
-    }
-
-    // No padding here — callers apply their own, since this is sometimes the sole popover
-    // content (textColorMenu) and sometimes one of several siblings sharing an outer padded
-    // HStack (highlightMenu). Padding baked in here doubled up in the latter case.
-    private func colorSwatchRow(_ swatches: [Color], onPick: @escaping (Color) -> Void) -> some View {
-        HStack(spacing: 14) {
-            ForEach(Array(swatches.enumerated()), id: \.offset) { _, color in
-                Button { onPick(color) } label: {
-                    Circle()
-                        .fill(color)
-                        .frame(width: 28, height: 28)
-                        .overlay(Circle().stroke(Palette.ink.opacity(0.18), lineWidth: 1))
-                }
-                .buttonStyle(PressableStyle(scale: 0.85))
-            }
-        }
-    }
-
-    private static let textColorSwatches: [Color] = [Palette.ink, Palette.amberDeep, Palette.danger, Palette.success]
-    private static let highlightSwatches: [Color] =
-        [Palette.sunDisc.opacity(0.4), Palette.mood(3).opacity(0.5), Palette.mood(4).opacity(0.4)]
-
-    private func applyFormat(_ transform: (NSAttributedString, NSRange) -> NSAttributedString) {
-        guard selectedRange.length > 0 else { return }
-        richText = transform(richText, selectedRange)
-        Haptics.select()
-    }
-
     private func insertPickedImage(_ image: UIImage) {
         let resized = image.downscaledForJournal()
-        let containerWidth = Metrics.maxContentWidth - 44   // approximates the editor's content width
         richText = RichTextFormatting.insertImage(resized, at: selectedRange.location,
                                                    containerWidth: containerWidth, in: richText)
     }

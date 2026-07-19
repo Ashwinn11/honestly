@@ -38,7 +38,7 @@ enum CloudBackup {
         // decoding this JSON never see a field they don't expect.
         let bare = entries.map {
             EntrySnapshot(id: $0.id, content: $0.content, mood: $0.mood, wordCount: $0.wordCount,
-                          createdAt: $0.createdAt, tags: $0.tags)
+                          createdAt: $0.createdAt, tags: $0.tags, themeID: $0.themeID)
         }
         record["payload"] = ((try? JSONEncoder().encode(bare)) ?? Data()) as CKRecordValue
         record["entryCount"] = entries.count as CKRecordValue

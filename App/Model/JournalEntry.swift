@@ -16,12 +16,15 @@ final class JournalEntry {
     var createdAt: Date = Date()
     var id: UUID = UUID()
 
-    // Added post-production — both default so legacy CloudKit records without them decode cleanly.
+    // Added post-production — all default so legacy CloudKit records without them decode cleanly.
     @Attribute(.externalStorage) var richContent: Data? = nil   // RTFD blob: formatted text + inline images
     var tags: [String] = []
+    var themeID: String = ""                                    // PageTheme raw value; "" → .paper
+    @Attribute(.externalStorage) var thumbnail: Data? = nil     // small JPEG of the first photo — History rows
 
     init(content: String, affirmationsRaw: String, mood: String, wordCount: Int,
-         createdAt: Date = Date(), id: UUID = UUID(), richContent: Data? = nil, tags: [String] = []) {
+         createdAt: Date = Date(), id: UUID = UUID(), richContent: Data? = nil, tags: [String] = [],
+         themeID: String = "", thumbnail: Data? = nil) {
         self.content = content
         self.affirmationsRaw = affirmationsRaw
         self.mood = mood
@@ -30,6 +33,8 @@ final class JournalEntry {
         self.id = id
         self.richContent = richContent
         self.tags = tags
+        self.themeID = themeID
+        self.thumbnail = thumbnail
     }
 
     // MARK: - UI bridges (keep the screens reading the same shape)

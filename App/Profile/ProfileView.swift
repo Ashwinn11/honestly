@@ -43,6 +43,12 @@ struct ProfileView: View {
                 sectionEyebrow("About")
                 aboutCard
                 deleteCard.padding(.top, 16)
+
+                // OpenMoji's CC BY-SA 4.0 license requires this credit to ship with the stickers.
+                Text("Stickers: OpenMoji.org · CC BY-SA 4.0")
+                    .font(Fonts.ui(10.5, .semibold)).foregroundStyle(Palette.inkSofter)
+                    .frame(maxWidth: .infinity)
+                    .padding(.top, 18)
             }
         }
         .familyActivityPicker(isPresented: $showPicker, selection: $st.selection)
