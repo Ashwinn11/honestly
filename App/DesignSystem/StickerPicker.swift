@@ -8,6 +8,8 @@ import SwiftUI
 struct StickerPicker: View {
     var onPick: (UIImage) -> Void
     @Environment(\.dismiss) private var dismiss
+    @Environment(PremiumManager.self) private var premium
+    @Environment(AppFlow.self) private var flow
     @State private var categoryIndex = 0
 
     private static let categories: [StickerCategory] = [
@@ -49,6 +51,10 @@ struct StickerPicker: View {
                 LazyVGrid(columns: columns, spacing: 10) {
                     ForEach(Self.categories[categoryIndex].codes, id: \.self) { code in
                         Button {
+                            if categoryLocked {
+                                flow.showPaywall()
+                                return
+                            }
                             guard let image = UIImage(named: "om\(code)") else { return }
                             Haptics.select()
                             onPick(image)
@@ -59,6 +65,9 @@ struct StickerPicker: View {
                                 .scaledToFit()
                                 .frame(width: 56, height: 56)
                                 .padding(6)
+                                .overlay(alignment: .topTrailing) {
+                                    if categoryLocked { lockBadge }
+                                }
                         }
                         .buttonStyle(PressableStyle(scale: 0.85))
                     }
@@ -83,6 +92,8 @@ struct StickerPicker: View {
                 ForEach(Array(Self.categories.enumerated()), id: \.offset) { index, category in
                     let active = index == categoryIndex
                     Button {
+                        // Switching to a locked category is free — it's just browsing/previewing;
+                        // only actually picking a sticker from it is the gated action.
                         Haptics.select()
                         categoryIndex = index
                     } label: {
@@ -98,6 +109,9 @@ struct StickerPicker: View {
                         .background(active ? Palette.amber : Palette.paper, in: Capsule())
                         .overlay(Capsule().stroke(active ? Palette.ink : Palette.outlineSoft,
                                                   lineWidth: active ? 1.8 : 1.2))
+                        .overlay(alignment: .topTrailing) {
+                            if index > 0 && !premium.isPremium { lockBadge.scaleEffect(0.8).offset(x: 4, y: -4) }
+                        }
                     }
                     .buttonStyle(PressableStyle(scale: 0.94))
                 }
@@ -105,6 +119,18 @@ struct StickerPicker: View {
             .padding(.horizontal, 20)
         }
         .animation(Motion.snappy, value: categoryIndex)
+    }
+
+    /// First category ("Moods") is free; every other category needs premium.
+    private var categoryLocked: Bool { categoryIndex > 0 && !premium.isPremium }
+
+    private var lockBadge: some View {
+        Image(systemName: "lock.fill")
+            .font(.system(size: 8, weight: .bold))
+            .foregroundStyle(.white)
+            .frame(width: 16, height: 16)
+            .background(Palette.amber, in: Circle())
+            .overlay(Circle().stroke(.white, lineWidth: 1))
     }
 }
 

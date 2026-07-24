@@ -14,9 +14,21 @@ struct EntryDetailView: View {
 
     private var entries: [JournalEntry] { store.entries }
 
+    // The reader header (back/edit buttons) used to sit over a fixed `PaperBackground()` while
+    // the page below it already switched to the entry's theme — a visible seam right where the
+    // two met. This tracks the same `selectedKey` the page curl uses, so the header and the page
+    // share one background and turn together.
+    @ViewBuilder private var background: some View {
+        if let entry = store.entry(for: selectedKey) {
+            PageThemeBackground(theme: PageTheme.from(entry.themeID))
+        } else {
+            PaperBackground()
+        }
+    }
+
     var body: some View {
         ZStack(alignment: .top) {
-            PaperBackground()
+            background
             if store.entry(for: dayKey) != nil {
                 reader
             } else {
@@ -56,7 +68,7 @@ struct EntryDetailView: View {
         HStack(spacing: 12) {
             IconTileButton(icon: "chevron.left", size: 38, iconSize: 15) { dismiss() }
             Spacer(minLength: 0)
-            if let entry = store.entry(for: selectedKey) {
+            if store.entry(for: selectedKey) != nil {
                 IconTileButton(icon: "pencil", size: 38, iconSize: 15) {
                     showEditor = true
                 }

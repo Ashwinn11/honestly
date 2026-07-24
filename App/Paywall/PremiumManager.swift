@@ -13,7 +13,7 @@ import RevenueCat
 @MainActor
 @Observable
 final class PremiumManager {
-    private(set) var isPremium = true // TEMP-TEST-FORCE-PREMIUM — reverted after simulator verification
+    private(set) var isPremium = false
     var offerings: Offerings? = nil
 
     func configure() {

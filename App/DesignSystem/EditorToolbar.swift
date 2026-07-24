@@ -5,7 +5,7 @@ import UIKit
 /// shows the identical toolbar. Sits in the footer slot while the editor has focus.
 ///
 /// Design:
-///  • Main row  — tT (text-format sheet) · Lists · Photo · Doodle · Sticker · Theme · Undo · Redo · Dismiss
+///  • Main row  — tT (text-format sheet) · Lists · Photo · Doodle · Sticker · Theme · Dismiss
 ///  • tT sheet  — Font | Size (with active tick) | Bold/Italic/Underline | Alignment | Color swatches
 ///
 /// Active state is shown everywhere: ticked rows for font/size/list, amber tile for B/I/U,
@@ -44,18 +44,13 @@ struct EditorToolbar: View {
                     listMenu
 
                     // ── Media / theme ────────────────────────────────────────────
-                    lockableButton(icon: "photo")              { onPhoto() }
-                    lockableButton(icon: "scribble.variable")  { onDoodle() }
-                    lockableButton(icon: "face.smiling")       { onSticker() }
-                    lockableButton(icon: "paintbrush")         { onTheme() }
-
-                    // ── Undo / Redo ───────────────────────────────────────────────
-                    undoRedoButton(icon: "arrow.uturn.backward") {
-                        NotificationCenter.default.post(name: .editorUndo, object: nil)
-                    }
-                    undoRedoButton(icon: "arrow.uturn.forward") {
-                        NotificationCenter.default.post(name: .editorRedo, object: nil)
-                    }
+                    // Photos/doodles: first one is free, a second (or more) needs premium.
+                    // Stickers/theme open unlocked too — each sheet shows its own free vs.
+                    // premium items with a lock badge, rather than gating the button itself.
+                    mediaButton(icon: "photo", isLocked: photoInsertLocked)             { onPhoto() }
+                    mediaButton(icon: "scribble.variable", isLocked: photoInsertLocked) { onDoodle() }
+                    toolbarButton(icon: "face.smiling") { onSticker() }
+                    toolbarButton(icon: "paintbrush")   { onTheme() }
                 }
                 .padding(.horizontal, 12)
             }
@@ -74,6 +69,8 @@ struct EditorToolbar: View {
                 activeListKind: activeListKind,
                 isBold: isBold,
                 isItalic: isItalic,
+                canBold: canBold,
+                canItalic: canItalic,
                 isUnderlined: isUnderlined,
                 currentAlignment: currentAlignment,
                 currentColor: currentTextColor,
@@ -81,8 +78,6 @@ struct EditorToolbar: View {
             )
             .presentationDetents([.medium, .large])
             .presentationDragIndicator(.visible)
-            .environment(premium)
-            .environment(flow)
         }
     }
 
@@ -196,19 +191,29 @@ struct EditorToolbar: View {
 
     // MARK: Buttons
 
-    private func lockableButton(icon: String, action: @escaping () -> Void) -> some View {
-        Button {
-            if premium.isPremium { action() } else { flow.showPaywall() }
-        } label: {
-            toolbarIcon(icon)
-                .overlay(alignment: .topTrailing) { if !premium.isPremium { lockBadge } }
+    /// Photos and doodles share one attachment kind (`.photo` — see `RichTextFormatting.kind`),
+    /// so the free tier's "one photo" allowance is counted across both together, not per-source.
+    private var photoAttachmentCount: Int {
+        var count = 0
+        text.enumerateAttribute(.attachment, in: NSRange(location: 0, length: text.length), options: []) { value, _, _ in
+            guard let attachment = value as? NSTextAttachment,
+                  RichTextFormatting.kind(of: attachment) == .photo else { return }
+            count += 1
         }
-        .buttonStyle(PressableStyle(scale: 0.9))
+        return count
     }
 
-    private func undoRedoButton(icon: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) { toolbarIcon(icon) }
-            .buttonStyle(PressableStyle(scale: 0.9))
+    /// The first photo/doodle is free; a second (or more) needs premium.
+    private var photoInsertLocked: Bool { !premium.isPremium && photoAttachmentCount >= 1 }
+
+    private func mediaButton(icon: String, isLocked: Bool, action: @escaping () -> Void) -> some View {
+        Button {
+            if isLocked { flow.showPaywall() } else { action() }
+        } label: {
+            toolbarIcon(icon)
+                .overlay(alignment: .topTrailing) { if isLocked { lockBadge } }
+        }
+        .buttonStyle(PressableStyle(scale: 0.9))
     }
 
     private func toolbarButton(icon: String, action: @escaping () -> Void) -> some View {
@@ -267,24 +272,18 @@ struct TextFormattingSheet: View {
     var activeListKind: ListKind?
     var isBold: Bool
     var isItalic: Bool
+    var canBold: Bool
+    var canItalic: Bool
     var isUnderlined: Bool
     var currentAlignment: NSTextAlignment
     var currentColor: UIColor?
     var textColors: [String]
 
-    @Environment(PremiumManager.self) private var premium
-    @Environment(AppFlow.self) private var flow
     @Environment(\.dismiss) private var dismiss
 
     // Detect active font choice and size from the UIFont at caret
     private var activeFontChoice: FontChoice? {
-        let name = currentFont.fontName
-        let family = currentFont.familyName
-        for choice in FontChoice.allCases {
-            let sample = choice.uiFont(size: 12)
-            if sample.familyName == family { return choice }
-        }
-        return nil
+        FontChoice.matching(familyName: currentFont.familyName)
     }
 
     private var activeTextSize: TextSize? {
@@ -337,7 +336,6 @@ struct TextFormattingSheet: View {
                                     )
                                 }
                                 .buttonStyle(PressableStyle(scale: 0.92))
-                                .premiumGate(premium: premium, flow: flow)
                             }
                         }
                         .padding(.horizontal, 2)
@@ -370,7 +368,6 @@ struct TextFormattingSheet: View {
                                 )
                             }
                             .buttonStyle(PressableStyle(scale: 0.92))
-                            .premiumGate(premium: premium, flow: flow)
                         }
                     }
                 }
@@ -379,22 +376,19 @@ struct TextFormattingSheet: View {
                 sheetSection(label: "Style & Alignment") {
                     HStack(spacing: 8) {
                         // Bold
-                        styleToggle(icon: "bold", active: isBold, enabled: currentFont.supports(.traitBold)) {
+                        styleToggle(icon: "bold", active: isBold, enabled: canBold) {
                             applyCharacter { RichTextFormatting.toggleBold($0, range: $1) }
                         }
-                        .premiumGate(premium: premium, flow: flow)
 
                         // Italic
-                        styleToggle(icon: "italic", active: isItalic, enabled: currentFont.supports(.traitItalic)) {
+                        styleToggle(icon: "italic", active: isItalic, enabled: canItalic) {
                             applyCharacter { RichTextFormatting.toggleItalic($0, range: $1) }
                         }
-                        .premiumGate(premium: premium, flow: flow)
 
                         // Underline
                         styleToggle(icon: "underline", active: isUnderlined, enabled: true) {
                             applyCharacter { RichTextFormatting.toggleUnderline($0, range: $1) }
                         }
-                        .premiumGate(premium: premium, flow: flow)
 
                         Spacer().frame(width: 8)
 
@@ -456,7 +450,6 @@ struct TextFormattingSheet: View {
                                 }
                             }
                             .buttonStyle(PressableStyle(scale: 0.85))
-                            .premiumGate(premium: premium, flow: flow)
                         }
                     }
                 }
@@ -513,33 +506,3 @@ extension ListKind {
     }
 }
 
-// MARK: - Premium gate view modifier
-
-private struct PremiumGateModifier: ViewModifier {
-    let premium: PremiumManager
-    let flow: AppFlow
-
-    func body(content: Content) -> some View {
-        content.overlay(alignment: .topTrailing) {
-            if !premium.isPremium {
-                Image(systemName: "lock.fill")
-                    .font(.system(size: 7, weight: .bold))
-                    .foregroundStyle(.white)
-                    .frame(width: 14, height: 14)
-                    .background(Palette.amber, in: Circle())
-                    .overlay(Circle().stroke(Palette.ink, lineWidth: 1))
-                    .offset(x: 4, y: -4)
-                    .allowsHitTesting(false)
-            }
-        }
-        .simultaneousGesture(TapGesture().onEnded {
-            if !premium.isPremium { flow.showPaywall() }
-        })
-    }
-}
-
-private extension View {
-    func premiumGate(premium: PremiumManager, flow: AppFlow) -> some View {
-        modifier(PremiumGateModifier(premium: premium, flow: flow))
-    }
-}

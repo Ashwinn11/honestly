@@ -15,10 +15,6 @@ struct EntryEditorView: View {
     @State private var showDoodleSheet = false
     @State private var showStickerSheet = false
     @State private var showThemeSheet = false
-    @State private var containerWidth: CGFloat = 300
-
-    @Environment(PremiumManager.self) private var premium
-    @Environment(AppFlow.self) private var flow
 
     init(entry: JournalEntry) {
         self.entry = entry
@@ -39,8 +35,7 @@ struct EntryEditorView: View {
     }
 
     var body: some View {
-        @Bindable var flow = flow
-        return VStack(spacing: 0) {
+        VStack(spacing: 0) {
             topBar.capWidth(Metrics.maxContentWidth)
 
             GeometryReader { proxy in
@@ -50,17 +45,14 @@ struct EntryEditorView: View {
                             PageDateRow(date: entry.createdAt, mood: entry.moodRaw)
                                 .padding(.bottom, 16)
 
-                            RichTextEditor(attributedText: $richText, isEditingAllowed: premium.isPremium,
+                            RichTextEditor(attributedText: $richText,
                                            selectedRange: $selectedRange, placeholder: "Start writing…")
                                 .focused($journalFocused)
                                 .frame(height: max(200, proxy.size.height - 180))
                                 .padding(.top, 16)
 
-                            TagEditorRow(tags: $tags, isPremium: premium.isPremium, onLockTap: { flow.showPaywall() })
+                            TagEditorRow(tags: $tags)
                                 .padding(.top, 16)
-                                .onAppear {
-                                    containerWidth = max(proxy.size.width - 44, 100)
-                                }
 
                             if wordCount > 0 {
                                 Text("\(wordCount) words — nice")
@@ -96,9 +88,6 @@ struct EntryEditorView: View {
             .padding(.top, 8)
             .padding(.bottom, 14)
         }
-        .fullScreenCover(isPresented: $flow.paywallPresented) {
-            PaywallView(onClose: { flow.paywallPresented = false })
-        }
         .sheet(isPresented: $showImagePicker) {
             ImagePickerWithCrop(
                 onImagePicked: { image in
@@ -116,9 +105,15 @@ struct EntryEditorView: View {
         }
         .sheet(isPresented: $showStickerSheet) {
             StickerPicker { image in
+                let oldLength = richText.length
                 let updated = RichTextFormatting.insertSticker(image, at: selectedRange.location,
                                                                in: richText)
                 richText = updated
+                // Advance the caret past what was just inserted — leaving it at the stale
+                // pre-insert location put it right *before* the sticker, which is exactly the
+                // "cursor touching an attachment" state that produces wrong font/line-height on
+                // whatever gets typed next.
+                selectedRange = NSRange(location: selectedRange.location + (updated.length - oldLength), length: 0)
             }
         }
         .sheet(isPresented: $showThemeSheet) {
@@ -144,10 +139,12 @@ struct EntryEditorView: View {
     }
 
     private func insertPickedImage(_ image: UIImage) {
-        let updated = RichTextFormatting.insertImage(
-            image, at: selectedRange.location, containerWidth: containerWidth, in: richText
-        )
+        let oldLength = richText.length
+        let updated = RichTextFormatting.insertImage(image, at: selectedRange.location, in: richText)
         richText = updated
+        // Same reasoning as the sticker sheet above — land the caret after the inserted block
+        // (its trailing newline), not at the stale pre-insert location.
+        selectedRange = NSRange(location: selectedRange.location + (updated.length - oldLength), length: 0)
     }
 
     private func save() {

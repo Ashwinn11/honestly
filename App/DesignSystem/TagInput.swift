@@ -28,32 +28,21 @@ struct TagChip: View {
     }
 }
 
-/// Premium-gated tag editor: existing chips (removable) plus an inline "+ tag" field, capped at
-/// 5 — matching the app's existing "up to 5" affirmations convention. Free users see a single
-/// locked row instead, mirroring `lockedAffirmationRow`'s pattern exactly.
+/// Tag editor: existing chips (removable) plus an inline "+ tag" field, capped at 5 — matching
+/// the app's existing "up to 5" affirmations convention. Free for everyone.
 struct TagEditorRow: View {
     @Binding var tags: [String]
-    let isPremium: Bool
-    let onLockTap: () -> Void
 
     @State private var draft = ""
     @FocusState private var draftFocused: Bool
 
     private var canAddMore: Bool { tags.count < 5 }
 
-    var body: some View {
-        if isPremium {
-            unlockedRow
-        } else {
-            lockedRow
-        }
-    }
-
     // Plain HStack, not a ScrollView. The `TextField` is given a fixed width, not just a
     // minimum — unlike `Text`, a `TextField` genuinely expands to claim any leftover space a
     // plain HStack offers it, which is what made the input pill (and the row as a whole) balloon
     // once nothing bounded it.
-    private var unlockedRow: some View {
+    var body: some View {
         HStack(alignment: .bottom, spacing: 8) {
             ForEach(tags, id: \.self) { tag in
                 TagChip(text: tag) {
@@ -84,22 +73,6 @@ struct TagEditorRow: View {
             }
             Spacer(minLength: 0)
         }
-    }
-
-    private var lockedRow: some View {
-        Button(action: onLockTap) {
-            HStack(spacing: 10) {
-                Image(systemName: "lock.fill")
-                    .font(.system(size: 12, weight: .bold)).foregroundStyle(Palette.inkSofter)
-                Text(loc: "Unlock tags")
-                    .font(Fonts.ui(14, .semibold)).foregroundStyle(Palette.inkSofter)
-                Spacer(minLength: 0)
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 11, weight: .bold)).foregroundStyle(Palette.hairline)
-            }
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(PressableStyle(scale: 0.98))
     }
 
     private func commitDraft() {

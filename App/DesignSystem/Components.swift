@@ -178,7 +178,9 @@ struct SoftCircleButton: View {
 // and EntryDetailView (a past entry's date) so writing and reading read as the same page.
 struct PageDateRow: View {
     let date: Date
-    let mood: Int?   // nil shows an empty placeholder (RitualView step 0, before mood is picked)
+    let mood: Int?   // nil shows a placeholder — either empty (read-only contexts) or a tappable
+                      // prompt to set one (RitualView, via `onTapMood`)
+    var onTapMood: (() -> Void)? = nil
 
     var body: some View {
         HStack(alignment: .bottom, spacing: 12) {
@@ -186,16 +188,26 @@ struct PageDateRow: View {
                 .font(Fonts.ui(14, .heavy))
                 .foregroundStyle(Palette.inkSoft)
             Spacer(minLength: 8)
-            moodIcon
+            if let onTapMood {
+                Button(action: onTapMood) { moodIcon }
+                    .buttonStyle(PressableStyle(scale: 0.88))
+            } else {
+                moodIcon
+            }
         }
     }
 
     // No placeholder border when mood isn't picked yet — the ruled page is already enough
-    // texture; an empty decorative circle just competes with it.
+    // texture; an empty decorative circle just competes with it. When tappable (RitualView, mood
+    // still unset), a dimmed neutral MoodFace invites the tap — the same illustrated face style
+    // used everywhere else, not a generic system glyph — rather than sitting fully invisible.
     @ViewBuilder private var moodIcon: some View {
         if let mood {
             MoodFace(mood: mood, size: 24)
                 .transition(.scale.combined(with: .opacity))
+        } else if onTapMood != nil {
+            MoodFace(mood: 1, size: 24)   // "Confused" — the flattest, most neutral face
+                .opacity(0.4)
         } else {
             Color.clear.frame(width: 24, height: 24)
         }

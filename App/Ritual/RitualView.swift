@@ -7,8 +7,11 @@ struct RitualView: View {
     @Environment(PremiumManager.self) private var premium
     @Environment(AppFlow.self) private var flow
 
+    // 0: journal, 1: affirmations, 2: celebration — mood is no longer its own step; it's set
+    // via the mood-card sheet, opened by tapping the mood icon on the journal page itself.
     @State private var step = 0
     @State private var mood: Int? = nil
+    @State private var showMoodSheet = false
     @State private var richText = NSAttributedString()
     @State private var selectedRange = NSRange(location: 0, length: 0)
     @State private var affirmations = ["", "", "", "", ""]
@@ -20,7 +23,6 @@ struct RitualView: View {
     @State private var showStickerSheet = false
     @State private var showThemeSheet = false
     @State private var theme: PageTheme = .paper
-    @State private var containerWidth: CGFloat = Metrics.maxContentWidth - 44
 
     private var journalText: String { richText.plainText }
     private var wordCount: Int {
@@ -46,7 +48,7 @@ struct RitualView: View {
     var body: some View {
         @Bindable var flow = flow
         Group {
-            if step == 3 {
+            if step == 2 {
                 CelebrationView(mood: mood ?? 2, streak: store.streak,
                                 words: wordCount, affirmCount: affirmCount, onStart: onClose)
             } else {
@@ -59,9 +61,9 @@ struct RitualView: View {
                             // viewport so the writing surface does not collapse after the keyboard
                             // is dismissed.
                             JournalPageSurface(cornerRadius: 0, showsBinderHoles: false, bordered: false) {
-                                stepBody(viewportHeight: proxy.size.height, geoWidth: proxy.size.width)
+                                stepBody(viewportHeight: proxy.size.height)
                                     .padding(EdgeInsets(top: 14, leading: 22, bottom: 24, trailing: 20))
-                                    .frame(minHeight: step == 1 ? proxy.size.height : nil,
+                                    .frame(minHeight: step == 0 ? proxy.size.height : nil,
                                            alignment: .topLeading)
                             }
                             .capWidth(Metrics.maxContentWidth)
@@ -126,13 +128,22 @@ struct RitualView: View {
         }
         .sheet(isPresented: $showStickerSheet) {
             StickerPicker { image in
+                let oldLength = richText.length
                 let updated = RichTextFormatting.insertSticker(image, at: selectedRange.location,
                                                                in: richText)
                 richText = updated
+                // Advance the caret past what was just inserted — leaving it at the stale
+                // pre-insert location put it right *before* the sticker, which is exactly the
+                // "cursor touching an attachment" state that produces wrong font/line-height on
+                // whatever gets typed next.
+                selectedRange = NSRange(location: selectedRange.location + (updated.length - oldLength), length: 0)
             }
         }
         .sheet(isPresented: $showThemeSheet) {
             ThemePickerSheet(selection: $theme)
+        }
+        .sheet(isPresented: $showMoodSheet) {
+            MoodPickerSheet(mood: $mood)
         }
     }
 
@@ -155,7 +166,7 @@ struct RitualView: View {
     }
 
     @ViewBuilder private var topBarTitleView: some View {
-        if step == 1 {
+        if step == 0 {
             Button {
                 if premium.isPremium { shufflePrompt() } else { flow.showPaywall() }
             } label: {
@@ -181,17 +192,15 @@ struct RitualView: View {
 
     private var topBarTitle: String? {
         switch step {
-        case 0: return "How are you, really?"
-        case 2: return "Affirm yourself"
+        case 1: return "Affirm yourself"
         default: return nil
         }
     }
 
     // MARK: Scrollable content per step
-    @ViewBuilder private func stepBody(viewportHeight: CGFloat, geoWidth: CGFloat) -> some View {
+    @ViewBuilder private func stepBody(viewportHeight: CGFloat) -> some View {
         switch step {
-        case 0: moodBody
-        case 1: journalBody(viewportHeight: viewportHeight, geoWidth: geoWidth)
+        case 0: journalBody(viewportHeight: viewportHeight)
         default: affirmationBody
         }
     }
@@ -200,15 +209,10 @@ struct RitualView: View {
     @ViewBuilder private var footer: some View {
         switch step {
         case 0:
-            PrimaryButton(title: mood != nil ? "That's my morning" : "Tap how you feel",
-                          enabled: mood != nil) {
-                withAnimation(Motion.gentle) { step = 1 }
-            }
-        case 1:
             PrimaryButton(title: "Almost there",
                           enabled: !journalText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) {
                 journalFocused = false
-                withAnimation(Motion.gentle) { step = 2 }
+                withAnimation(Motion.gentle) { step = 1 }
             }
         default:
             PrimaryButton(title: affirmCount >= 1 ? "Unlock my morning" : "Say at least one",
@@ -216,60 +220,24 @@ struct RitualView: View {
         }
     }
 
-    // MARK: Step 0 — mood
-    private var moodBody: some View {
+    // MARK: Step 0 — journal (the prompt lives in the top bar now — see topBarTitleView — so it
+    // never competes with the writing area for space). Mood is set via the tappable icon on the
+    // date row, which opens `MoodPickerSheet` — no longer a separate blocking step.
+    private func journalBody(viewportHeight: CGFloat) -> some View {
         VStack(alignment: .leading, spacing: 0) {
-            PageDateRow(date: Date(), mood: mood)
-            HStack(spacing: 4) {
-                ForEach(0..<5, id: \.self) { i in moodChoice(i) }
+            PageDateRow(date: Date(), mood: mood) {
+                Haptics.select()
+                showMoodSheet = true
             }
-            .frame(maxWidth: .infinity)
-            .padding(.top, 28)
-        }
-    }
 
-    private func moodChoice(_ i: Int) -> some View {
-        let selected = mood == i
-        let scale: CGFloat = selected ? 1.16 : (mood == nil ? 1 : 0.84)
-        return Button {
-            Haptics.select()
-            withAnimation(Motion.pop) { mood = i }
-        } label: {
-            VStack(spacing: 9) {
-                MoodFace(mood: i, size: 52, expressive: true)
-                    .scaleEffect(scale)
-                    .opacity(mood == nil || selected ? 1 : 0.42)
-                Text(loc: Mood(rawValue: i)!.label)
-                    .font(Fonts.ui(12, selected ? .heavy : .semibold))
-                    .foregroundStyle(selected ? Palette.amberDeep : Palette.inkSofter)
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 8)
-        }
-        .buttonStyle(.plain)
-        .animation(Motion.snappy, value: mood)
-    }
-
-    // MARK: Step 1 — journal (the prompt lives in the top bar now — see topBarTitleView — so it
-    // never competes with the writing area for space)
-    private func journalBody(viewportHeight: CGFloat, geoWidth: CGFloat) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            PageDateRow(date: Date(), mood: mood)
-
-            RichTextEditor(attributedText: $richText, isEditingAllowed: premium.isPremium,
+            RichTextEditor(attributedText: $richText,
                            selectedRange: $selectedRange, placeholder: "Start writing…")
                 .focused($journalFocused)
                 .frame(height: journalEditorHeight(for: viewportHeight))
                 .padding(.top, 16)
 
-            TagEditorRow(tags: $tags, isPremium: premium.isPremium, onLockTap: { flow.showPaywall() })
+            TagEditorRow(tags: $tags)
                 .padding(.top, 16)
-                .onAppear {
-                    // Capture the real rendered width for image/sticker insertion so the
-                    // container width matches what the UITextView actually lays out in.
-                    // The 44pt accounts for JournalPageSurface's leading+trailing padding.
-                    containerWidth = max(geoWidth - 44, 100)
-                }
 
             // Only shown once there's something to report — the prompt above is the only guidance
             // the empty page needs.
@@ -281,6 +249,11 @@ struct RitualView: View {
         }
         .onAppear {
             // Seed with today's daily prompt for this mood pool — stable all session, rotates daily.
+            promptIndex = AppContent.dailyPromptIndex(in: promptPool)
+        }
+        .onChange(of: mood) { _, _ in
+            // Picking a mood (any time, since it's no longer a step gate) re-seeds the prompt
+            // pool/index so the prompt actually reflects the mood just picked.
             promptIndex = AppContent.dailyPromptIndex(in: promptPool)
         }
         .animation(Motion.gentle, value: wordCount > 0)
@@ -304,7 +277,7 @@ struct RitualView: View {
         return max(220, availableHeight)
     }
 
-    // MARK: Step 2 — affirmations
+    // MARK: Step 1 — affirmations
     private var affirmationBody: some View {
         VStack(alignment: .leading, spacing: 0) {
             PageDateRow(date: Date(), mood: mood)
@@ -361,17 +334,78 @@ struct RitualView: View {
                           richContent: richText.rtfdData(), tags: tags,
                           themeID: theme.rawValue, thumbnail: thumbnail)
         Haptics.success()
-        withAnimation(Motion.gentle) { step = 3 }
+        withAnimation(Motion.gentle) { step = 2 }
     }
 
     private func insertPickedImage(_ image: UIImage) {
-        let resized = image.downscaledForJournal()
-        richText = RichTextFormatting.insertImage(resized, at: selectedRange.location,
-                                                   containerWidth: containerWidth, in: richText)
+        let oldLength = richText.length
+        let updated = RichTextFormatting.insertImage(image, at: selectedRange.location, in: richText)
+        richText = updated
+        // Same reasoning as the sticker sheet above — land the caret after the inserted block
+        // (its trailing newline), not at the stale pre-insert location.
+        selectedRange = NSRange(location: selectedRange.location + (updated.length - oldLength), length: 0)
     }
 }
 
-// MARK: - Celebration (step 3)
+// MARK: - Mood card sheet — opened by tapping the mood icon on the journal page's date row.
+// Replaces the old dedicated mood step; picking a face applies it and dismisses automatically.
+private struct MoodPickerSheet: View {
+    @Binding var mood: Int?
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Text(loc: "How are you, really?")
+                    .font(Fonts.display(19, .bold)).foregroundStyle(Palette.ink)
+                Spacer()
+                IconTileButton(icon: "xmark", size: 34, iconSize: 12) { dismiss() }
+            }
+            .padding(EdgeInsets(top: 18, leading: 20, bottom: 6, trailing: 20))
+
+            HStack(spacing: 4) {
+                ForEach(0..<5, id: \.self) { i in moodChoice(i) }
+            }
+            .padding(.horizontal, 12)
+            .padding(.top, 14)
+            .padding(.bottom, 26)
+        }
+        // Fill the whole sheet, not just the VStack's measured content height — otherwise the
+        // background only paints up to the content and the system sheet's own (light gray)
+        // background shows through underneath as a second layer, in the reserved bottom
+        // safe-area/home-indicator strip a tight `.height()` detent still leaves.
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .background(Palette.cream.ignoresSafeArea())
+        .presentationDetents([.height(230)])
+        .presentationDragIndicator(.hidden)
+    }
+
+    private func moodChoice(_ i: Int) -> some View {
+        let selected = mood == i
+        return Button {
+            Haptics.select()
+            withAnimation(Motion.pop) { mood = i }
+            Task {
+                try? await Task.sleep(for: .seconds(0.22))
+                dismiss()
+            }
+        } label: {
+            VStack(spacing: 9) {
+                MoodFace(mood: i, size: 48, expressive: true)
+                    .scaleEffect(selected ? 1.14 : 1)
+                Text(loc: Mood(rawValue: i)!.label)
+                    .font(Fonts.ui(12, selected ? .heavy : .semibold))
+                    .foregroundStyle(selected ? Palette.amberDeep : Palette.inkSofter)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 8)
+        }
+        .buttonStyle(.plain)
+        .animation(Motion.snappy, value: mood)
+    }
+}
+
+// MARK: - Celebration (step 2)
 
 private struct CelebrationView: View {
     let mood: Int

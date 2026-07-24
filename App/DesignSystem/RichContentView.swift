@@ -27,14 +27,20 @@ struct RichContentView: UIViewRepresentable {
     }
 
     func updateUIView(_ uiView: UITextView, context: Context) {
-        guard uiView.attributedText != attributedText else { return }
-        uiView.attributedText = attributedText
+        let contentWidth = uiView.bounds.width > 0 ? uiView.bounds.width : Metrics.maxContentWidth - 44
+        let prepared = RichTextFormatting.scaleAttachments(in: attributedText, toFitWidth: contentWidth)
+        guard uiView.attributedText != prepared else { return }
+        uiView.attributedText = prepared
     }
 
     // Self-size to the proposed width — without this the text view reports zero/intrinsic sizes
     // that fight the SwiftUI layout inside the reader's scroll view.
     func sizeThatFits(_ proposal: ProposedViewSize, uiView: UITextView, context: Context) -> CGSize? {
         guard let width = proposal.width, width.isFinite, width > 0 else { return nil }
+        let prepared = RichTextFormatting.scaleAttachments(in: attributedText, toFitWidth: width)
+        if uiView.attributedText != prepared {
+            uiView.attributedText = prepared
+        }
         let fitted = uiView.sizeThatFits(CGSize(width: width, height: .greatestFiniteMagnitude))
         return CGSize(width: width, height: fitted.height)
     }

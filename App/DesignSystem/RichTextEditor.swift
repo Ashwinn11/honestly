@@ -5,10 +5,8 @@ import UniformTypeIdentifiers
 extension Notification.Name {
     static let editorApplyDefaultTransform  = Notification.Name("editorApplyDefaultTransform")
     static let journalEntryDidUpdate        = Notification.Name("journalEntryDidUpdate")
-    static let editorUndo                   = Notification.Name("editorUndo")
-    static let editorRedo                   = Notification.Name("editorRedo")
     /// Carries `transform:(NSAttributedString,NSRange)->NSAttributedString` + `range:NSRange`.
-    /// Coordinator applies via textStorage + registers undo — never touches the SwiftUI binding.
+    /// Coordinator applies via textStorage — never touches the SwiftUI binding directly.
     static let editorApplyFormatToStorage   = Notification.Name("editorApplyFormatToStorage")
 }
 
@@ -18,7 +16,6 @@ extension Notification.Name {
 /// have supported all of this natively for years.
 struct RichTextEditor: UIViewRepresentable {
     @Binding var attributedText: NSAttributedString
-    var isEditingAllowed: Bool          // premium.isPremium — locks rich formatting at the UIKit level
     @Binding var selectedRange: NSRange
     var placeholder: String = ""
 
@@ -47,7 +44,7 @@ struct RichTextEditor: UIViewRepresentable {
         tv.textContainer.lineFragmentPadding = 0
         tv.tintColor = UIColor(Palette.amber)
         tv.typingAttributes = Self.defaultAttributes
-        tv.allowsEditingTextAttributes = isEditingAllowed
+        tv.allowsEditingTextAttributes = true
         tv.smartInsertDeleteType = .no
         tv.attributedText = attributedText
         tv.delegate = context.coordinator
@@ -90,30 +87,69 @@ struct RichTextEditor: UIViewRepresentable {
         defer { context.coordinator.isApplyingSwiftUIUpdate = false }
         uiView.backgroundColor = .clear
         uiView.isOpaque = false
-        uiView.allowsEditingTextAttributes = isEditingAllowed
+        uiView.allowsEditingTextAttributes = true
         uiView.smartInsertDeleteType = .no
         context.coordinator.placeholderLabel?.text = String(localized: String.LocalizationValue(placeholder))
         context.coordinator.placeholderLabel?.isHidden = !attributedText.string.isEmpty
-        let selection = uiView.selectedRange
         // Only replace textStorage when content actually differs — setting `attributedText` via the
         // property setter unconditionally resets NSUndoManager and triggers a full re-layout on
         // every SwiftUI re-render (including after every keystroke). Going through textStorage
         // directly with an equality guard preserves the undo stack and avoids the re-layout flash
         // that causes line-overlap visual artefacts.
-        if uiView.attributedText != attributedText {
+        let contentWidth = uiView.bounds.width - uiView.textContainerInset.left - uiView.textContainerInset.right
+        let prepared = RichTextFormatting.scaleAttachments(in: attributedText, toFitWidth: contentWidth)
+        if uiView.attributedText != prepared {
             uiView.textStorage.beginEditing()
-            uiView.textStorage.setAttributedString(attributedText)
+            uiView.textStorage.setAttributedString(prepared)
             uiView.textStorage.endEditing()
         }
+        // Clamp and re-apply the *incoming* `selectedRange` binding — not `uiView.selectedRange`
+        // (the live view's own pre-update value). Using the live value silently discarded any
+        // caret reposition requested from the SwiftUI side (e.g. moving the caret past an
+        // attachment right after inserting it): it's stale by definition here, since it reflects
+        // wherever the caret was *before* this update, and the two only coincide by coincidence —
+        // normal typing/selection already synced them via `textViewDidChangeSelection` before this
+        // render, but a programmatic reposition from calling code never touches the live view at
+        // all except through this binding.
         let len = (uiView.text as NSString).length
-        let clampedLocation = min(selection.location, len)
-        let clampedLength = min(selection.length, max(0, len - clampedLocation))
+        let clampedLocation = min(selectedRange.location, len)
+        let clampedLength = min(selectedRange.length, max(0, len - clampedLocation))
         uiView.selectedRange = NSRange(location: clampedLocation, length: clampedLength)
 
         context.coordinator.textView = uiView
         context.coordinator.updateTypingAttributes(in: uiView, selection: uiView.selectedRange)
 
         context.coordinator.textDidChangeExternally(uiView)
+    }
+
+    // `updateUIView`'s `uiView.bounds.width` can still reflect the *previous* frame — UIKit applies
+    // the new layout after `updateUIView` returns, not before — so right after the editor's width
+    // actually changes (first appearance, an image just inserted, rotation) the attachment-clamping
+    // pass above can run against a stale or zero width and skip clamping entirely, leaving an
+    // oversized attachment to overflow the screen until some unrelated state change triggers another
+    // `updateUIView`. `sizeThatFits` gets SwiftUI's authoritative proposed width instead, the same
+    // way `RichContentView` already uses it, so the clamp always has the right number to work with.
+    func sizeThatFits(_ proposal: ProposedViewSize, uiView: UITextView, context: Context) -> CGSize? {
+        guard let width = proposal.width, width.isFinite, width > 0 else { return nil }
+        let contentWidth = width - uiView.textContainerInset.left - uiView.textContainerInset.right
+        let prepared = RichTextFormatting.scaleAttachments(in: attributedText, toFitWidth: contentWidth)
+        if uiView.attributedText != prepared {
+            // Suppress the delegate's binding write-back — mutating `@Binding attributedText`
+            // synchronously from inside a layout/measurement callback is undefined behavior in
+            // SwiftUI. `updateUIView` will independently re-derive and persist the same clamp once
+            // layout settles; this call only needs to fix what's on screen right now.
+            context.coordinator.isApplyingSwiftUIUpdate = true
+            let selection = uiView.selectedRange
+            uiView.textStorage.beginEditing()
+            uiView.textStorage.setAttributedString(prepared)
+            uiView.textStorage.endEditing()
+            let len = (uiView.text as NSString).length
+            let clampedLocation = min(selection.location, len)
+            let clampedLength = min(selection.length, max(0, len - clampedLocation))
+            uiView.selectedRange = NSRange(location: clampedLocation, length: clampedLength)
+            context.coordinator.isApplyingSwiftUIUpdate = false
+        }
+        return nil
     }
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
@@ -132,29 +168,17 @@ struct RichTextEditor: UIViewRepresentable {
             let nc = NotificationCenter.default
             nc.addObserver(self, selector: #selector(handleDefaultTransform(_:)),
                            name: .editorApplyDefaultTransform, object: nil)
-            nc.addObserver(self, selector: #selector(handleUndo),
-                           name: .editorUndo, object: nil)
-            nc.addObserver(self, selector: #selector(handleRedo),
-                           name: .editorRedo, object: nil)
             nc.addObserver(self, selector: #selector(handleFormatToStorage(_:)),
                            name: .editorApplyFormatToStorage, object: nil)
         }
 
-        // MARK: Snapshot-based undo — captures the entire attributed string before each
-        // formatting change, registers the reverse as an undo action, and symmetrically
-        // re-registers redo inside the undo handler so the stack stays coherent.
-        func applySnapshot(_ newText: NSAttributedString) {
+        /// Applies `newText` via textStorage directly (not the SwiftUI binding) — preserves the
+        /// caret/selection and avoids the full re-layout flash that comes from resetting
+        /// `attributedText` through its property setter.
+        func applyToStorage(_ newText: NSAttributedString) {
             guard let tv = textView else { return }
             let old = NSAttributedString(attributedString: tv.textStorage)
             guard newText != old else { return }
-            tv.undoManager?.registerUndo(withTarget: self) { [weak tv] target in
-                guard let tv else { return }
-                // Undo: restore old. Inside the handler NSUndoManager auto-captures this
-                // registerUndo call as the redo action for the inverse direction.
-                target.applySnapshot(old)
-                // Force UI refresh after undo
-                target.textViewDidChange(tv)
-            }
             tv.textStorage.beginEditing()
             tv.textStorage.setAttributedString(newText)
             tv.textStorage.endEditing()
@@ -167,19 +191,42 @@ struct RichTextEditor: UIViewRepresentable {
                   let tv = textView else { return }
             let old = NSAttributedString(attributedString: tv.textStorage)
             let new = transform(old, rangeValue)
-            applySnapshot(new)
+            applyToStorage(new)
         }
 
         func updateTypingAttributes(in textView: UITextView, selection: NSRange) {
             let len = (textView.text as NSString).length
-            if selection.length == 0 {
-                if selection.location == len {
-                    textView.typingAttributes = defaultAttributes
-                } else if len > 0 {
-                    let attrLoc = max(0, min(selection.location > 0 ? selection.location - 1 : 0, len - 1))
-                    textView.typingAttributes = textView.textStorage.attributes(at: attrLoc, effectiveRange: nil)
-                }
+            guard selection.length == 0 else { return }
+            if selection.location == len {
+                textView.typingAttributes = defaultAttributes
+                return
             }
+            guard len > 0 else { return }
+            textView.typingAttributes = attributesSkippingAttachments(before: selection.location, in: textView)
+        }
+
+        /// Attributes to type with at `location` — walks back past any attachment characters
+        /// (photos, doodles, stickers carry no font/color/paragraph-style of their own) to the
+        /// last real text run, falling back to `defaultAttributes` if none is found (document
+        /// starts with an attachment, or the run genuinely has no font).
+        private func attributesSkippingAttachments(before location: Int,
+                                                    in textView: UITextView) -> [NSAttributedString.Key: Any] {
+            let len = (textView.text as NSString).length
+            guard len > 0 else { return defaultAttributes }
+            let storage = textView.textStorage
+            var attrLoc = max(0, min(location > 0 ? location - 1 : 0, len - 1))
+            while storage.attribute(.attachment, at: attrLoc, effectiveRange: nil) != nil, attrLoc > 0 {
+                attrLoc -= 1
+            }
+            var attributes = storage.attributes(at: attrLoc, effectiveRange: nil)
+            // The walk-back can bottom out AT an attachment (document starts with a sticker/photo/
+            // doodle, or several back-to-back) — that run's own dictionary carries `.attachment`,
+            // and handing it to a *real* character (not the attachment's own U+FFFC placeholder)
+            // is invalid NSAttributedString state: TextKit still consults `.attachment` for glyph
+            // sizing on that run, which is what produces the wrong font metrics/line height right
+            // around the attachment. Always strip it — same as `prefixAttributes` below already does.
+            attributes.removeValue(forKey: .attachment)
+            return attributes[.font] != nil ? attributes : defaultAttributes
         }
 
         @objc private func handleDefaultTransform(_ notification: Notification) {
@@ -193,11 +240,6 @@ struct RichTextEditor: UIViewRepresentable {
                 }
             }
         }
-
-        @objc private func handleUndo() { textView?.undoManager?.undo() }
-        @objc private func handleRedo() { textView?.undoManager?.redo() }
-
-
 
         func textViewDidChange(_ textView: UITextView) {
             attachmentEditor.dismiss()   // any text mutation can shift attachment indexes
@@ -227,6 +269,27 @@ struct RichTextEditor: UIViewRepresentable {
         // notes-style editor.
         func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange,
                       replacementText text: String) -> Bool {
+            // Typing (or pasting) with the caret touching an attachment on either side — right
+            // after one, or right before one: UIKit derives *this* keystroke's attributes itself
+            // (from whichever neighboring run it picks, which can be the attachment) rather than
+            // from `typingAttributes`, so the fix in `updateTypingAttributes` never gets a chance
+            // to apply — the attachment has no font/color, and the character lands in the system
+            // default. Insert it ourselves with the walked-back attributes instead; every
+            // character after this one lands on real text and self-corrects normally.
+            let storage = textView.textStorage
+            let touchesAttachment = (range.location > 0
+                && storage.attribute(.attachment, at: range.location - 1, effectiveRange: nil) != nil)
+                || (range.location < storage.length
+                && storage.attribute(.attachment, at: range.location, effectiveRange: nil) != nil)
+            if !text.isEmpty, touchesAttachment {
+                let attributes = attributesSkippingAttachments(before: range.location, in: textView)
+                let insertion = NSAttributedString(string: text, attributes: attributes)
+                textView.textStorage.replaceCharacters(in: range, with: insertion)
+                textView.selectedRange = NSRange(location: range.location + insertion.length, length: 0)
+                textView.typingAttributes = attributes
+                textViewDidChange(textView)
+                return false
+            }
             guard text == "\n" else { return true }
             let ns = textView.text as NSString
             guard range.location <= ns.length else { return true }
@@ -255,12 +318,24 @@ struct RichTextEditor: UIViewRepresentable {
             guard let tv = gesture.view as? UITextView else { return }
             attachmentEditor.handleTap(at: gesture.location(in: tv), in: tv) { [weak self] newText in
                 guard let self else { return }
-                self.parent.attributedText = newText
+                self.applyToStorage(newText)
             }
         }
 
         func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
                                shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool { true }
+
+        func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
+                               shouldReceive touch: UITouch) -> Bool {
+            var current = touch.view
+            while let view = current {
+                if view is AttachmentEditBar {
+                    return false
+                }
+                current = view.superview
+            }
+            return true
+        }
     }
 }
 
@@ -442,6 +517,11 @@ enum RichTextFormatting {
         attributes.removeValue(forKey: .attachment)
         if attributes[.font] == nil { attributes[.font] = RichTextEditor.defaultFont }
         if attributes[.foregroundColor] == nil { attributes[.foregroundColor] = Palette.inkUI }
+        // Without this, a run that's missing paragraphStyle (RTF round-trip edge cases, or
+        // chaining off another attachment that itself never got one) falls back to TextKit's
+        // built-in zero-line-spacing default instead of this app's 4pt — line height visibly
+        // jumps right at that run's boundary.
+        if attributes[.paragraphStyle] == nil { attributes[.paragraphStyle] = RichTextEditor.defaultParagraphStyle }
         return attributes
     }
 
@@ -479,19 +559,45 @@ enum RichTextFormatting {
     }
 
     /// Inserts a photo/doodle as its own full-width block (paragraph breaks before/after — no
-    /// CSS-style text wrap), sized to the editor's content width. The attachment-edit bar can
-    /// later flip it to the minimized thumbnail (see `toggleImageSize`).
-    static func insertImage(_ image: UIImage, at location: Int, containerWidth: CGFloat,
+    /// CSS-style text wrap). Stored at `downscaledForJournal`'s resolution, not a caller-guessed
+    /// display width — bounds start at the image's own size and the very next render's
+    /// `scaleAttachments` pass (in `RichTextEditor.updateUIView`/`RichContentView`) clamps them to
+    /// whatever container the editor or reader is *actually* laid out in. That keeps display size
+    /// tied to one real source of truth (the live `UITextView`'s width) instead of a SwiftUI-side
+    /// width estimate that can drift from it and cause the image to visibly snap/resize right
+    /// after insertion. The attachment-edit bar can later flip it to the minimized thumbnail (see
+    /// `toggleImageSize`).
+    static func insertImage(_ image: UIImage, at location: Int,
                              in text: NSAttributedString) -> NSAttributedString {
         let mutable = NSMutableAttributedString(attributedString: text)
-        let data = image.jpegData(compressionQuality: 0.82) ?? Data()
+        let resized = image.downscaledForJournal()
+        let data = resized.jpegData(compressionQuality: 0.82) ?? Data()
         let attachment = NSTextAttachment(data: data, ofType: UTType.jpeg.identifier)
-        let aspect = image.size.height / max(image.size.width, 1)
-        attachment.bounds = CGRect(x: 0, y: 0, width: containerWidth, height: containerWidth * aspect)
+        attachment.bounds = CGRect(origin: .zero, size: resized.size)
 
-        let insertion = NSMutableAttributedString(string: "\n")
-        insertion.append(NSAttributedString(attachment: attachment))
-        insertion.append(NSAttributedString(string: "\n", attributes: RichTextEditor.defaultAttributes))
+        // Attributes active at the insertion point — NOT the hardcoded global default. Using
+        // `RichTextEditor.defaultAttributes` here unconditionally meant every photo/doodle's
+        // surrounding newlines (and the attachment character itself) silently reset to
+        // Nunito-Regular-16, regardless of whatever font/size/color the paragraph actually used:
+        // the toolbar reads the attachment's own font when the caret lands on it (always showing
+        // "Nunito" as active there), and the first character typed after the image inherited the
+        // trailing newline's hardcoded font instead of the paragraph's real one. Same reasoning as
+        // `insertSticker` below, which already gets this right.
+        let contextAttributes = prefixAttributes(in: text, at: min(max(location, 0), text.length))
+
+        // The attachment character itself carries these attributes too — invisible to rendering
+        // (attachments ignore `.font`/`.foregroundColor`), but it means the character immediately
+        // before the caret always has a real font for anything (UIKit's own marked-text/autocorrect
+        // machinery included, which reads textStorage directly and never goes through our
+        // `shouldChangeTextIn`) to inherit from, instead of typing right after it silently falling
+        // back to the system default for that first keystroke.
+        let attachmentString = NSMutableAttributedString(attachment: attachment)
+        attachmentString.addAttributes(contextAttributes,
+                                        range: NSRange(location: 0, length: attachmentString.length))
+
+        let insertion = NSMutableAttributedString(string: "\n", attributes: contextAttributes)
+        insertion.append(attachmentString)
+        insertion.append(NSAttributedString(string: "\n", attributes: contextAttributes))
 
         let safeLocation = min(max(location, 0), mutable.length)
         mutable.insert(insertion, at: safeLocation)
@@ -502,11 +608,23 @@ enum RichTextFormatting {
     /// paragraph's alignment like any other glyph.
     static func insertSticker(_ image: UIImage, at location: Int, in text: NSAttributedString) -> NSAttributedString {
         let mutable = NSMutableAttributedString(attributedString: text)
-        let data = image.pngData() ?? Data()
+        // Encode at the largest cycle tier so `cycleStickerSize`'s non-destructive bounds-only
+        // resize (see `replacingAttachment`) always has enough source resolution to cycle up to —
+        // displayed size starts at the smaller default tier via `bounds`, independent of the pixel
+        // data actually stored.
+        let storedWidth = DesignScale.s(stickerSides.max() ?? stickerSides[1])
+        let resized = image.resized(toWidth: storedWidth) ?? image
+        let data = resized.pngData() ?? Data()
         let attachment = NSTextAttachment(data: data, ofType: UTType.png.identifier)
-        attachment.bounds = stickerBounds(for: image, side: DesignScale.s(stickerSides[1]))
+        attachment.bounds = stickerBounds(for: resized, side: DesignScale.s(stickerSides[1]))
         let safeLocation = min(max(location, 0), mutable.length)
-        mutable.insert(NSAttributedString(attachment: attachment), at: safeLocation)
+        // Same reasoning as `insertImage` — give the (inline, non-paragraph-broken) sticker
+        // character the attributes already active at the insertion point, so it has a real font
+        // to hand off to whatever gets typed right after it.
+        let attachmentString = NSMutableAttributedString(attachment: attachment)
+        attachmentString.addAttributes(prefixAttributes(in: text, at: safeLocation),
+                                        range: NSRange(location: 0, length: attachmentString.length))
+        mutable.insert(attachmentString, at: safeLocation)
         return mutable
     }
 
@@ -572,7 +690,11 @@ enum RichTextFormatting {
 
     /// Bounds changes must go through a *fresh* attachment: mutating the existing object in place
     /// leaves the old and new `NSAttributedString` comparing equal, so the SwiftUI binding never
-    /// sees the edit and the text view never relayouts.
+    /// sees the edit and the text view never relayouts. Non-destructive — reuses the attachment's
+    /// original `data` untouched and only changes the display `bounds`, so toggling an image
+    /// between minimized/full (or cycling a sticker's size) any number of times never re-encodes
+    /// pixels and never loses resolution, unlike re-deriving `data` from a resize of the *current*
+    /// (possibly already-shrunk) bitmap on every toggle.
     private static func replacingAttachment(at index: Int, in text: NSAttributedString,
                                              bounds: CGRect) -> NSAttributedString {
         guard index < text.length,
@@ -586,6 +708,62 @@ enum RichTextFormatting {
         mutable.replaceCharacters(in: NSRange(location: index, length: 1),
                                   with: NSAttributedString(attachment: fresh))
         return mutable
+    }
+
+    /// Dynamically scales down any inline attachments (photos, doodles, stickers) whose widths
+    /// exceed the target layout width. This completely prevents layout overflows or horizontal
+    /// clipping when viewing or editing on smaller devices/containers.
+    static func scaleAttachments(in text: NSAttributedString, toFitWidth targetWidth: CGFloat) -> NSAttributedString {
+        guard targetWidth > 0 else { return text }
+        let mutable = NSMutableAttributedString(attributedString: text)
+        var changed = false
+        mutable.enumerateAttribute(.attachment, in: NSRange(location: 0, length: mutable.length), options: []) { value, range, _ in
+            guard let attachment = value as? NSTextAttachment else { return }
+            
+            let originalBounds = attachment.bounds
+            let imageSize = attachmentImage(attachment)?.size ?? .zero
+            let currentWidth = originalBounds.width > 0 ? originalBounds.width : imageSize.width
+            let currentHeight = originalBounds.height > 0 ? originalBounds.height : imageSize.height
+            
+            guard currentWidth > 0 && currentHeight > 0 else { return }
+            
+            let isSticker = kind(of: attachment) == .sticker
+            
+            if isSticker && currentWidth > DesignScale.s(150) {
+                // Scale legacy giant sticker to default sticker size
+                let targetStickerWidth = DesignScale.s(84)
+                let scale = targetStickerWidth / currentWidth
+                let newWidth = targetStickerWidth
+                let newHeight = currentHeight * scale
+                
+                let data = attachmentData(attachment)
+                let fresh = NSTextAttachment(data: data ?? Data(), ofType: UTType.png.identifier)
+                fresh.bounds = CGRect(x: 0, y: 0, width: newWidth, height: newHeight)
+                mutable.addAttribute(.attachment, value: fresh, range: range)
+                changed = true
+            } else if currentWidth > targetWidth - 4 {
+                // Scale overflowing photo/doodle/sticker to container width
+                let availableWidth = targetWidth - 4
+                let scale = availableWidth / currentWidth
+                let newWidth = availableWidth
+                let newHeight = currentHeight * scale
+                
+                let data = attachmentData(attachment)
+                let fresh = NSTextAttachment(data: data ?? Data(), ofType: isSticker ? UTType.png.identifier : UTType.jpeg.identifier)
+                fresh.bounds = CGRect(x: 0, y: 0, width: newWidth, height: newHeight)
+                mutable.addAttribute(.attachment, value: fresh, range: range)
+                changed = true
+            } else if originalBounds.width == 0 || originalBounds.height == 0 {
+                // If it has zero bounds (newly decoded from database), assign the image size
+                // to its bounds property explicitly so layout works correctly.
+                let data = attachmentData(attachment)
+                let fresh = NSTextAttachment(data: data ?? Data(), ofType: isSticker ? UTType.png.identifier : UTType.jpeg.identifier)
+                fresh.bounds = CGRect(x: 0, y: 0, width: currentWidth, height: currentHeight)
+                mutable.addAttribute(.attachment, value: fresh, range: range)
+                changed = true
+            }
+        }
+        return changed ? mutable : text
     }
 }
 
@@ -693,9 +871,24 @@ enum FontChoice: String, CaseIterable, Identifiable {
         }
     }
 
-    /// Find the FontChoice whose base UIFont shares the given family name.
+    /// Find the FontChoice whose base UIFont — or, for the bundled custom fonts, whose *bold*
+    /// sibling — shares the given family name.
+    ///
+    /// Nunito and Shantell Sans ship as separate static font files per weight, and each one
+    /// registers its OWN font family (confirmed via the files' `name` table: "Nunito Regular",
+    /// "Nunito Bold", "Nunito SemiBold"… are three distinct families, not one "Nunito" family
+    /// with weight variants). A plain `uiFont(size:).familyName` check only ever covers the
+    /// Regular file's family, so once bold is applied the family flips to "Nunito Bold" and stops
+    /// matching anything here — `removingTrait` below then can't map back to `.nunito` to find
+    /// `regularFontName`, and bold silently becomes impossible to turn back off. Checking the
+    /// bold sibling's family too closes that loop.
     static func matching(familyName: String) -> FontChoice? {
-        allCases.first { $0.uiFont(size: 12).familyName == familyName }
+        allCases.first { choice in
+            if choice.uiFont(size: 12).familyName == familyName { return true }
+            if let boldName = choice.boldFontName,
+               UIFont(name: boldName, size: 12)?.familyName == familyName { return true }
+            return false
+        }
     }
 
     func uiFont(size: CGFloat) -> UIFont {
@@ -771,6 +964,18 @@ extension UIImage {
         }
         return recompressed
     }
+
+    func resized(toWidth targetWidth: CGFloat) -> UIImage? {
+        guard targetWidth > 0, size.width > 0 else { return nil }
+        let aspect = size.height / size.width
+        let targetSize = CGSize(width: targetWidth, height: targetWidth * aspect)
+        let format = UIGraphicsImageRendererFormat.default()
+        format.scale = 1.0 // Ensure 1x scale so points map directly to pixels
+        let renderer = UIGraphicsImageRenderer(size: targetSize, format: format)
+        return renderer.image { _ in
+            self.draw(in: CGRect(origin: .zero, size: targetSize))
+        }
+    }
 }
 
 // MARK: - Font variant availability — some iOS faces (Zapfino, Snell Roundhand, Marker Felt,
@@ -780,14 +985,6 @@ extension UIImage {
 // probing withSymbolicTraits on the descriptor alone.
 
 extension UIFont {
-    /// True if the font's family has at least one registered variant carrying `trait`.
-    func supports(_ trait: UIFontDescriptor.SymbolicTraits) -> Bool {
-        let family = fontDescriptor.object(forKey: .family) as? String ?? familyName
-        return UIFont.fontNames(forFamilyName: family).contains { name in
-            UIFontDescriptor(name: name, size: pointSize).symbolicTraits.contains(trait)
-        }
-    }
-
     /// Returns a variant of this font with `trait` added. Tries descriptor synthesis first (works
     /// for system fonts); falls back to scanning the font family for a registered member that
     /// carries the trait (needed for custom fonts loaded by PostScript name like Nunito-SemiBold).
