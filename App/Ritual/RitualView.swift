@@ -50,7 +50,7 @@ struct RitualView: View {
         @Bindable var flow = flow
         Group {
             if step == 2 {
-                CelebrationView(mood: mood ?? 2, streak: store.streak,
+                CelebrationView(mood: mood ?? 0, streak: store.streak,
                                 words: wordCount, affirmCount: affirmCount, onStart: onClose)
             } else {
                 VStack(spacing: 0) {
@@ -317,7 +317,7 @@ struct RitualView: View {
         TagEditing.commit(draft: &tagDraft, into: &tags)
 
         let thumbnail = richText.firstPhotoThumbnail()
-        let entry = store.saveRitual(mood: mood ?? 2, journal: journalText, affirmations: affirmations,
+        let entry = store.saveRitual(mood: mood ?? 0, journal: journalText, affirmations: affirmations,
                                      richContent: richText.rtfdData(), tags: tags,
                                      themeID: theme.rawValue, thumbnail: thumbnail)
         // Without this, History's page-curl reader keeps whatever `PageHost` it already cached for
