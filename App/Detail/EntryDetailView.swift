@@ -241,7 +241,8 @@ private struct JournalReaderPage: View {
 
 
                 }
-                .padding(EdgeInsets(top: 22, leading: 22, bottom: 24, trailing: 22))
+                .padding(EdgeInsets(top: 22, leading: Metrics.pageHorizontalInset,
+                                    bottom: 24, trailing: Metrics.pageHorizontalInset))
             }
             .capWidth(Metrics.maxContentWidth)
         }

@@ -16,6 +16,7 @@ struct RitualView: View {
     @State private var selectedRange = NSRange(location: 0, length: 0)
     @State private var affirmations = ["", "", "", "", ""]
     @State private var tags: [String] = []
+    @State private var tagDraft = ""
     @FocusState private var journalFocused: Bool
     @State private var promptIndex: Int = 0
     @State private var showImagePicker = false
@@ -54,22 +55,19 @@ struct RitualView: View {
             } else {
                 VStack(spacing: 0) {
                     topBar.capWidth(Metrics.maxContentWidth)
-                    GeometryReader { proxy in
-                        ScrollView {
-                            // One continuous page for the whole ritual — no per-step cards. Most
-                            // steps size to their actual content; the journal step alone claims the
-                            // viewport so the writing surface does not collapse after the keyboard
-                            // is dismissed.
-                            JournalPageSurface(cornerRadius: 0, showsBinderHoles: false, bordered: false) {
-                                stepBody(viewportHeight: proxy.size.height)
-                                    .padding(EdgeInsets(top: 14, leading: 22, bottom: 24, trailing: 20))
-                                    .frame(minHeight: step == 0 ? proxy.size.height : nil,
-                                           alignment: .topLeading)
-                            }
-                            .capWidth(Metrics.maxContentWidth)
+                    // One continuous page for the whole ritual — no per-step cards. Every step
+                    // (including the journal editor, which grows to its actual content height —
+                    // see `RichTextEditor`) sizes to its real content, so this one `ScrollView` is
+                    // the only scrolling region; nothing needs the viewport height threaded in.
+                    ScrollView {
+                        JournalPageSurface(cornerRadius: 0, showsBinderHoles: false, bordered: false) {
+                            stepBody
+                                .padding(EdgeInsets(top: 14, leading: Metrics.pageHorizontalInset,
+                                                    bottom: 24, trailing: Metrics.pageHorizontalInset))
                         }
-                        .scrollDismissesKeyboard(.interactively)
+                        .capWidth(Metrics.maxContentWidth)
                     }
+                    .scrollDismissesKeyboard(.interactively)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                 .background(PageThemeBackground(theme: theme))
@@ -198,9 +196,9 @@ struct RitualView: View {
     }
 
     // MARK: Scrollable content per step
-    @ViewBuilder private func stepBody(viewportHeight: CGFloat) -> some View {
+    @ViewBuilder private var stepBody: some View {
         switch step {
-        case 0: journalBody(viewportHeight: viewportHeight)
+        case 0: journalBody
         default: affirmationBody
         }
     }
@@ -223,7 +221,7 @@ struct RitualView: View {
     // MARK: Step 0 — journal (the prompt lives in the top bar now — see topBarTitleView — so it
     // never competes with the writing area for space). Mood is set via the tappable icon on the
     // date row, which opens `MoodPickerSheet` — no longer a separate blocking step.
-    private func journalBody(viewportHeight: CGFloat) -> some View {
+    private var journalBody: some View {
         VStack(alignment: .leading, spacing: 0) {
             PageDateRow(date: Date(), mood: mood) {
                 Haptics.select()
@@ -233,10 +231,13 @@ struct RitualView: View {
             RichTextEditor(attributedText: $richText,
                            selectedRange: $selectedRange, placeholder: "Start writing…")
                 .focused($journalFocused)
-                .frame(height: journalEditorHeight(for: viewportHeight))
+                // See the matching comment in EntryEditorView.swift — `.frame(minHeight:)`
+                // defaults to center alignment, which is why the empty placeholder sat mid-box
+                // instead of at its top until typed content grew past the floor.
+                .frame(minHeight: 220, alignment: .top)
                 .padding(.top, 16)
 
-            TagEditorRow(tags: $tags)
+            TagEditorRow(tags: $tags, draft: $tagDraft)
                 .padding(.top, 16)
 
             // Only shown once there's something to report — the prompt above is the only guidance
@@ -257,24 +258,6 @@ struct RitualView: View {
             promptIndex = AppContent.dailyPromptIndex(in: promptPool)
         }
         .animation(Motion.gentle, value: wordCount > 0)
-    }
-
-    private func journalEditorHeight(for viewportHeight: CGFloat) -> CGFloat {
-        let verticalPadding: CGFloat = 14 + 24
-        let dateRowHeight: CGFloat = 24
-        let editorTopPadding: CGFloat = 16
-        let tagTopPadding: CGFloat = 16
-        let tagRowHeight: CGFloat = 34
-        let wordCounterHeight: CGFloat = wordCount > 0 ? 28 : 0
-        let availableHeight = viewportHeight
-            - verticalPadding
-            - dateRowHeight
-            - editorTopPadding
-            - tagTopPadding
-            - tagRowHeight
-            - wordCounterHeight
-
-        return max(220, availableHeight)
     }
 
     // MARK: Step 1 — affirmations
@@ -329,10 +312,21 @@ struct RitualView: View {
 
     // MARK: Finish
     private func finish() {
+        // Flush any tag still sitting in the input — see `TagEditorRow`'s doc comment. Not a known
+        // issue in this flow, just closing off the same theoretical race as a no-cost safety net.
+        TagEditing.commit(draft: &tagDraft, into: &tags)
+
         let thumbnail = richText.firstPhotoThumbnail()
-        store.saveRitual(mood: mood ?? 2, journal: journalText, affirmations: affirmations,
-                          richContent: richText.rtfdData(), tags: tags,
-                          themeID: theme.rawValue, thumbnail: thumbnail)
+        let entry = store.saveRitual(mood: mood ?? 2, journal: journalText, affirmations: affirmations,
+                                     richContent: richText.rtfdData(), tags: tags,
+                                     themeID: theme.rawValue, thumbnail: thumbnail)
+        // Without this, History's page-curl reader keeps whatever `PageHost` it already cached for
+        // today (see `EntryDetailView.swift`'s `PageCurlReader.Coordinator`) — stale content, and a
+        // stale layout frame for any image/sticker resized since that page was cached, which shows
+        // up as content that's wrong, oversized, or clipped. `EntryEditorView.save()` already posts
+        // this for the "edit an old entry" path; the main write flow needs the same call for a
+        // same-day re-write to invalidate correctly.
+        NotificationCenter.default.post(name: .journalEntryDidUpdate, object: entry.dayKey)
         Haptics.success()
         withAnimation(Motion.gentle) { step = 2 }
     }

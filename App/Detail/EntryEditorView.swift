@@ -8,6 +8,7 @@ struct EntryEditorView: View {
     @State private var richText = NSAttributedString()
     @State private var selectedRange = NSRange(location: 0, length: 0)
     @State private var tags: [String] = []
+    @State private var tagDraft = ""
     @State private var theme: PageTheme = .paper
     @FocusState private var journalFocused: Bool
 
@@ -38,34 +39,45 @@ struct EntryEditorView: View {
         VStack(spacing: 0) {
             topBar.capWidth(Metrics.maxContentWidth)
 
-            GeometryReader { proxy in
-                ScrollView {
-                    JournalPageSurface(cornerRadius: 0, showsBinderHoles: false, bordered: false) {
-                        VStack(alignment: .leading, spacing: 0) {
-                            PageDateRow(date: entry.createdAt, mood: entry.moodRaw)
-                                .padding(.bottom, 16)
+            // One scroll, not two: `RichTextEditor` grows to its actual content height (like
+            // `RichContentView`, the read-only reader) instead of scrolling internally, so tags and
+            // word count sit right after wherever the text actually ends, not stretched to the
+            // bottom of the screen — this outer `ScrollView` is the page's only scrolling region.
+            ScrollView {
+                JournalPageSurface(cornerRadius: 0, showsBinderHoles: false, bordered: false) {
+                    VStack(alignment: .leading, spacing: 0) {
+                        PageDateRow(date: entry.createdAt, mood: entry.moodRaw)
+                            .padding(.bottom, 16)
 
-                            RichTextEditor(attributedText: $richText,
-                                           selectedRange: $selectedRange, placeholder: "Start writing…")
-                                .focused($journalFocused)
-                                .frame(height: max(200, proxy.size.height - 180))
-                                .padding(.top, 16)
+                        RichTextEditor(attributedText: $richText,
+                                       selectedRange: $selectedRange, placeholder: "Start writing…")
+                            .focused($journalFocused)
+                            // `.frame(minHeight:)` defaults to *center* alignment: when the editor
+                            // is empty, `sizeThatFits` reports just the placeholder's one-line
+                            // height, and without an explicit `.top` here that small view gets
+                            // centered inside the enforced 200pt slot instead of pinned to its top
+                            // — the placeholder sits mid-box until typed content grows past 200pt
+                            // and the "centering" has no slack left, at which point it visibly
+                            // snaps up. `alignment: .top` is what a text editor's box should do
+                            // regardless of how much (or little) it's holding.
+                            .frame(minHeight: 200, alignment: .top)
+                            .padding(.top, 16)
 
-                            TagEditorRow(tags: $tags)
-                                .padding(.top, 16)
+                        TagEditorRow(tags: $tags, draft: $tagDraft)
+                            .padding(.top, 16)
 
-                            if wordCount > 0 {
-                                Text("\(wordCount) words — nice")
-                                    .font(Fonts.ui(12.5, .semibold)).foregroundStyle(Palette.inkSofter)
-                                    .padding(.top, 10)
-                            }
+                        if wordCount > 0 {
+                            Text("\(wordCount) words — nice")
+                                .font(Fonts.ui(12.5, .semibold)).foregroundStyle(Palette.inkSofter)
+                                .padding(.top, 10)
                         }
-                        .padding(EdgeInsets(top: 14, leading: 22, bottom: 24, trailing: 20))
                     }
-                    .capWidth(Metrics.maxContentWidth)
+                    .padding(EdgeInsets(top: 14, leading: Metrics.pageHorizontalInset,
+                                        bottom: 24, trailing: Metrics.pageHorizontalInset))
                 }
-                .scrollDismissesKeyboard(.interactively)
+                .capWidth(Metrics.maxContentWidth)
             }
+            .scrollDismissesKeyboard(.interactively)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background(PageThemeBackground(theme: theme))
@@ -148,6 +160,11 @@ struct EntryEditorView: View {
     }
 
     private func save() {
+        // Flush any tag that's still sitting in the input, typed but never submitted — tapping
+        // this checkmark directly (rather than dismissing the keyboard first) doesn't reliably
+        // commit it via TagEditorRow's own focus-loss handler before this reads `tags`.
+        TagEditing.commit(draft: &tagDraft, into: &tags)
+
         let plain = richText.plainText
         let data = richText.rtfdData()
         let thumbnail = richText.firstPhotoThumbnail()

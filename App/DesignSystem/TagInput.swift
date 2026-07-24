@@ -30,13 +30,21 @@ struct TagChip: View {
 
 /// Tag editor: existing chips (removable) plus an inline "+ tag" field, capped at 5 — matching
 /// the app's existing "up to 5" affirmations convention. Free for everyone.
+///
+/// `draft` is a binding, not private state: the caller (`RitualView`/`EntryEditorView`) needs to
+/// be able to flush it into `tags` itself right before saving. Tapping "Save"/"Finish" directly
+/// after typing a tag — without hitting Return or tapping elsewhere to drop focus first — fires
+/// that button's own action; whether *this* view's focus-loss commit (below) has actually run by
+/// then isn't guaranteed, so a save reading only `tags` can miss whatever's still sitting in the
+/// field. `TagEditing.commit` is the one place the parse/append logic lives, called both from here
+/// (Return / losing focus) and from the parent (immediately before save).
 struct TagEditorRow: View {
     @Binding var tags: [String]
+    @Binding var draft: String
 
-    @State private var draft = ""
     @FocusState private var draftFocused: Bool
 
-    private var canAddMore: Bool { tags.count < 5 }
+    private var canAddMore: Bool { tags.count < TagEditing.maxTags }
 
     // Plain HStack, not a ScrollView. The `TextField` is given a fixed width, not just a
     // minimum — unlike `Text`, a `TextField` genuinely expands to claim any leftover space a
@@ -76,11 +84,21 @@ struct TagEditorRow: View {
     }
 
     private func commitDraft() {
-        let cleaned = draft.trimmingCharacters(in: .whitespacesAndNewlines).replacingOccurrences(of: "#", with: "")
-        defer { draft = "" }
-        guard !cleaned.isEmpty, canAddMore, !tags.contains(cleaned) else { return }
-        withAnimation(Motion.snappy) { tags.append(cleaned) }
         Haptics.select()
+        withAnimation(Motion.snappy) { TagEditing.commit(draft: &draft, into: &tags) }
+    }
+}
+
+/// Shared with the parent view so a tag typed but never explicitly submitted still makes it into
+/// `tags` when save/finish is triggered directly — see `TagEditorRow`'s doc comment.
+enum TagEditing {
+    static let maxTags = 5
+
+    static func commit(draft: inout String, into tags: inout [String]) {
+        let cleaned = draft.trimmingCharacters(in: .whitespacesAndNewlines).replacingOccurrences(of: "#", with: "")
+        draft = ""
+        guard !cleaned.isEmpty, tags.count < maxTags, !tags.contains(cleaned) else { return }
+        tags.append(cleaned)
     }
 }
 

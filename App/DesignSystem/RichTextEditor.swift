@@ -48,6 +48,12 @@ struct RichTextEditor: UIViewRepresentable {
         tv.smartInsertDeleteType = .no
         tv.attributedText = attributedText
         tv.delegate = context.coordinator
+        // Grows to its full content height instead of scrolling internally — same as
+        // `RichContentView` (the read-only reader) — so callers can put it in an ordinary page
+        // layout (date row above, tags below, right after wherever the text actually ends) inside
+        // one outer `ScrollView`, rather than a fixed-height box that scrolls on its own and pins
+        // everything below it to the bottom of the screen regardless of how much was written.
+        tv.isScrollEnabled = false
 
         // Attachment tap-to-edit (✕ / resize bar) — fires alongside the text view's own tap
         // handling (caret placement), so it must not cancel or exclude it.
@@ -129,6 +135,13 @@ struct RichTextEditor: UIViewRepresentable {
     // oversized attachment to overflow the screen until some unrelated state change triggers another
     // `updateUIView`. `sizeThatFits` gets SwiftUI's authoritative proposed width instead, the same
     // way `RichContentView` already uses it, so the clamp always has the right number to work with.
+    //
+    // Also — now that `isScrollEnabled` is false — this is what reports the view's actual height
+    // (text content + attachments), same approach as `RichContentView`. Returning `nil` here (as
+    // this used to) tells SwiftUI "no opinion, use whatever `.frame()` the caller applied," which
+    // is exactly how a fixed-height, internally-scrolling box ends up needing one; reporting the
+    // real fitted height instead is what lets the caller size it to content with a plain
+    // `.frame(minHeight:)` floor.
     func sizeThatFits(_ proposal: ProposedViewSize, uiView: UITextView, context: Context) -> CGSize? {
         guard let width = proposal.width, width.isFinite, width > 0 else { return nil }
         let contentWidth = width - uiView.textContainerInset.left - uiView.textContainerInset.right
@@ -149,7 +162,8 @@ struct RichTextEditor: UIViewRepresentable {
             uiView.selectedRange = NSRange(location: clampedLocation, length: clampedLength)
             context.coordinator.isApplyingSwiftUIUpdate = false
         }
-        return nil
+        let fitted = uiView.sizeThatFits(CGSize(width: width, height: .greatestFiniteMagnitude))
+        return CGSize(width: width, height: fitted.height)
     }
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
@@ -558,6 +572,56 @@ enum RichTextFormatting {
         return attachmentData(attachment).flatMap { UIImage(data: $0) }
     }
 
+    // MARK: Chosen display size, persisted through the attachment's own filename
+    //
+    // `NSTextAttachment.bounds` — the only place a chosen display size (minimized photo/doodle,
+    // a sticker's size tier) lives — does NOT survive the RTFD save/reload round-trip; verified
+    // directly: writing an attachment with `bounds = (123, 45)` through
+    // `fileWrapper(from:documentAttributes:)` and reading it back with
+    // `NSAttributedString(url:options:documentAttributes:)` comes back `bounds = .zero` every
+    // time. Whatever size the user picked is silently discarded the moment the entry is saved and
+    // reloaded, and every render path that hits that zero (`scaleAttachments` below) used to fall
+    // back to the image's raw native pixel size — i.e. always maximized, regardless of what was
+    // actually chosen.
+    //
+    // A `FileWrapper`'s `preferredFilename`, in contrast, DOES survive — it's the literal on-disk
+    // name of the attachment's sub-file inside the .rtfd bundle. Baking the chosen size into that
+    // name gives it a second, independent way to survive, with no pixel re-encoding (and so no
+    // quality loss on a later resize back up): `makeAttachment` writes it, `recoveredSize` reads
+    // it back.
+
+    private static func sizedFilename(width: CGFloat, height: CGFloat, type: UTType) -> String {
+        let ext = type == .png ? "png" : "jpg"
+        return "att_\(Int(width.rounded()))x\(Int(height.rounded())).\(ext)"
+    }
+
+    /// Recovers a size previously written by `sizedFilename`, if the attachment's backing file
+    /// still carries that name — true across any number of RTFD round-trips, since the OS treats
+    /// it as an ordinary filename, not attributed-string state.
+    private static func recoveredSize(of attachment: NSTextAttachment) -> CGSize? {
+        guard let name = attachment.fileWrapper?.preferredFilename, name.hasPrefix("att_") else { return nil }
+        let core = name.dropFirst("att_".count)
+        let withoutExtension = core.split(separator: ".").first ?? core[...]
+        let parts = withoutExtension.split(separator: "x")
+        guard parts.count == 2, let w = Double(parts[0]), let h = Double(parts[1]) else { return nil }
+        return CGSize(width: w, height: h)
+    }
+
+    /// Builds an attachment via an explicit `FileWrapper` (not the `NSTextAttachment(data:ofType:)`
+    /// convenience init) — that convenience init only populates `.contents`/`.fileType`, and the
+    /// RTFD writer auto-generates its own generically-named wrapper from those at encode time
+    /// ("Attachment.png"), ignoring any rename attempted after the fact. Supplying the wrapper
+    /// ourselves up front is what makes the writer preserve *our* filename.
+    private static func makeAttachment(data: Data, type: UTType, bounds: CGRect) -> NSTextAttachment {
+        let attachment = NSTextAttachment()
+        attachment.fileType = type.identifier
+        let wrapper = FileWrapper(regularFileWithContents: data)
+        wrapper.preferredFilename = sizedFilename(width: bounds.width, height: bounds.height, type: type)
+        attachment.fileWrapper = wrapper
+        attachment.bounds = bounds
+        return attachment
+    }
+
     /// Inserts a photo/doodle as its own full-width block (paragraph breaks before/after — no
     /// CSS-style text wrap). Stored at `downscaledForJournal`'s resolution, not a caller-guessed
     /// display width — bounds start at the image's own size and the very next render's
@@ -572,8 +636,7 @@ enum RichTextFormatting {
         let mutable = NSMutableAttributedString(attributedString: text)
         let resized = image.downscaledForJournal()
         let data = resized.jpegData(compressionQuality: 0.82) ?? Data()
-        let attachment = NSTextAttachment(data: data, ofType: UTType.jpeg.identifier)
-        attachment.bounds = CGRect(origin: .zero, size: resized.size)
+        let attachment = makeAttachment(data: data, type: .jpeg, bounds: CGRect(origin: .zero, size: resized.size))
 
         // Attributes active at the insertion point — NOT the hardcoded global default. Using
         // `RichTextEditor.defaultAttributes` here unconditionally meant every photo/doodle's
@@ -615,8 +678,8 @@ enum RichTextFormatting {
         let storedWidth = DesignScale.s(stickerSides.max() ?? stickerSides[1])
         let resized = image.resized(toWidth: storedWidth) ?? image
         let data = resized.pngData() ?? Data()
-        let attachment = NSTextAttachment(data: data, ofType: UTType.png.identifier)
-        attachment.bounds = stickerBounds(for: resized, side: DesignScale.s(stickerSides[1]))
+        let attachment = makeAttachment(data: data, type: .png,
+                                        bounds: stickerBounds(for: resized, side: DesignScale.s(stickerSides[1])))
         let safeLocation = min(max(location, 0), mutable.length)
         // Same reasoning as `insertImage` — give the (inline, non-paragraph-broken) sticker
         // character the attributes already active at the insertion point, so it has a real font
@@ -691,9 +754,10 @@ enum RichTextFormatting {
     /// Bounds changes must go through a *fresh* attachment: mutating the existing object in place
     /// leaves the old and new `NSAttributedString` comparing equal, so the SwiftUI binding never
     /// sees the edit and the text view never relayouts. Non-destructive — reuses the attachment's
-    /// original `data` untouched and only changes the display `bounds`, so toggling an image
-    /// between minimized/full (or cycling a sticker's size) any number of times never re-encodes
-    /// pixels and never loses resolution, unlike re-deriving `data` from a resize of the *current*
+    /// original `data` untouched and only changes the display `bounds` (plus, via `makeAttachment`,
+    /// the filename that lets that size survive a save/reload), so toggling an image between
+    /// minimized/full (or cycling a sticker's size) any number of times never re-encodes pixels
+    /// and never loses resolution, unlike re-deriving `data` from a resize of the *current*
     /// (possibly already-shrunk) bitmap on every toggle.
     private static func replacingAttachment(at index: Int, in text: NSAttributedString,
                                              bounds: CGRect) -> NSAttributedString {
@@ -701,9 +765,7 @@ enum RichTextFormatting {
               let attachment = text.attribute(.attachment, at: index, effectiveRange: nil) as? NSTextAttachment,
               let data = attachmentData(attachment) else { return text }
         let isSticker = kind(of: attachment) == .sticker
-        let fresh = NSTextAttachment(data: data,
-                                     ofType: (isSticker ? UTType.png : UTType.jpeg).identifier)
-        fresh.bounds = bounds
+        let fresh = makeAttachment(data: data, type: isSticker ? .png : .jpeg, bounds: bounds)
         let mutable = NSMutableAttributedString(attributedString: text)
         mutable.replaceCharacters(in: NSRange(location: index, length: 1),
                                   with: NSAttributedString(attachment: fresh))
@@ -719,26 +781,31 @@ enum RichTextFormatting {
         var changed = false
         mutable.enumerateAttribute(.attachment, in: NSRange(location: 0, length: mutable.length), options: []) { value, range, _ in
             guard let attachment = value as? NSTextAttachment else { return }
-            
+
             let originalBounds = attachment.bounds
             let imageSize = attachmentImage(attachment)?.size ?? .zero
-            let currentWidth = originalBounds.width > 0 ? originalBounds.width : imageSize.width
-            let currentHeight = originalBounds.height > 0 ? originalBounds.height : imageSize.height
-            
+            // Bounds reset to zero on every entry reload (see `makeAttachment`'s doc comment) — try
+            // the size recovered from the attachment's own filename before falling back to the raw
+            // native pixel size, which is what previously made every minimized image/sticker come
+            // back maximized the moment an entry was saved and reopened.
+            let recovered = recoveredSize(of: attachment)
+            let currentWidth = originalBounds.width > 0 ? originalBounds.width : (recovered?.width ?? imageSize.width)
+            let currentHeight = originalBounds.height > 0 ? originalBounds.height : (recovered?.height ?? imageSize.height)
+
             guard currentWidth > 0 && currentHeight > 0 else { return }
-            
+
             let isSticker = kind(of: attachment) == .sticker
-            
+
             if isSticker && currentWidth > DesignScale.s(150) {
                 // Scale legacy giant sticker to default sticker size
                 let targetStickerWidth = DesignScale.s(84)
                 let scale = targetStickerWidth / currentWidth
                 let newWidth = targetStickerWidth
                 let newHeight = currentHeight * scale
-                
-                let data = attachmentData(attachment)
-                let fresh = NSTextAttachment(data: data ?? Data(), ofType: UTType.png.identifier)
-                fresh.bounds = CGRect(x: 0, y: 0, width: newWidth, height: newHeight)
+
+                let data = attachmentData(attachment) ?? Data()
+                let fresh = makeAttachment(data: data, type: .png,
+                                           bounds: CGRect(x: 0, y: 0, width: newWidth, height: newHeight))
                 mutable.addAttribute(.attachment, value: fresh, range: range)
                 changed = true
             } else if currentWidth > targetWidth - 4 {
@@ -747,18 +814,19 @@ enum RichTextFormatting {
                 let scale = availableWidth / currentWidth
                 let newWidth = availableWidth
                 let newHeight = currentHeight * scale
-                
-                let data = attachmentData(attachment)
-                let fresh = NSTextAttachment(data: data ?? Data(), ofType: isSticker ? UTType.png.identifier : UTType.jpeg.identifier)
-                fresh.bounds = CGRect(x: 0, y: 0, width: newWidth, height: newHeight)
+
+                let data = attachmentData(attachment) ?? Data()
+                let fresh = makeAttachment(data: data, type: isSticker ? .png : .jpeg,
+                                           bounds: CGRect(x: 0, y: 0, width: newWidth, height: newHeight))
                 mutable.addAttribute(.attachment, value: fresh, range: range)
                 changed = true
             } else if originalBounds.width == 0 || originalBounds.height == 0 {
-                // If it has zero bounds (newly decoded from database), assign the image size
-                // to its bounds property explicitly so layout works correctly.
-                let data = attachmentData(attachment)
-                let fresh = NSTextAttachment(data: data ?? Data(), ofType: isSticker ? UTType.png.identifier : UTType.jpeg.identifier)
-                fresh.bounds = CGRect(x: 0, y: 0, width: currentWidth, height: currentHeight)
+                // Zero bounds (every entry, right after reload) — reassign the recovered/native
+                // size explicitly so layout works correctly, and re-tag the filename so this size
+                // keeps surviving future round-trips too.
+                let data = attachmentData(attachment) ?? Data()
+                let fresh = makeAttachment(data: data, type: isSticker ? .png : .jpeg,
+                                           bounds: CGRect(x: 0, y: 0, width: currentWidth, height: currentHeight))
                 mutable.addAttribute(.attachment, value: fresh, range: range)
                 changed = true
             }

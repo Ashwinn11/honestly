@@ -15,6 +15,17 @@ enum DesignScale {
 enum Metrics {
     static var maxContentWidth: CGFloat { DesignScale.s(430) }
     static let maxButtonWidth: CGFloat = 430
+
+    /// The page's left/right margin — shared by every place that renders the journal "page"
+    /// (writing in RitualView, editing in EntryEditorView, reading in EntryDetailView's
+    /// JournalReaderPage). These three used to each hand-roll their own `EdgeInsets`, and two of
+    /// them silently drifted from the third (`trailing: 20` vs `22`) — a couple points that don't
+    /// matter for text, but do matter for an attachment saved at "full width": its stored bounds
+    /// are computed from whichever container happened to be showing it, so any inset mismatch
+    /// between write/edit and read makes a full-bleed photo/doodle look not-quite-full-bleed (or
+    /// scaled differently) depending on which of the three screens is displaying it. One constant
+    /// here means that class of bug can't come back by accident.
+    static let pageHorizontalInset: CGFloat = 22
 }
 
 extension View {

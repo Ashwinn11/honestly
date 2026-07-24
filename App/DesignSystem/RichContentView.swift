@@ -27,7 +27,9 @@ struct RichContentView: UIViewRepresentable {
     }
 
     func updateUIView(_ uiView: UITextView, context: Context) {
-        let contentWidth = uiView.bounds.width > 0 ? uiView.bounds.width : Metrics.maxContentWidth - 44
+        let contentWidth = uiView.bounds.width > 0
+            ? uiView.bounds.width
+            : Metrics.maxContentWidth - Metrics.pageHorizontalInset * 2
         let prepared = RichTextFormatting.scaleAttachments(in: attributedText, toFitWidth: contentWidth)
         guard uiView.attributedText != prepared else { return }
         uiView.attributedText = prepared
