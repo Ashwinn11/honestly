@@ -89,7 +89,7 @@ struct HistoryView: View {
                 .padding(.top, 18).padding(.bottom, 9)
             ForEach(group.items, id: \.dayKey) { e in
                 NavigationLink(value: e.dayKey) {
-                    EntryRow(entry: e) { EntryScore(count: e.affirmationCount) }
+                    EntryRow(entry: e) { EmptyView() }
                 }
                 .buttonStyle(PressableStyle(scale: 0.98))
                 .contextMenu {

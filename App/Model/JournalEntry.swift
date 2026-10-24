@@ -5,12 +5,14 @@ import SwiftData
 /// the SwiftData app could adopt the existing store with zero migration. One deliberate
 /// divergence since: `affirmationsRaw` (production's single "gratitude" note, later repurposed to
 /// pack 5 affirmations) no longer preserves that column across the schema change — affirmations
-/// only matter for the day they're written (Home, notifications, the widget); losing one day's
-/// worth at the moment of an update isn't worth carrying the legacy name forever.
+/// only mattered for the day they were written; losing one day's worth at the moment of an update
+/// wasn't worth carrying the legacy name forever. Affirmations have since moved off the page
+/// entirely (a picked rotation — see `Affirmations`), so new pages leave this empty; the column
+/// stays only so older stores and CloudKit records keep decoding.
 @Model
 final class JournalEntry {
     var content: String = ""       // the journal text
-    var affirmationsRaw: String = ""   // 5 affirmations, newline-joined — see `affirmations` below
+    var affirmationsRaw: String = ""   // legacy: affirmations written on this page, newline-joined; no longer written
     var mood: String = ""          // Capitalized label, e.g. "Sad"
     var wordCount: Int = 0
     var createdAt: Date = Date()
@@ -43,18 +45,8 @@ final class JournalEntry {
     var dayKey: String { SharedState.dayKey(for: createdAt) }
     var moodValue: Mood { Mood(stored: mood) }
     var moodRaw: Int { moodValue.rawValue }
-    var affirmations: [String] { JournalEntry.unpackAffirmations(affirmationsRaw) }
-    var affirmationCount: Int { affirmations.count }
 
     // MARK: - Encoding helpers
-    static func unpackAffirmations(_ s: String) -> [String] {
-        s.split(separator: "\n", omittingEmptySubsequences: true)
-            .map { $0.trimmingCharacters(in: .whitespaces) }
-            .filter { !$0.isEmpty }
-    }
-    static func packAffirmations(_ items: [String]) -> String {
-        items.map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }.joined(separator: "\n")
-    }
     static func wordCount(of text: String) -> Int {
         text.split(whereSeparator: { $0.isWhitespace || $0.isNewline }).count
     }

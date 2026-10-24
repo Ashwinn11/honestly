@@ -18,7 +18,7 @@ enum LegalDoc: Identifiable {
         ("Purchases",
          "Honestly Premium is a one-time purchase processed by Apple. We use RevenueCat to verify your purchase and unlock premium features. This involves an anonymous purchase identifier only — no name, email, or contact information is required or collected."),
         ("Notifications",
-         "If you turn on affirmation reminders, a single local notification quoting one of your own past affirmations is scheduled on your device. It is generated on-device and is not sent through any server."),
+         "If you turn on affirmation reminders, one local notification a day carrying that day's affirmation is scheduled on your device. It is generated on-device and is not sent through any server."),
         ("What we don't do",
          "We do not collect analytics, we do not fingerprint your device, we do not build a profile of you, and we do not share anything with advertisers. There is nothing to opt out of because there is nothing being gathered."),
         ("Your control",

@@ -59,6 +59,9 @@ final class LocalizationManager {
         // it whenever it next renders — without this it'd keep showing the old language until
         // some unrelated refresh (next midnight, or writing today's page) happened to trigger one.
         WidgetCenter.shared.reloadAllTimelines()
+        // Queued notifications carry their text from when they were scheduled — re-lay them in
+        // the new language.
+        AffirmationNudge.schedule()
     }
 
     /// Saved choice if valid, else the best match for the device's preferred languages, else English.

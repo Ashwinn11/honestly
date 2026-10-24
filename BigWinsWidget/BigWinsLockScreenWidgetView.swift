@@ -15,13 +15,12 @@ struct BigWinsLockScreenWidgetView: View {
                     .textCase(.uppercase)
                 SunMark(size: 12, muted: entry.affirmation == nil)
             }
-            if let text = entry.affirmation {
-                // The user's own words — never localized/rewritten (matches AffirmationNudge).
-                Text(text)
+            if let line = entry.affirmation {
+                Affirmations.text(line)
                     .font(Fonts.ui(12.5, .semibold))
                     .lineLimit(2)
             } else {
-                Text(loc: "Your affirmations will land here\nonce you've written this morning.")
+                Text(loc: "Unlock this widget with Premium")
                     .font(Fonts.ui(10.5, .medium))
                     .lineLimit(2)
             }

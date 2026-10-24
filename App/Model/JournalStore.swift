@@ -1,7 +1,6 @@
 import Foundation
 import SwiftData
 import Observation
-import WidgetKit
 
 /// The app's single source of truth for morning pages. Wraps a SwiftData `ModelContext`,
 /// derives the streak / week strip / mood distribution the screens read, and — on save —
@@ -32,7 +31,6 @@ final class JournalStore {
             try? context.save()
         }
         entries = kept
-        syncWidgetData()
         healRitualFlag()
     }
 
@@ -44,19 +42,6 @@ final class JournalStore {
         let done = todayEntry != nil
         guard done != SharedState.ritualCompleted() else { return }
         SharedState.lastRitualDay = done ? todayKey : nil
-    }
-
-    /// Keeps the widget's cross-process cache (`SharedState.todayAffirmations`) in step with the
-    /// real store on every mutation this triggers from (save, delete, deleteAll, launch) — covers
-    /// entries that existed before this cache did, and clears stale data the moment today's entry
-    /// is deleted, rather than only ever refreshing it on a fresh save.
-    private func syncWidgetData() {
-        let today = entries.first { $0.dayKey == SharedState.dayKey() }
-        let lines = today?.affirmations ?? []
-        guard lines != SharedState.todayAffirmations else { return }   // avoid needless widget reloads
-        SharedState.todayAffirmations = lines
-        SharedState.todayAffirmationsSetAt = lines.isEmpty ? nil : Date()
-        WidgetCenter.shared.reloadAllTimelines()
     }
 
     // MARK: Today
@@ -140,24 +125,22 @@ final class JournalStore {
 
     /// Create or update today's page, then sync completion out to the app group + shield.
     @discardableResult
-    func saveRitual(mood: Int, journal: String, affirmations: [String],
+    func saveRitual(mood: Int, journal: String,
                      richContent: Data? = nil, tags: [String] = [],
                      themeID: String = "", thumbnail: Data? = nil) -> JournalEntry {
         let face = Mood(rawValue: mood) ?? .sad
         let trimmed = journal.trimmingCharacters(in: .whitespacesAndNewlines)
         let content = trimmed.isEmpty ? AppContent.emptyJournalFallback : trimmed
-        let packed = JournalEntry.packAffirmations(affirmations)
 
         let entry: JournalEntry
         if let existing = todayEntry {
             entry = existing
         } else {
-            entry = JournalEntry(content: content, affirmationsRaw: packed, mood: face.storageKey,
+            entry = JournalEntry(content: content, affirmationsRaw: "", mood: face.storageKey,
                                  wordCount: JournalEntry.wordCount(of: content), createdAt: Date())
             context.insert(entry)
         }
         entry.content = content
-        entry.affirmationsRaw = packed
         entry.mood = face.storageKey
         entry.wordCount = JournalEntry.wordCount(of: content)
         entry.richContent = richContent
@@ -171,12 +154,12 @@ final class JournalStore {
         SharedState.markRitualComplete(mood: face.storageKey)
         SharedState.streak = streak
         Shielding.reconcile()
-        AffirmationNudge.scheduleForToday()
+        AffirmationNudge.ritualWritten()
         return entry
     }
 
-    /// Edit an already-saved page (any day) from the reader. Content-only: mood, affirmations,
-    /// and all the save-ritual side effects (completion flag, streak, shield, notifications) are
+    /// Edit an already-saved page (any day) from the reader. Content-only: mood and all the
+    /// save-ritual side effects (completion flag, streak, shield, notifications) are
     /// morning-ritual concerns and deliberately don't re-fire on an edit.
     @discardableResult
     func update(_ entry: JournalEntry, journal: String, richContent: Data?, tags: [String],
@@ -193,16 +176,16 @@ final class JournalStore {
         return entry
     }
 
-    /// Deleting today's page rewinds the day to "not written yet": the completion flag and the
-    /// queued echo notifications are cleared before `reload()` so the widget rebuild sees a
-    /// consistent state, and the shield comes back if blocking would be active right now —
-    /// otherwise the home screen says "your page is waiting" while the apps stay unlocked.
+    /// Deleting today's page rewinds the day to "not written yet": the completion flag is cleared
+    /// before `reload()` so everything re-derived there sees a consistent state, and the shield
+    /// comes back if blocking would be active right now — otherwise the home screen says "your
+    /// page is waiting" while the apps stay unlocked. The daily affirmation isn't tied to the page,
+    /// so its notifications stay queued.
     func delete(_ entry: JournalEntry) {
         let wasToday = entry.dayKey == todayKey
         if wasToday {
             SharedState.lastRitualDay = nil
             SharedState.todayMoodKey = nil
-            AffirmationNudge.cancel()
         }
         context.delete(entry)
         try? context.save()

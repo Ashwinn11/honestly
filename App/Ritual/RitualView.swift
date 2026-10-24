@@ -6,15 +6,16 @@ struct RitualView: View {
     @Environment(JournalStore.self) private var store
     @Environment(PremiumManager.self) private var premium
     @Environment(AppFlow.self) private var flow
+    @Environment(AffirmationList.self) private var affirmations
 
-    // 0: journal, 1: affirmations, 2: celebration — mood is no longer its own step; it's set
-    // via the mood-card sheet, opened by tapping the mood icon on the journal page itself.
+    // 0: journal, 1: celebration — mood is no longer its own step; it's set via the mood-card
+    // sheet, opened by tapping the mood icon on the journal page itself. Affirmations aren't
+    // written here anymore either: the celebration shows the day's line from the picked rotation.
     @State private var step = 0
     @State private var mood: Int? = nil
     @State private var showMoodSheet = false
     @State private var richText = NSAttributedString()
     @State private var selectedRange = NSRange(location: 0, length: 0)
-    @State private var affirmations = ["", "", "", "", ""]
     @State private var tags: [String] = []
     @State private var tagDraft = ""
     @FocusState private var journalFocused: Bool
@@ -29,7 +30,6 @@ struct RitualView: View {
     private var wordCount: Int {
         journalText.split(whereSeparator: { $0.isWhitespace || $0.isNewline }).count
     }
-    private var affirmCount: Int { affirmations.filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }.count }
 
     // MARK: Prompt helpers
     private var promptPool: [JournalPrompt] { AppContent.prompts(for: mood) }
@@ -49,9 +49,10 @@ struct RitualView: View {
     var body: some View {
         @Bindable var flow = flow
         Group {
-            if step == 2 {
-                CelebrationView(mood: mood ?? 0, streak: store.streak,
-                                words: wordCount, affirmCount: affirmCount, onStart: onClose)
+            if step == 1 {
+                CelebrationView(mood: mood ?? 0, streak: store.streak, words: wordCount,
+                                affirmation: affirmations.today(premium: premium.isPremium),
+                                onStart: onClose)
             } else {
                 VStack(spacing: 0) {
                     topBar.capWidth(Metrics.maxContentWidth)
@@ -61,7 +62,7 @@ struct RitualView: View {
                     // the only scrolling region; nothing needs the viewport height threaded in.
                     ScrollView {
                         JournalPageSurface(cornerRadius: 0, showsBinderHoles: false, bordered: false) {
-                            stepBody
+                            journalBody
                                 .padding(EdgeInsets(top: 14, leading: Metrics.pageHorizontalInset,
                                                     bottom: 24, trailing: Metrics.pageHorizontalInset))
                         }
@@ -146,10 +147,9 @@ struct RitualView: View {
     }
 
 
-    // MARK: Top bar — close icon + step title. On the journal step, the title slot becomes the
-    // prompt itself (tap to shuffle) instead of a generic label — it doesn't compete with the
-    // writing area below anymore, and it's real page content, unlike a title would be. No
-    // progress dots, no mood badge here — the date/mood live on the page itself, below.
+    // MARK: Top bar — close icon + the prompt itself (tap to shuffle) instead of a generic label —
+    // it doesn't compete with the writing area below, and it's real page content, unlike a title
+    // would be. No progress dots, no mood badge here — the date/mood live on the page itself, below.
     private var topBar: some View {
         HStack(spacing: 12) {
             IconTileButton(icon: "xmark", size: 38, iconSize: 13) { onClose() }
@@ -163,58 +163,28 @@ struct RitualView: View {
         .animation(Motion.snappy, value: promptIndex)
     }
 
-    @ViewBuilder private var topBarTitleView: some View {
-        if step == 0 {
-            Button {
-                if premium.isPremium { shufflePrompt() } else { flow.showPaywall() }
-            } label: {
-                Text(loc: premium.isPremium ? currentPromptText : "Unlock daily morning prompts")
-                    .font(Fonts.display(14, .bold))
-                    .foregroundStyle(premium.isPremium ? Palette.ink : Palette.inkSofter)
-                    .lineSpacing(1)
-                    .multilineTextAlignment(.leading)
-                    .lineLimit(2)
-                    .fixedSize(horizontal: false, vertical: true)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            .buttonStyle(.plain)
-            .transition(.opacity)
-        } else if let topBarTitle {
-            Text(loc: topBarTitle)
-                .font(Fonts.display(19, .bold))
-                .foregroundStyle(Palette.ink)
-                .lineLimit(1)
-                .transition(.opacity)
+    private var topBarTitleView: some View {
+        Button {
+            if premium.isPremium { shufflePrompt() } else { flow.showPaywall() }
+        } label: {
+            Text(loc: premium.isPremium ? currentPromptText : "Unlock daily morning prompts")
+                .font(Fonts.display(14, .bold))
+                .foregroundStyle(premium.isPremium ? Palette.ink : Palette.inkSofter)
+                .lineSpacing(1)
+                .multilineTextAlignment(.leading)
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .buttonStyle(.plain)
     }
 
-    private var topBarTitle: String? {
-        switch step {
-        case 1: return "Affirm yourself"
-        default: return nil
-        }
-    }
-
-    // MARK: Scrollable content per step
-    @ViewBuilder private var stepBody: some View {
-        switch step {
-        case 0: journalBody
-        default: affirmationBody
-        }
-    }
-
-    // MARK: Footer CTA per step — pinned at the bottom, floats above the keyboard
-    @ViewBuilder private var footer: some View {
-        switch step {
-        case 0:
-            PrimaryButton(title: "Almost there",
-                          enabled: !journalText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) {
-                journalFocused = false
-                withAnimation(Motion.gentle) { step = 1 }
-            }
-        default:
-            PrimaryButton(title: affirmCount >= 1 ? "Unlock my morning" : "Say at least one",
-                          enabled: affirmCount >= 1) { finish() }
+    // MARK: Footer CTA — pinned at the bottom, floats above the keyboard
+    private var footer: some View {
+        PrimaryButton(title: "Unlock my morning",
+                      enabled: !journalText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) {
+            journalFocused = false
+            finish()
         }
     }
 
@@ -260,56 +230,6 @@ struct RitualView: View {
         .animation(Motion.gentle, value: wordCount > 0)
     }
 
-    // MARK: Step 1 — affirmations
-    private var affirmationBody: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            PageDateRow(date: Date(), mood: mood)
-            VStack(spacing: 10) {
-                ForEach(0..<5, id: \.self) { i in affirmationRow(i) }
-            }
-            .padding(.top, 20)
-        }
-    }
-
-    @ViewBuilder
-    private func affirmationRow(_ i: Int) -> some View {
-        if i > 0 && !premium.isPremium {
-            lockedAffirmationRow
-        } else {
-            let lit = !affirmations[i].trimmingCharacters(in: .whitespaces).isEmpty
-            HStack(spacing: 12) {
-                SunMark(size: 26, muted: !lit)
-                    .scaleEffect(lit ? 1.08 : 1)
-                    .animation(Motion.pop, value: lit)
-                TextField(LocalizedStringKey(AppContent.affirmationPlaceholder(i)), text: $affirmations[i])
-                    .font(Fonts.ui(15, .semibold)).foregroundStyle(Palette.ink)
-                    .submitLabel(.next)
-            }
-            .padding(EdgeInsets(top: 12, leading: 14, bottom: 12, trailing: 14))
-            .background(lit ? Palette.iconTile : .white, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(lit ? Palette.outlineSoft : Palette.ink.opacity(0.12), lineWidth: 1.5))
-        }
-    }
-
-    private var lockedAffirmationRow: some View {
-        Button { flow.showPaywall() } label: {
-            HStack(spacing: 12) {
-                Image(systemName: "lock.fill")
-                    .font(.system(size: 13, weight: .bold)).foregroundStyle(Palette.inkSofter)
-                    .frame(width: 26, height: 26)
-                Text(loc: "Unlock more affirmations")
-                    .font(Fonts.ui(15, .semibold)).foregroundStyle(Palette.inkSofter)
-                Spacer(minLength: 0)
-            }
-            .padding(EdgeInsets(top: 12, leading: 14, bottom: 12, trailing: 14))
-            .background(.white, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(Palette.ink.opacity(0.12), lineWidth: 1.5))
-        }
-        .buttonStyle(PressableStyle(scale: 0.98))
-    }
-
     // MARK: Finish
     private func finish() {
         // Flush any tag still sitting in the input — see `TagEditorRow`'s doc comment. Not a known
@@ -317,7 +237,7 @@ struct RitualView: View {
         TagEditing.commit(draft: &tagDraft, into: &tags)
 
         let thumbnail = richText.firstPhotoThumbnail()
-        let entry = store.saveRitual(mood: mood ?? 0, journal: journalText, affirmations: affirmations,
+        let entry = store.saveRitual(mood: mood ?? 0, journal: journalText,
                                      richContent: richText.rtfdData(), tags: tags,
                                      themeID: theme.rawValue, thumbnail: thumbnail)
         // Without this, History's page-curl reader keeps whatever `PageHost` it already cached for
@@ -328,7 +248,7 @@ struct RitualView: View {
         // same-day re-write to invalidate correctly.
         NotificationCenter.default.post(name: .journalEntryDidUpdate, object: entry.dayKey)
         Haptics.success()
-        withAnimation(Motion.gentle) { step = 2 }
+        withAnimation(Motion.gentle) { step = 1 }
     }
 
     private func insertPickedImage(_ image: UIImage) {
@@ -399,13 +319,13 @@ private struct MoodPickerSheet: View {
     }
 }
 
-// MARK: - Celebration (step 2)
+// MARK: - Celebration (step 1)
 
 private struct CelebrationView: View {
     let mood: Int
     let streak: Int
     let words: Int
-    let affirmCount: Int
+    let affirmation: String
     var onStart: () -> Void
 
     @Environment(\.requestReview) private var requestReview
@@ -450,9 +370,20 @@ private struct CelebrationView: View {
                 .padding(.top, 22)
                 .popIn(delay: 0.35)
 
-                Text("Mood: \(Text(loc: Mood(rawValue: mood)?.label ?? "Sad"))  ·  \(words) words  ·  \(affirmCount) affirmations")
+                Text("Mood: \(Text(loc: Mood(rawValue: mood)?.label ?? "Sad"))  ·  \(words) words")
                     .font(Fonts.ui(12.5, .bold)).foregroundStyle(.white.opacity(0.9))
                     .padding(.top, 18)
+
+                VStack(spacing: 6) {
+                    Eyebrow(text: "Today's affirmation", color: .white.opacity(0.85), tracking: 1.2, size: 11)
+                    Affirmations.text(affirmation)
+                        .font(Fonts.display(19, .semibold)).foregroundStyle(.white)
+                        .multilineTextAlignment(.center).lineSpacing(2)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: 300)
+                .padding(.top, 22)
+                .popIn(delay: 0.5)
 
                 CreamButton(title: "Start my day") { onStart() }
                     .frame(maxWidth: 300)

@@ -38,15 +38,3 @@ struct EntryRow<Trailing: View>: View {
         .shadow(color: Color(hex: "78501E").opacity(0.07), radius: 11, y: 8)
     }
 }
-
-/// The affirmation-count flourish on the right of a page card — a small gold sun disc + the count.
-struct EntryScore: View {
-    let count: Int
-    var body: some View {
-        VStack(spacing: 1) {
-            SunMark(size: 20, rays: false)
-            Text("\(count)").font(Fonts.display(13, .bold)).foregroundStyle(Palette.ink)
-        }
-        .frame(minWidth: 24)
-    }
-}

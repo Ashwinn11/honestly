@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import UserNotifications
+import WidgetKit
 
 @main
 struct HonestlyApp: App {
@@ -8,6 +9,7 @@ struct HonestlyApp: App {
     @State private var screenTime = ScreenTimeManager()
     @State private var flow = AppFlow()
     @State private var l10n = LocalizationManager()
+    @State private var affirmations = AffirmationList()
     @State private var store: JournalStore
     @Environment(\.scenePhase) private var scenePhase
     private let container: ModelContainer
@@ -48,7 +50,8 @@ struct HonestlyApp: App {
                 .environment(screenTime)
                 .environment(flow)
                 .environment(l10n)
-                .environment(\.locale, l10n.locale)                    // live String Catalog switch
+                .environment(affirmations)
+                .environment(\.locale, l10n.locale)                   // live String Catalog switch
                 .environment(\.layoutDirection, l10n.layoutDirection)  // RTL for Arabic
                 // `Text(loc:)`/literal `Text` re-resolve automatically on a locale change, but
                 // plain `String`s computed from `HDate` (month/weekday names via `DateFormatter`)
@@ -67,11 +70,15 @@ struct HonestlyApp: App {
                     screenTime.isPremiumActive = premium.isPremium
                     screenTime.armSchedule()
                     Shielding.reconcile()
+                    AffirmationNudge.schedule()
                 }
                 .onChange(of: premium.isPremium) { _, isPremium in
                     // Fires once in the app's life: the moment the lifetime unlock ratchets on.
                     screenTime.isPremiumActive = isPremium
                     Shielding.reconcile()
+                    // The widget unlocks and the rotation grows past the free cap.
+                    WidgetCenter.shared.reloadAllTimelines()
+                    AffirmationNudge.schedule()
                 }
                 .onChange(of: scenePhase) { _, phase in
                     // A warm resume redraws nothing on its own: if the day rolled over while the
@@ -85,6 +92,8 @@ struct HonestlyApp: App {
                     store.reload()
                     screenTime.refreshAuthStatus()
                     Shielding.reconcile()
+                    // Tops the daily affirmations back up to a full month ahead.
+                    AffirmationNudge.schedule()
                 }
         }
     }

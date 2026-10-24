@@ -6,10 +6,13 @@ struct ProfileView: View {
     @Environment(ScreenTimeManager.self) private var screenTime
     @Environment(PremiumManager.self) private var premium
     @Environment(AppFlow.self) private var flow
+    @Environment(AffirmationList.self) private var affirmations
     @Environment(\.openURL) private var openURL
     @Environment(\.requestReview) private var requestReview
 
     @AppStorage("affirmationNudgeOn", store: SharedState.defaults) private var affirmNudgeOn = false
+    @AppStorage(SharedState.Key.affirmationMinutes, store: SharedState.defaults)
+    private var notifyMinutes = AffirmationNudge.defaultMinutes
     @State private var notifDenied = false
     @State private var showPicker = false
     @State private var confirmDelete = false
@@ -54,7 +57,7 @@ struct ProfileView: View {
         .familyActivityPicker(isPresented: $showPicker, selection: $st.selection)
         .alert("Delete all data?", isPresented: $confirmDelete) {
             Button("Delete everything", role: .destructive) {
-                store.deleteAll(); screenTime.wipe(); Haptics.rigid()
+                store.deleteAll(); screenTime.wipe(); affirmations.set([]); Haptics.rigid()
             }
             Button("Cancel", role: .cancel) { }
         } message: {
@@ -77,6 +80,7 @@ struct ProfileView: View {
                 AffirmationNudge.cancel()
             }
         }
+        .onChange(of: notifyMinutes) { _, _ in AffirmationNudge.schedule() }
         .alert("Notifications are switched off", isPresented: $notifDenied) {
             Button("Open Settings") {
                 if let url = URL(string: UIApplication.openNotificationSettingsURLString) { openURL(url) }
@@ -156,12 +160,30 @@ struct ProfileView: View {
     }
 
     // MARK: Settings
+    private var rotationCount: Int {
+        Affirmations.rotation(from: affirmations.chosen, premium: premium.isPremium).count
+    }
+
     private var affirmNudgeBinding: Binding<Bool> {
         Binding(
             get: { premium.isPremium && affirmNudgeOn },
             set: { newValue in
                 guard premium.isPremium else { flow.showPaywall(); return }
                 affirmNudgeOn = newValue
+            }
+        )
+    }
+
+    /// The time picker edits a `Date`; storage is minutes after midnight, so only hour/minute survive.
+    private var notifyTime: Binding<Date> {
+        Binding(
+            get: {
+                Calendar.current.date(bySettingHour: notifyMinutes / 60, minute: notifyMinutes % 60,
+                                      second: 0, of: Date()) ?? Date()
+            },
+            set: { date in
+                let c = Calendar.current.dateComponents([.hour, .minute], from: date)
+                notifyMinutes = (c.hour ?? 9) * 60 + (c.minute ?? 0)
             }
         )
     }
@@ -173,10 +195,34 @@ struct ProfileView: View {
 
     private var settingsCard: some View {
         VStack(spacing: 0) {
+            NavigationLink {
+                AffirmationsScreen().toolbar(.hidden, for: .navigationBar)
+            } label: {
+                settingRow {
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("Your affirmations").font(Fonts.ui(15, .bold)).foregroundStyle(Palette.ink)
+                        Text("One a day, from the \(rotationCount) you picked")
+                            .font(Fonts.ui(12, .medium)).foregroundStyle(Palette.inkSofter)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                } trailing: { chevron }
+            }
+            .buttonStyle(RowPressStyle())
+            divider
             settingRow {
-                rowText("Affirmation reminders", "An occasional nudge with something you wrote")
+                rowText("Affirmation reminders", "One a day, at the time you choose")
             } trailing: {
                 AmberToggle(isOn: affirmNudgeBinding)
+            }
+            if premium.isPremium && affirmNudgeOn {
+                divider
+                settingRow {
+                    rowText("Reminder time")
+                } trailing: {
+                    DatePicker("", selection: notifyTime, displayedComponents: .hourAndMinute)
+                        .labelsHidden()
+                        .tint(Palette.amber)
+                }
             }
             divider
             settingRow {

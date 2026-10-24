@@ -3,12 +3,9 @@ import Foundation
 /// A single entry serialized for the backup payload (mirrors the production fields; `JournalEntry`
 /// isn't itself Codable).
 ///
-/// Deliberately does **not** carry affirmations — they're never displayed for any entry but
-/// today's (`HomeView`'s "Today's affirmations"), and past entries only ever surface a bare count
-/// (`HistoryView`'s `EntryScore`), never the text itself. That count is a "you showed up" signal,
-/// not recoverable content, so it's not worth the payload weight here. The primary sync path —
-/// SwiftData's automatic CloudKit mirroring — still carries `JournalEntry.affirmationsRaw` in
-/// full; this is only the secondary, explicit "back up / restore" snapshot.
+/// Deliberately does **not** carry affirmations — pages don't hold them anymore (they're a picked
+/// rotation in the app group; see `Affirmations`), and the legacy `JournalEntry.affirmationsRaw`
+/// on older pages is never displayed, so it's not worth the payload weight here.
 struct EntrySnapshot: Codable {
     var id: UUID
     var content: String

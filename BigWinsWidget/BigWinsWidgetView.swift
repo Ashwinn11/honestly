@@ -13,15 +13,14 @@ struct BigWinsWidgetView: View {
                     .tracking(0.4)
                     .textCase(.uppercase)
                     .foregroundStyle(Palette.inkSofter)
-                if let text = entry.affirmation {
-                    // The user's own words — never localized/rewritten (matches AffirmationNudge).
-                    Text(text)
+                if let line = entry.affirmation {
+                    Affirmations.text(line)
                         .font(Fonts.display(19, .semibold))
                         .foregroundStyle(Palette.ink)
                         .lineLimit(3)
                         .fixedSize(horizontal: false, vertical: true)
                 } else {
-                    Text(loc: "Your affirmations will land here\nonce you've written this morning.")
+                    Text(loc: "Unlock this widget with Premium")
                         .font(Fonts.ui(14, .semibold))
                         .foregroundStyle(Palette.inkSofter)
                         .lineLimit(3)

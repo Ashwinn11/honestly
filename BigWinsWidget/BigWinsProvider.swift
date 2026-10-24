@@ -1,52 +1,50 @@
 import WidgetKit
 
-/// `nil` affirmation means nothing has been written yet today — the empty state.
+/// `nil` affirmation means locked — the widget is a Premium feature, so free installs see an
+/// upgrade nudge in its place.
 struct BigWinsEntry: TimelineEntry {
     let date: Date
     let affirmation: String?
 }
 
-/// Reads `SharedState.todayAffirmations` (written by `JournalStore.saveRitual`) rather than
-/// SwiftData directly — no live cross-process store needed, and `WidgetCenter.reloadAllTimelines()`
-/// (called from the same save) makes the widget reflect a new entry immediately rather than
-/// waiting on this timeline's own day-boundary refresh.
+/// Reads the rotation from the app group (`Affirmations.chosen` + the `premiumActive` mirror)
+/// rather than anything in the app process. The line is a pure function of the day, so a week of
+/// midnights is laid out in one timeline; the app calls `WidgetCenter.reloadAllTimelines()`
+/// whenever the list or Premium changes, so edits show up immediately rather than next week.
 struct BigWinsProvider: TimelineProvider {
+    private static let daysAhead = 7
+
     func placeholder(in context: Context) -> BigWinsEntry {
-        BigWinsEntry(date: .now, affirmation: "I am capable of hard things.")
+        BigWinsEntry(date: .now, affirmation: Affirmations.defaults[0])
     }
 
     func getSnapshot(in context: Context, completion: @escaping (BigWinsEntry) -> Void) {
-        completion(currentEntry())
+        // The widget gallery shows a real line even before Premium — the lock is for the
+        // widget on the Home/Lock Screen, not for seeing what it would look like.
+        completion(context.isPreview ? placeholder(in: context) : currentEntry())
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<BigWinsEntry>) -> Void) {
-        completion(Timeline(entries: buildEntries(), policy: .after(nextMidnight())))
+        guard SharedState.premiumActive else {
+            // Nothing to roll over; the Premium ratchet reloads every timeline when it flips.
+            completion(Timeline(entries: [BigWinsEntry(date: .now, affirmation: nil)], policy: .never))
+            return
+        }
+        completion(Timeline(entries: dailyEntries(), policy: .atEnd))
     }
 
-    /// One entry per affirmation written today, spaced 2 hours apart starting from when they were
-    /// saved — the same cadence `AffirmationNudge` uses for its echo notifications, so the widget
-    /// and that day's notifications stay in step with each other.
-    private func buildEntries() -> [BigWinsEntry] {
-        guard SharedState.ritualCompleted() else { return [BigWinsEntry(date: .now, affirmation: nil)] }
-        let lines = SharedState.todayAffirmations
-        guard !lines.isEmpty else { return [BigWinsEntry(date: .now, affirmation: nil)] }
-
-        let start = SharedState.todayAffirmationsSetAt ?? .now
-        return lines.enumerated().map { i, line in
-            let date = i == 0 ? start : start.addingTimeInterval(Double(i) * 2 * 3600)
-            return BigWinsEntry(date: date, affirmation: line)
+    /// One entry per midnight, starting today.
+    private func dailyEntries() -> [BigWinsEntry] {
+        let cal = Calendar.current
+        let today = cal.startOfDay(for: .now)
+        return (0..<Self.daysAhead).compactMap { offset in
+            cal.date(byAdding: .day, value: offset, to: today)
+                .map { BigWinsEntry(date: $0, affirmation: Affirmations.line(on: $0)) }
         }
     }
 
     private func currentEntry() -> BigWinsEntry {
-        let entries = buildEntries()
-        let now = Date()
-        return entries.last(where: { $0.date <= now }) ?? entries.first ?? BigWinsEntry(date: now, affirmation: nil)
-    }
-
-    private func nextMidnight() -> Date {
-        let cal = Calendar.current
-        let tomorrow = cal.date(byAdding: .day, value: 1, to: Date()) ?? Date()
-        return cal.startOfDay(for: tomorrow)
+        guard SharedState.premiumActive else { return BigWinsEntry(date: .now, affirmation: nil) }
+        return BigWinsEntry(date: .now, affirmation: Affirmations.line(on: .now))
     }
 }

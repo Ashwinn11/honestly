@@ -3,11 +3,15 @@ import SwiftUI
 struct OnboardingView: View {
     var onFinish: () -> Void
 
+    @Environment(AffirmationList.self) private var affirmations
+    @Environment(PremiumManager.self) private var premium
+
     @State private var index = 0
     @State private var forward = true
+    @State private var picks: [String] = []
 
     private enum Beat: Int, CaseIterable {
-        case brand, problem, lock, plan, social, notif, paywall
+        case brand, problem, lock, plan, affirm, social, notif, paywall
     }
     private let beats = Beat.allCases
     private var beat: Beat { beats[index] }
@@ -34,6 +38,7 @@ struct OnboardingView: View {
             }
         }
         .animation(Motion.gentle, value: index)
+        .onAppear { picks = affirmations.chosen }
     }
 
     private var slide: AnyTransition {
@@ -66,6 +71,15 @@ struct OnboardingView: View {
                 OnbPlanView()
             }
 
+        case .affirm:
+            chrome(primary: .init(title: picks.isEmpty ? "Pick at least one" : "These are mine",
+                                  enabled: !picks.isEmpty) {
+                affirmations.set(picks)
+                advance()
+            }) {
+                OnbAffirmView(picks: $picks, isPremium: premium.isPremium)
+            }
+
         case .social:
             chrome(primary: .init(title: "Continue") { advance() }) {
                 OnbSocialProofView()
@@ -75,7 +89,8 @@ struct OnboardingView: View {
             chrome(primary: .init(title: "Allow notifications") { requestNotifications() },
                    secondary: .init(title: "Maybe later") { advance() }) {
                 VStack(spacing: 24) {
-                    NotifStack(first: AppContent.defaultAffirmation, second: "Today, I choose calm over chaos.")
+                    let lines = Affirmations.rotation(from: picks, premium: premium.isPremium)
+                    NotifStack(first: lines[0], second: lines[1 % lines.count])
                     VStack(spacing: 10) {
                         Text(loc: AppContent.notifTitle)
                             .font(Fonts.display(24, .bold)).foregroundStyle(Palette.ink)
@@ -310,7 +325,7 @@ private struct OnbPlanView: View {
 
             VStack(spacing: 14) {
                 planRow(SunMark(size: 20), "The ritual",
-                        "Mood → a prompt → write → affirm  ·  ~3 min")
+                        "Mood → a prompt → write  ·  ~3 min")
                 planRow(InkGlyph(kind: .moon, size: 20, fill: Palette.sunDisc, lineWidth: 1.6), "The quiet",
                         "Instagram, TikTok & X stay asleep until you've written")
                 planRow(InkGlyph(kind: .flame, size: 19, fill: Palette.sunDisc, lineWidth: 1.6), "The goal",
@@ -334,8 +349,33 @@ private struct OnbPlanView: View {
     }
 }
 
-// MARK: - Notification cards — a floating-card illustration shown as a live stack of two curated
-// examples (one is the app's default affirmation, sent until the user's written their own).
+// MARK: - Pick your affirmations — the rotation Home, the widget and the daily notification draw
+// from. Free picks stop at `Affirmations.freeLimit`; no upsell here, the paywall is a few beats on.
+private struct OnbAffirmView: View {
+    @Binding var picks: [String]
+    let isPremium: Bool
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Eyebrow(text: "Your affirmations", tracking: 1.6, size: 12)
+            Text(loc: "Pick the ones that sound like you")
+                .font(Fonts.display(24, .bold)).foregroundStyle(Palette.ink)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, 10)
+            Text(loc: "One shows up each day, in the order you pick them.")
+                .font(Fonts.ui(14, .semibold)).foregroundStyle(Palette.inkSoft)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, 6)
+            AffirmationCount(count: picks.count, isPremium: isPremium)
+                .padding(.top, 14)
+            AffirmationPicker(selection: $picks, isPremium: isPremium)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+// MARK: - Notification cards — a floating-card illustration of today's and yesterday's daily
+// affirmation, drawn from the lines just picked.
 
 private struct NotifCard: View {
     let text: String
@@ -353,7 +393,7 @@ private struct NotifCard: View {
                     Spacer()
                     Text(loc: time).font(Fonts.ui(12, .semibold)).foregroundStyle(Palette.inkSofter)
                 }
-                Text(loc: text)
+                Affirmations.text(text)
                     .font(Fonts.ui(13.5, .semibold)).foregroundStyle(Color(hex: "5A4A38"))
                     .lineSpacing(2).fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -382,7 +422,7 @@ private struct NotifStack: View {
                                             removal: .opacity))
             }
             if showSecond {
-                NotifCard(text: second)
+                NotifCard(text: second, time: "yesterday")
                     .transition(.asymmetric(insertion: .move(edge: .top).combined(with: .opacity),
                                             removal: .opacity))
             }

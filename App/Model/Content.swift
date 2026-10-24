@@ -6,14 +6,6 @@ enum AppContent {
     static let journalPlaceholder = "Start anywhere. No one reads this but you."
     static let emptyJournalFallback = "Left the page quiet today — and that counts too."
 
-    // MARK: Affirmations — five short starters so each line becomes its own affirmation.
-    private static let affirmationStarters = ["I am…", "I can…", "I choose…", "I deserve…", "Today, I…"]
-    static func affirmationPlaceholder(_ index: Int) -> String {
-        affirmationStarters[index % affirmationStarters.count]
-    }
-    /// Sent in the affirmation notification until the user has written one of their own.
-    static let defaultAffirmation = "I am capable of hard things."
-
     // MARK: - Onboarding funnel
 
     static let onbProblemTitle  = "A morning that's\nactually yours."
@@ -24,8 +16,8 @@ enum AppContent {
     static let lockSubtitle = "Instagram, TikTok, and the rest stay asleep until you've written today's page."
 
     // MARK: Notification nudge
-    static let notifTitle = "Hear your own words back?"
-    static let notifBody  = "Once you've written a few, we'll echo one back to you — until then, a gentle one to start."
+    static let notifTitle = "One kind line, every day"
+    static let notifBody  = "One of your affirmations, once a day, at the time you choose."
 
     // MARK: Social proof
     static let socialProof = SocialProof(

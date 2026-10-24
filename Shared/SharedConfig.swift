@@ -43,8 +43,8 @@ enum SharedState {
         static let streak             = "ritual.streak"
         static let weeklyGoal         = "onboarding.weeklyGoal"     // mornings/week the user committed to
         static let premiumActive      = "premium.active"             // mirrors PremiumManager.isPremium for the background extension
-        static let todayAffirmations  = "ritual.todayAffirmations"   // [String] — today's written affirmations, in order (widget data source)
-        static let todayAffirmationsSetAt = "ritual.todayAffirmationsSetAt"  // when they were last saved (widget rotation start time)
+        static let affirmationList    = "affirmations.list"          // [String] — the picked rotation, in order (see `Affirmations`)
+        static let affirmationMinutes = "affirmations.notifyMinutes" // Int — minutes after midnight the daily notification lands
     }
 
     // MARK: Day key helpers
@@ -119,18 +119,4 @@ enum SharedState {
         set { defaults.set(newValue, forKey: Key.premiumActive) }
     }
 
-    // MARK: Widget data (BigWinsWidget reads these directly — no SwiftData access across processes)
-
-    static var todayAffirmations: [String] {
-        get { defaults.stringArray(forKey: Key.todayAffirmations) ?? [] }
-        set { defaults.set(newValue, forKey: Key.todayAffirmations) }
-    }
-
-    static var todayAffirmationsSetAt: Date? {
-        get {
-            let t = defaults.double(forKey: Key.todayAffirmationsSetAt)
-            return t > 0 ? Date(timeIntervalSince1970: t) : nil
-        }
-        set { defaults.set(newValue?.timeIntervalSince1970 ?? 0, forKey: Key.todayAffirmationsSetAt) }
-    }
 }

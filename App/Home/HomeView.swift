@@ -5,6 +5,7 @@ struct HomeView: View {
     @Environment(AppFlow.self) private var flow
     @Environment(ScreenTimeManager.self) private var screenTime
     @Environment(PremiumManager.self) private var premium
+    @Environment(AffirmationList.self) private var affirmations
 
     var body: some View {
         ScreenScaffold {
@@ -173,41 +174,35 @@ struct HomeView: View {
     }
 
 
-    // MARK: Today's affirmations
-    @ViewBuilder private var affirmationSection: some View {
+    // MARK: Today's affirmation — one line a day from the picked rotation (see `Affirmations`),
+    // the same one the widget and the daily notification carry. Shown from midnight, written or not.
+    private var affirmationSection: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text("Today's affirmations").font(Fonts.display(21, .bold)).foregroundStyle(Palette.ink)
-                .fixedSize()
-                .underlineSquiggle(Palette.sunDisc, weight: 3.5, height: 8)
-                .padding(.bottom, 13)
-
-            if let today = store.todayEntry, !today.affirmations.isEmpty {
-                VStack(spacing: 10) {
-                    ForEach(Array(today.affirmations.enumerated()), id: \.offset) { i, line in
-                        HStack(spacing: 12) {
-                            SunMark(size: 22, rays: false)
-                            Text(line).font(Fonts.ui(14.5, .semibold)).foregroundStyle(Palette.ink)
-                            Spacer(minLength: 0)
-                        }
-                        .padding(EdgeInsets(top: 11, leading: 14, bottom: 11, trailing: 14))
-                        .background(Palette.cream, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                        .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(Palette.outlineSoft, lineWidth: 1.5))
-                        .staggeredAppear(index: i + 2)
-                    }
+            HStack(alignment: .firstTextBaseline) {
+                Text("Today's affirmation").font(Fonts.display(21, .bold)).foregroundStyle(Palette.ink)
+                    .fixedSize()
+                    .underlineSquiggle(Palette.sunDisc, weight: 3.5, height: 8)
+                Spacer(minLength: 8)
+                NavigationLink {
+                    AffirmationsScreen().toolbar(.hidden, for: .navigationBar)
+                } label: {
+                    Text("Edit").font(Fonts.ui(13.5, .heavy)).foregroundStyle(Palette.amberDeep)
                 }
-            } else {
-                emptyAffirmations
+                .simultaneousGesture(TapGesture().onEnded { Haptics.tap() })
             }
+            .padding(.bottom, 13)
+
+            HStack(spacing: 12) {
+                SunMark(size: 22, rays: false)
+                Affirmations.text(affirmations.today(premium: premium.isPremium))
+                    .font(Fonts.ui(14.5, .semibold)).foregroundStyle(Palette.ink)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 0)
+            }
+            .padding(EdgeInsets(top: 11, leading: 14, bottom: 11, trailing: 14))
+            .background(Palette.cream, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(Palette.outlineSoft, lineWidth: 1.5))
+            .staggeredAppear(index: 2)
         }
-    }
-    private var emptyAffirmations: some View {
-        VStack(spacing: 8) {
-            SunMark(size: 34, muted: true)
-            Text("Your affirmations will land here\nonce you've written this morning.")
-                .font(Fonts.ui(13.5, .semibold)).foregroundStyle(Palette.inkSofter)
-                .multilineTextAlignment(.center).lineSpacing(2)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 28)
     }
 }
