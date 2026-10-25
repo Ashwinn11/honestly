@@ -27,8 +27,8 @@ final class AffirmationList {
         let defaults = SharedState.defaults
         let topicsKey = SharedState.Key.affirmationTopics
         let needsTopicMigration = defaults.object(forKey: topicsKey) == nil
-        if let sharedSelection = defaults.stringArray(forKey: topicsKey) {
-            selectedTopics = sharedSelection
+        if !needsTopicMigration {
+            selectedTopics = Affirmations.selectedTopics
         } else if let oldFeedSelection = defaults.stringArray(forKey: SharedState.Key.affirmationFeedFocuses) {
             selectedTopics = oldFeedSelection
         } else {
@@ -39,13 +39,13 @@ final class AffirmationList {
                 if !result.contains(title) { result.append(title) }
             }
         }
-        defaults.set(selectedTopics, forKey: topicsKey)
+        Affirmations.selectedTopics = selectedTopics
         defaults.removeObject(forKey: SharedState.Key.affirmationFeedFocuses)
         defaults.removeObject(forKey: SharedState.Key.affirmationReminderFocuses)
         defaults.removeObject(forKey: SharedState.Key.affirmationWidgetFocuses)
         selectedTopics = migrateTopicNames(selectedTopics)
         selectedTopics = normalizedFocuses(selectedTopics)
-        defaults.set(selectedTopics, forKey: topicsKey)
+        Affirmations.selectedTopics = selectedTopics
         if needsTopicMigration {
             WidgetCenter.shared.reloadAllTimelines()
             AffirmationNudge.schedule()
@@ -63,7 +63,7 @@ final class AffirmationList {
         let cleaned = normalizedFocuses(topics)
         guard selectedTopics != cleaned else { return }
         selectedTopics = cleaned
-        SharedState.defaults.set(cleaned, forKey: SharedState.Key.affirmationTopics)
+        Affirmations.selectedTopics = cleaned
         refreshDelivery()
     }
 
@@ -85,10 +85,10 @@ final class AffirmationList {
         SharedState.defaults.set(readingHistory, forKey: SharedState.Key.affirmationHistory)
         if savedCustom.isEmpty {
             selectedTopics.removeAll { $0 == "Your own" }
-            SharedState.defaults.set(selectedTopics, forKey: SharedState.Key.affirmationTopics)
+            Affirmations.selectedTopics = selectedTopics
         }
         selectedTopics = normalizedFocuses(selectedTopics)
-        SharedState.defaults.set(selectedTopics, forKey: SharedState.Key.affirmationTopics)
+        Affirmations.selectedTopics = selectedTopics
         refreshDelivery()
     }
 
@@ -115,7 +115,7 @@ final class AffirmationList {
         selectedTopics = []
         SharedState.defaults.set([], forKey: SharedState.Key.affirmationFavorites)
         SharedState.defaults.set([], forKey: SharedState.Key.affirmationHistory)
-        SharedState.defaults.removeObject(forKey: SharedState.Key.affirmationTopics)
+        Affirmations.selectedTopics = []
         SharedState.defaults.removeObject(forKey: SharedState.Key.affirmationFeedFocuses)
         SharedState.defaults.removeObject(forKey: SharedState.Key.affirmationReminderFocuses)
         SharedState.defaults.removeObject(forKey: SharedState.Key.affirmationWidgetFocuses)
@@ -160,6 +160,6 @@ final class AffirmationList {
 
     /// Today's line from the shared topic selection, used on Home and throughout delivery.
     func today(premium: Bool) -> String {
-        Affirmations.feedLine(on: .now, focusTitles: selectedTopics, premium: premium)
+        Affirmations.dailyLine(premium: premium)
     }
 }

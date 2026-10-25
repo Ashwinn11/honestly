@@ -159,15 +159,21 @@ struct AffirmationReaderScreen: View {
     }
 
     private func filterMenuItem(_ title: String, value: AffirmationReaderFilter) -> some View {
-        Button {
+        let displayTitle: String
+        if case let .topic(topic) = value {
+            displayTitle = Affirmations.topicDisplayTitle(topic)
+        } else {
+            displayTitle = title
+        }
+        return Button {
             guard filter != value else { return }
             filter = value
             refresh(preserving: current)
         } label: {
             if filter == value {
-                Label { Text(loc: title) } icon: { Image(systemName: "checkmark") }
+                Label { Text(loc: displayTitle) } icon: { Image(systemName: "checkmark") }
             } else {
-                Text(loc: title)
+                Text(loc: displayTitle)
             }
         }
     }
@@ -183,7 +189,7 @@ private enum AffirmationReaderFilter: Hashable {
     var title: String {
         switch self {
         case .allTopics: return "All topics"
-        case .topic(let title): return title
+        case .topic(let title): return Affirmations.topicDisplayTitle(title)
         case .favorites: return "Favorites"
         case .recentlyRead: return "Recently read"
         }

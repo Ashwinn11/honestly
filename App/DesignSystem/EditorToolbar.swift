@@ -34,7 +34,7 @@ struct EditorToolbar: View {
                 HStack(spacing: 8) {
                     // ── tT: consolidated text-format sheet ──────────────────────
                     Button { onFormattingOpened(); showTextSheet = true } label: {
-                        Text("tT")
+                        Text(verbatim: "tT")
                             .font(.system(size: 13, weight: .bold, design: .rounded))
                             .compactControl()
                     }

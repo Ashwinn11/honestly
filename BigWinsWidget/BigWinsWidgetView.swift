@@ -29,10 +29,18 @@ struct BigWinsWidgetView: View {
         }
     }
 
+    private var quoteSpacing: CGFloat {
+        switch family {
+        case .systemSmall: return 4
+        case .systemLarge: return 2
+        default: return 5
+        }
+    }
+
     var body: some View {
         Group {
             if let line = entry.affirmation {
-                VStack(spacing: family == .systemSmall ? 4 : 7) {
+                VStack(spacing: quoteSpacing) {
                     Image(systemName: "quote.opening")
                         .font(.system(size: quoteGlyphSize, weight: .semibold))
                         .foregroundStyle(Color(hex: entry.textHex))
@@ -44,7 +52,7 @@ struct BigWinsWidgetView: View {
                         .lineSpacing(family == .systemSmall ? 1 : 3)
                         .lineLimit(quoteLineLimit)
                         .minimumScaleFactor(0.68)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .frame(maxWidth: .infinity)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .padding(family == .systemSmall ? 10 : 18)

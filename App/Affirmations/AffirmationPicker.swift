@@ -33,9 +33,10 @@ struct AffirmationTopicPicker: View {
     }
 
     private func topicRow(_ title: String, selected: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
+        let displayTitle = Affirmations.topicDisplayTitle(title)
+        return Button(action: action) {
             HStack(spacing: 10) {
-                Text(loc: title).font(Fonts.ui(14, .semibold)).foregroundStyle(Palette.ink)
+                Text(loc: displayTitle).font(Fonts.ui(14, .semibold)).foregroundStyle(Palette.ink)
                 Spacer()
                 if selected {
                     Image(systemName: "checkmark.circle.fill").foregroundStyle(Palette.amberDeep)

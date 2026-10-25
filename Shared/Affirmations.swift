@@ -17,6 +17,21 @@ enum Affirmations {
     private static let libraryLines = Set(library.flatMap(\.lines))
     static func isLibrary(_ line: String) -> Bool { libraryLines.contains(line) }
 
+    /// The one persisted topic choice used by the app, widgets, and notification scheduler.
+    static var selectedTopics: [String] {
+        get { SharedState.defaults.stringArray(forKey: SharedState.Key.affirmationTopics) ?? [] }
+        set { SharedState.defaults.set(newValue, forKey: SharedState.Key.affirmationTopics) }
+    }
+
+    /// User-facing wording stays personal while the source topic IDs continue to match the dataset.
+    static func topicDisplayTitle(_ sourceTitle: String) -> String {
+        switch sourceTitle {
+        case "Self-esteem": "Self-worth"
+        case "Safety": "Feeling safe"
+        default: sourceTitle
+        }
+    }
+
     // MARK: Topic based delivery
 
     /// An empty topic selection means all available affirmation topics.
@@ -34,18 +49,13 @@ enum Affirmations {
         topicRotation(focusTitles: focusTitles, premium: premium)
     }
 
-    static func deliveryLine(on date: Date, occurrence: Int = 0, focusTitles: [String], premium: Bool) -> String {
-        let list = topicRotation(focusTitles: focusTitles, premium: premium)
+    /// Single quote source for Home, both widget families, and scheduled notifications.
+    /// `occurrence` varies only the quote when a user has multiple reminders in one day.
+    static func dailyLine(on date: Date = .now, occurrence: Int = 0, premium: Bool) -> String {
+        let list = topicRotation(focusTitles: selectedTopics, premium: premium)
         guard !list.isEmpty else { return "" }
         let day = Calendar.current.ordinality(of: .day, in: .era, for: date) ?? 0
         return list[(day + occurrence) % list.count]
-    }
-
-    static func feedLine(on date: Date, focusTitles: [String], premium: Bool) -> String {
-        let list = feedRotation(focusTitles: focusTitles, premium: premium)
-        guard !list.isEmpty else { return "" }
-        let day = Calendar.current.ordinality(of: .day, in: .era, for: date) ?? 0
-        return list[day % list.count]
     }
 
     // MARK: Display

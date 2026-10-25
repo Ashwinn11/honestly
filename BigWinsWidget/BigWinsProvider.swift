@@ -11,10 +11,9 @@ struct BigWinsEntry: TimelineEntry {
     let fontName: String
 }
 
-/// Reads the widget's own topic selection from the app group
-/// rather than anything in the app process. The line is a pure function of the day, so a week of
-/// midnights is laid out in one timeline; the app calls `WidgetCenter.reloadAllTimelines()`
-/// whenever the list or Premium changes, so edits show up immediately rather than next week.
+/// Reads the app-wide topic selection and produces the same daily line as Home and reminders.
+/// The line is a pure function of the date and shared selection, so a week of midnights is laid
+/// out in one timeline; the app reloads all timelines whenever selection or Premium changes.
 struct BigWinsProvider: TimelineProvider {
     private static let daysAhead = 7
 
@@ -64,7 +63,6 @@ struct BigWinsProvider: TimelineProvider {
     }
 
     private func widgetLine(on date: Date) -> String {
-        Affirmations.deliveryLine(on: date, focusTitles: AffirmationNudge.selectedTopics,
-                                  premium: SharedState.premiumActive)
+        Affirmations.dailyLine(on: date, premium: SharedState.premiumActive)
     }
 }

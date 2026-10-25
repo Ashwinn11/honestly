@@ -43,8 +43,6 @@ enum AffirmationNudge {
         let raw = stored?.isEmpty == false ? stored! : Array(1...7)
         return raw.filter { (1...7).contains($0) }
     }
-    static var selectedTopics: [String] { SharedState.defaults.stringArray(forKey: SharedState.Key.affirmationTopics) ?? [] }
-
     /// Used when reminders are enabled in Profile. Requests permission, then lays out the schedule.
     /// Onboarding requests permission separately without enabling reminders.
     /// Scheduling only sticks if iOS is authorized at the moment `add` runs — a later grant never
@@ -86,8 +84,8 @@ enum AffirmationNudge {
                 let content = UNMutableNotificationContent()
                 // iOS shows the app name in the notification header automatically; keeping the
                 // title empty lets the affirmation itself be the only notification message.
-                let line = Affirmations.deliveryLine(on: day, occurrence: timeIndex,
-                                                     focusTitles: selectedTopics, premium: SharedState.premiumActive)
+                let line = Affirmations.dailyLine(on: day, occurrence: timeIndex,
+                                                  premium: SharedState.premiumActive)
                 guard !line.isEmpty else { continue }
                 content.body = Affirmations.display(line)
                 content.sound = .default
