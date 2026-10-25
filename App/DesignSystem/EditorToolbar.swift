@@ -5,19 +5,23 @@ import UIKit
 /// shows the identical toolbar. Sits in the footer slot while the editor has focus.
 ///
 /// Design:
-///  • Main row  — tT (text-format sheet) · Lists · Photo · Doodle · Sticker · Theme · Dismiss
-///  • tT sheet  — Font | Size (with active tick) | Bold/Italic/Underline | Alignment | Color swatches
+///  • Main row  — tT (text-format sheet) · Tags · Photo · Doodle · Sticker · Theme · Dismiss
+///  • tT sheet  — Font / Color / Highlight tabs; inline color surfaces and quick swatches
 ///
 /// Active state is shown everywhere: ticked rows for font/size/list, amber tile for B/I/U,
 /// ringed swatch for color, filled alignment button for the current alignment.
 struct EditorToolbar: View {
     @Binding var text: NSAttributedString
     @Binding var selectedRange: NSRange
+    var tagCount: Int
+    var onTags: () -> Void
     var onPhoto: () -> Void
     var onDoodle: () -> Void
     var onSticker: () -> Void
     var onTheme: () -> Void
     var onDismissKeyboard: () -> Void
+    var onFormattingOpened: () -> Void
+    var onFormattingClosed: () -> Void
 
     @Environment(PremiumManager.self) private var premium
     @Environment(AppFlow.self) private var flow
@@ -29,19 +33,30 @@ struct EditorToolbar: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     // ── tT: consolidated text-format sheet ──────────────────────
-                    Button { showTextSheet = true } label: {
+                    Button { onFormattingOpened(); showTextSheet = true } label: {
                         Text("tT")
                             .font(.system(size: 13, weight: .bold, design: .rounded))
-                            .foregroundStyle(Palette.ink)
-                            .frame(width: 40, height: 36)
-                            .background(Palette.paper, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                .stroke(Palette.outlineSoft, lineWidth: 1.2))
+                            .compactControl()
                     }
-                    .buttonStyle(PressableStyle(scale: 0.9))
+                    .buttonStyle(PressableStyle())
 
-                    // ── Lists (free; ticks show active kind) ────────────────────
-                    listMenu
+
+                    Button(action: onTags) {
+                        toolbarIcon("tag")
+                            .overlay(alignment: .topTrailing) {
+                                if tagCount > 0 {
+                                    Text(tagCount, format: .number)
+                                        .font(Fonts.ui(9, .heavy)).foregroundStyle(.white)
+                                        .frame(width: 16, height: 16)
+                                        .background(Palette.amber, in: Circle())
+                                        .overlay(Circle().strokeBorder(Palette.ink, lineWidth: 1.5))
+                                        .offset(x: 4, y: -4)
+                                }
+                            }
+                    }
+                    .buttonStyle(PressableStyle())
+                    .accessibilityLabel(Text(loc: "Tags"))
+                    .accessibilityValue(Text(tagCount, format: .number))
 
                     // ── Media / theme ────────────────────────────────────────────
                     // Photos/doodles: first one is free, a second (or more) needs premium.
@@ -53,13 +68,15 @@ struct EditorToolbar: View {
                     toolbarButton(icon: "paintbrush")   { onTheme() }
                 }
                 .padding(.horizontal, 12)
+                .padding(.vertical, 8)
             }
+            .scrollClipDisabled()
 
             // Keyboard dismiss — always visible, never scrolled away
             toolbarButton(icon: "keyboard.chevron.compact.down") { onDismissKeyboard() }
                 .padding(.trailing, 12)
         }
-        .sheet(isPresented: $showTextSheet) {
+        .sheet(isPresented: $showTextSheet, onDismiss: onFormattingClosed) {
             TextFormattingSheet(
                 text: $text,
                 selectedRange: $selectedRange,
@@ -74,30 +91,13 @@ struct EditorToolbar: View {
                 isUnderlined: isUnderlined,
                 currentAlignment: currentAlignment,
                 currentColor: currentTextColor,
+                currentHighlight: currentHighlight,
                 textColors: Self.textColors
             )
             .presentationDetents([.medium, .large])
+            .presentationContentInteraction(.scrolls)
             .presentationDragIndicator(.visible)
-        }
-    }
-
-    // MARK: List menu — shows checkmark next to the active kind; tapping it again removes the list
-
-    private var listMenu: some View {
-        Menu {
-            ForEach(ListKind.allCases) { kind in
-                Button {
-                    applyParagraphFormat { RichTextFormatting.toggleList(kind, in: $0, range: $1) }
-                } label: {
-                    Label {
-                        Text(kind.menuLabel)
-                    } icon: {
-                        Image(systemName: activeListKind == kind ? "checkmark" : kind.icon)
-                    }
-                }
-            }
-        } label: {
-            toolbarIcon(activeListKind?.icon ?? "list.bullet")
+            .interactiveDismissDisabled()
         }
     }
 
@@ -180,6 +180,11 @@ struct EditorToolbar: View {
         let loc = min(selectedRange.location, text.length - 1)
         return text.attribute(.foregroundColor, at: loc, effectiveRange: nil) as? UIColor
     }
+    var currentHighlight: UIColor? {
+        guard text.length > 0 else { return nil }
+        let loc = min(selectedRange.location, text.length - 1)
+        return text.attribute(.backgroundColor, at: loc, effectiveRange: nil) as? UIColor
+    }
     var activeListKind: ListKind? {
         guard text.length > 0 else { return nil }
         let paraRange = RichTextFormatting.paragraphRange(in: text, for: selectedRange)
@@ -213,22 +218,16 @@ struct EditorToolbar: View {
             toolbarIcon(icon)
                 .overlay(alignment: .topTrailing) { if isLocked { lockBadge } }
         }
-        .buttonStyle(PressableStyle(scale: 0.9))
+        .buttonStyle(PressableStyle())
     }
 
     private func toolbarButton(icon: String, action: @escaping () -> Void) -> some View {
         Button(action: action) { toolbarIcon(icon) }
-            .buttonStyle(PressableStyle(scale: 0.9))
+            .buttonStyle(PressableStyle())
     }
 
     private func toolbarIcon(_ systemName: String) -> some View {
-        Image(systemName: systemName)
-            .font(.system(size: 14, weight: .bold))
-            .foregroundStyle(Palette.ink)
-            .frame(width: 36, height: 36)
-            .background(Palette.paper, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .stroke(Palette.outlineSoft, lineWidth: 1.2))
+        CompactIconFace(icon: systemName)
     }
 
     private var lockBadge: some View {
@@ -237,7 +236,7 @@ struct EditorToolbar: View {
             .foregroundStyle(.white)
             .frame(width: 14, height: 14)
             .background(Palette.amber, in: Circle())
-            .overlay(Circle().stroke(Palette.ink, lineWidth: 1))
+            .overlay(Circle().strokeBorder(Palette.ink, lineWidth: 1))
             .offset(x: 4, y: -4)
     }
 
@@ -277,9 +276,13 @@ struct TextFormattingSheet: View {
     var isUnderlined: Bool
     var currentAlignment: NSTextAlignment
     var currentColor: UIColor?
+    var currentHighlight: UIColor?
     var textColors: [String]
 
     @Environment(\.dismiss) private var dismiss
+
+    private enum Panel: String, CaseIterable { case font = "Font", color = "Color", highlight = "Highlight" }
+    @State private var panel: Panel = .font
 
     // Detect active font choice and size from the UIFont at caret
     private var activeFontChoice: FontChoice? {
@@ -291,24 +294,40 @@ struct TextFormattingSheet: View {
         return TextSize.allCases.min { abs($0.points - pts) < abs($1.points - pts) }
     }
 
-    private var activeColorHex: String? {
-        guard let c = currentColor else { return nil }
-        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0
-        c.getRed(&r, green: &g, blue: &b, alpha: nil)
-        let hex = String(format: "%02X%02X%02X", Int(r * 255), Int(g * 255), Int(b * 255))
-        return textColors.first { $0.caseInsensitiveCompare(hex) == .orderedSame }
-    }
-
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-
-                // ── Section header ─────────────────────────────────────────────
+        VStack(alignment: .leading, spacing: 14) {
+            HStack {
                 Text("Text Formatting")
-                    .font(Fonts.display(20, .bold))
-                    .foregroundStyle(Palette.ink)
-                    .padding(.top, 4)
+                    .font(Fonts.display(20, .bold)).foregroundStyle(Palette.ink)
+                Spacer()
+                IconTileButton(icon: "xmark", size: 38, iconSize: 13) { dismiss() }
+            }
+            HStack(spacing: 4) {
+                ForEach(Panel.allCases, id: \.self) { item in
+                    Button { panel = item } label: {
+                        Text(loc: item.rawValue)
+                            .font(Fonts.ui(13, .bold))
+                            .foregroundStyle(panel == item ? .white : Palette.ink)
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                            .background(panel == item ? Palette.amber : .clear,
+                                        in: RoundedRectangle(cornerRadius: 10))
+                            .overlay {
+                                if panel == item {
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .strokeBorder(Palette.ink, lineWidth: 2)
+                                }
+                            }
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityAddTraits(panel == item ? .isSelected : [])
+                }
+            }
+            .padding(4)
+            .background(Palette.cream, in: RoundedRectangle(cornerRadius: 14))
 
+            ScrollView {
+                VStack(alignment: .leading, spacing: 14) {
+                    if panel == .font {
                 // ── Font family ───────────────────────────────────────────────
                 sheetSection(label: "Font") {
                     ScrollView(.horizontal, showsIndicators: false) {
@@ -331,7 +350,7 @@ struct TextFormattingSheet: View {
                                     )
                                     .overlay(
                                         RoundedRectangle(cornerRadius: 9, style: .continuous)
-                                            .stroke(active ? Palette.ink : Palette.outlineSoft,
+                                            .strokeBorder(active ? Palette.ink : Palette.outlineSoft,
                                                     lineWidth: active ? 2 : 1.2)
                                     )
                                 }
@@ -339,36 +358,44 @@ struct TextFormattingSheet: View {
                             }
                         }
                         .padding(.horizontal, 2)
+                        .padding(.vertical, 3)
                     }
+                    .scrollClipDisabled()
                 }
 
-                // ── Size ──────────────────────────────────────────────────────
-                sheetSection(label: "Size") {
-                    HStack(spacing: 8) {
-                        ForEach(TextSize.allCases) { size in
-                            let active = activeTextSize == size
-                            Button {
-                                applyCharacter { RichTextFormatting.setTextSize(size, in: $0, range: $1) }
-                            } label: {
-                                HStack(spacing: 4) {
-                                    if active { Image(systemName: "checkmark").font(.system(size: 10, weight: .bold)) }
-                                    Text(size.label).font(Fonts.ui(14, .bold))
+                HStack(alignment: .top, spacing: 12) {
+                    sheetSection(label: "Size") {
+                        Menu {
+                            ForEach(TextSize.allCases) { size in
+                                Button {
+                                    applyCharacter { RichTextFormatting.setTextSize(size, in: $0, range: $1) }
+                                } label: {
+                                    Label { Text(loc: size.label) } icon: {
+                                        if activeTextSize == size { Image(systemName: "checkmark") }
+                                    }
                                 }
-                                .foregroundStyle(active ? .white : Palette.ink)
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 36)
-                                .background(
-                                    active ? AnyShapeStyle(Palette.amber) : AnyShapeStyle(Palette.paper),
-                                    in: RoundedRectangle(cornerRadius: 9, style: .continuous)
-                                )
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 9, style: .continuous)
-                                        .stroke(active ? Palette.ink : Palette.outlineSoft,
-                                                lineWidth: active ? 2 : 1.2)
-                                )
                             }
-                            .buttonStyle(PressableStyle(scale: 0.92))
-                        }
+                        } label: { pickerLabel(activeTextSize?.label ?? "Body") }
+                    }
+                    sheetSection(label: "List") {
+                        Menu {
+                            Button {
+                                applyParagraph { RichTextFormatting.setList(nil, in: $0, range: $1) }
+                            } label: {
+                                Label { Text(loc: "No list") } icon: {
+                                    if activeListKind == nil { Image(systemName: "checkmark") }
+                                }
+                            }
+                            ForEach(ListKind.allCases) { kind in
+                                Button {
+                                    applyParagraph { RichTextFormatting.setList(kind, in: $0, range: $1) }
+                                } label: {
+                                    Label { Text(loc: kind.menuLabel) } icon: {
+                                        Image(systemName: activeListKind == kind ? "checkmark" : kind.icon)
+                                    }
+                                }
+                            }
+                        } label: { pickerLabel(activeListKind?.menuLabel ?? "No list") }
                     }
                 }
 
@@ -403,68 +430,107 @@ struct TextFormattingSheet: View {
                             Button {
                                 applyParagraph { RichTextFormatting.setAlignment(alignment, in: $0, range: $1) }
                             } label: {
-                                Image(systemName: icon)
-                                    .font(.system(size: 14, weight: .bold))
-                                    .foregroundStyle(active ? .white : Palette.ink)
-                                    .frame(width: 40, height: 36)
-                                    .background(
-                                        active ? AnyShapeStyle(Palette.amber) : AnyShapeStyle(Palette.paper),
-                                        in: RoundedRectangle(cornerRadius: 9, style: .continuous)
-                                    )
-                                    .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous)
-                                        .stroke(active ? Palette.ink : Palette.outlineSoft,
-                                                lineWidth: active ? 2 : 1.2))
+                                CompactIconFace(icon: icon, active: active)
                             }
-                            .buttonStyle(PressableStyle(scale: 0.92))
+                            .buttonStyle(PressableStyle())
                         }
                     }
                 }
 
-                // ── Colors ────────────────────────────────────────────────────
-                sheetSection(label: "Color") {
-                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 8),
-                              spacing: 10) {
-                        ForEach(Array(textColors.enumerated()), id: \.offset) { _, hex in
-                            let isActive = activeColorHex?.caseInsensitiveCompare(hex) == .orderedSame
-                            Button {
-                                applyCharacter {
-                                    RichTextFormatting.setTextColor(UIColor(Color(hex: hex)), in: $0, range: $1)
-                                }
-                            } label: {
-                                ZStack {
-                                    Circle()
-                                        .fill(Color(hex: hex))
-                                        .frame(width: 30, height: 30)
-                                    if isActive {
-                                        Circle()
-                                            .stroke(Palette.ink, lineWidth: 2.5)
-                                            .frame(width: 30, height: 30)
-                                        Image(systemName: "checkmark")
-                                            .font(.system(size: 9, weight: .black))
-                                            .foregroundStyle(.white)
-                                    } else {
-                                        Circle()
-                                            .stroke(Palette.ink.opacity(0.14), lineWidth: 1)
-                                            .frame(width: 30, height: 30)
-                                    }
-                                }
-                            }
-                            .buttonStyle(PressableStyle(scale: 0.85))
-                        }
+                    } else {
+                        colorPanel
                     }
                 }
+                .padding(.vertical, 2)
             }
-            .padding(20)
         }
+        .padding(16)
         .background(PaperBackground())
+    }
+
+    private var editingHighlight: Bool { panel == .highlight }
+    private var selectedColor: UIColor? { editingHighlight ? currentHighlight : currentColor }
+    private var quickColors: [String] {
+        editingHighlight
+            ? ["FFE89A", "F8C9D9", "CDE8CB", "C8E1FA", "DDCFF1", "FFD8B5"]
+            : [0, 4, 11, 13, 16, 20].compactMap { textColors.indices.contains($0) ? textColors[$0] : nil }
+    }
+
+    private var colorPanel: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            InlineJournalColorPicker(
+                color: selectedColor ?? (editingHighlight ? UIColor(Color(hex: "FFE89A")) : Palette.inkUI),
+                onChange: { applyColor($0) }
+            )
+            .id(panel)
+
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: editingHighlight ? 7 : 6), spacing: 8) {
+                if editingHighlight {
+                    let active = currentHighlight == nil || currentHighlight?.cgColor.alpha == 0
+                    Button { applyColor(nil) } label: {
+                        Circle().fill(Palette.paper).frame(width: 32, height: 32)
+                            .overlay(Circle().strokeBorder(Palette.ink, lineWidth: active ? 2.5 : 0.5))
+                            .overlay(Image(systemName: "nosign").font(.system(size: 15, weight: .bold)).foregroundStyle(Palette.ink))
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(PressableStyle())
+                    .accessibilityLabel(Text(loc: "No highlight"))
+                    .accessibilityAddTraits(active ? .isSelected : [])
+                }
+                ForEach(quickColors, id: \.self) { hex in
+                    let color = UIColor(Color(hex: hex))
+                    let active = selectedColor?.isEqual(color) == true
+                    Button { applyColor(color) } label: {
+                        Circle().fill(Color(hex: hex))
+                            .frame(width: 32, height: 32)
+                            .overlay(Circle().strokeBorder(Palette.ink, lineWidth: active ? 2.5 : 0.5))
+                            .overlay {
+                                if active {
+                                    Image(systemName: "checkmark").font(.system(size: 12, weight: .black))
+                                        .foregroundStyle(editingHighlight ? Palette.ink : .white)
+                                }
+                            }
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(PressableStyle())
+                    .accessibilityLabel(Text(loc: panel.rawValue) + Text(" #" + hex))
+                    .accessibilityAddTraits(active ? .isSelected : [])
+                }
+            }
+
+        }
+    }
+
+    private func applyColor(_ color: UIColor?) {
+        if editingHighlight {
+            applyCharacter { RichTextFormatting.setHighlight(color, in: $0, range: $1) }
+        } else if let color {
+            applyCharacter { RichTextFormatting.setTextColor(color, in: $0, range: $1) }
+        }
     }
 
     // MARK: Helpers
 
+    private func pickerLabel(_ selection: String) -> some View {
+        HStack(spacing: 8) {
+            Text(loc: selection).font(Fonts.ui(13, .bold)).lineLimit(1)
+            Spacer(minLength: 0)
+            Image(systemName: "chevron.up.chevron.down").font(.system(size: 10, weight: .bold))
+        }
+        .foregroundStyle(Palette.ink)
+        .padding(.horizontal, 12)
+        .frame(maxWidth: .infinity, minHeight: 44)
+        .background(Palette.cream, in: RoundedRectangle(cornerRadius: 10))
+        .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(Palette.ink, lineWidth: 1.5))
+    }
+
     @ViewBuilder
     private func sheetSection<Content: View>(label: String, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(label.uppercased())
+            Text(loc: label)
+                .textCase(.uppercase)
                 .font(Fonts.ui(10.5, .heavy))
                 .foregroundStyle(Palette.inkSofter)
                 .tracking(1.2)
@@ -477,32 +543,10 @@ struct TextFormattingSheet: View {
         Button {
             if enabled { action() }
         } label: {
-            Image(systemName: icon)
-                .font(.system(size: 14, weight: .bold))
-                .foregroundStyle(active ? .white : (enabled ? Palette.ink : Palette.inkSofter))
-                .frame(width: 44, height: 36)
-                .background(
-                    active ? AnyShapeStyle(Palette.amber) : AnyShapeStyle(Palette.paper),
-                    in: RoundedRectangle(cornerRadius: 9, style: .continuous)
-                )
-                .overlay(RoundedRectangle(cornerRadius: 9, style: .continuous)
-                    .stroke(active ? Palette.ink : Palette.outlineSoft,
-                            lineWidth: active ? 2 : 1.2))
+            CompactIconFace(icon: icon, active: active)
                 .opacity(enabled ? 1 : 0.35)
         }
-        .buttonStyle(PressableStyle(scale: enabled ? 0.92 : 1.0))
+        .buttonStyle(PressableStyle(scale: enabled ? 0.96 : 1.0))
+        .disabled(!enabled)
     }
 }
-
-// MARK: - Short labels for list kinds in the sheet
-
-extension ListKind {
-    var shortLabel: String {
-        switch self {
-        case .bullet:   return "Bullet"
-        case .star:     return "Star"
-        case .numbered: return "Number"
-        }
-    }
-}
-

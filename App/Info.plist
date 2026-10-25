@@ -22,8 +22,24 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.morning-journal.app</string>
+			<key>CFBundleURLSchemes</key>
+			<array><string>honestly</string></array>
+		</dict>
+	</array>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<false/>
+		<key>UISceneConfigurations</key>
+		<dict/>
+	</dict>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UIUserInterfaceStyle</key>
@@ -52,16 +68,7 @@
 	<string>Honestly uses your photo library so you can add a photo to your journal page.</string>
 	<key>UIAppFonts</key>
 	<array>
-		<string>Nunito-Regular.ttf</string>
-		<string>Nunito-Medium.ttf</string>
-		<string>Nunito-SemiBold.ttf</string>
-		<string>Nunito-Bold.ttf</string>
-		<string>Nunito-ExtraBold.ttf</string>
-		<string>Nunito-Black.ttf</string>
-		<string>ShantellSans-Medium.ttf</string>
-		<string>ShantellSans-SemiBold.ttf</string>
-		<string>ShantellSans-Bold.ttf</string>
-		<string>ShantellSans-ExtraBold.ttf</string>
+		<string>Manrope.ttf</string>
 	</array>
 </dict>
 </plist>

@@ -9,7 +9,7 @@ struct PaywallView: View {
     @State private var selected: Plan = .lifetime
     @State private var purchasing = false
     @State private var restoring = false
-    @State private var showRestoreAlert = false
+    @State private var showPurchaseAlert = false
     @State private var legal: LegalDoc? = nil
 
     var body: some View {
@@ -33,10 +33,10 @@ struct PaywallView: View {
             .overlay(alignment: .topTrailing) { closeButton }
             .capWidth(Metrics.maxContentWidth)
         }
-        .alert("No purchase found", isPresented: $showRestoreAlert) {
+        .alert("Purchase update", isPresented: $showPurchaseAlert) {
             Button("OK", role: .cancel) {}
         } message: {
-            Text("We couldn't find a previous purchase to restore on this Apple ID.")
+            Text(premium.errorMessage ?? "")
         }
         .sheet(item: $legal) { LegalView(doc: $0) }
         .onAppear(perform: syncSelection)
@@ -46,8 +46,7 @@ struct PaywallView: View {
 
     // MARK: Close
     private var closeButton: some View {
-        SoftCircleButton(icon: "xmark") { onClose() }
-            .overlay(Circle().stroke(Palette.ink, lineWidth: 2))
+        IconTileButton(icon: "xmark", size: 38, iconSize: 13) { onClose() }
             .padding(.horizontal, 20)
             .padding(.top, 8)
     }
@@ -70,10 +69,10 @@ struct PaywallView: View {
     // MARK: Benefits — sun-disc bullets, no card
     private var benefitsCard: some View {
         VStack(alignment: .leading, spacing: 12) {
-            benefitRow(Text(loc: "Daily prompts that match how you're actually feeling"))
-            benefitRow(Text(loc: "Unlimited affirmations, plus widgets & daily reminders"))
-            benefitRow(Text(loc: "Distracting apps, quieted till you write"))
-            benefitRow(Text(loc: "Your full history, synced and backed up everywhere"))
+            benefitRow(Text(loc: "Daily prompts for every mood"))
+            benefitRow(Text(loc: "Unlimited affirmations & widgets"))
+            benefitRow(Text(loc: "Block apps until you write"))
+            benefitRow(Text(loc: "Full history & iCloud backup"))
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 4)
@@ -97,7 +96,7 @@ struct PaywallView: View {
             }
             if premium.hasMonthly {
                 planCard(.monthly, name: "Monthly", badge: "FLEXIBLE",
-                         sub: "Billed monthly · cancel anytime",
+                         sub: "Billed monthly",
                          price: premium.monthlyPriceString, period: "mo")
             }
         }
@@ -169,7 +168,7 @@ struct PaywallView: View {
         } else if selected == .lifetime {
             let price = premium.lifetimePriceString
             if price.isEmpty {
-                PrimaryButton(title: "Unlock forever") { purchase() }
+                PrimaryButton(title: "Try loading purchase again") { purchase() }
             } else {
                 PrimaryButton(title: "Unlock forever — \(price)") { purchase() }
             }
@@ -183,11 +182,11 @@ struct PaywallView: View {
         }
     }
 
-    @ViewBuilder private var subNoteView: some View {
-        if selected != .lifetime {
-            Text(loc: "Cancel anytime · secure checkout")
-        } else {
-            Text(loc: "One-time payment · no subscription, ever")
+    private var subNoteView: some View {
+        HStack(spacing: 5) {
+            Image(systemName: "checkmark.shield")
+                .accessibilityHidden(true)
+            Text(loc: selected == .lifetime ? "One-time payment" : "Secure payment")
         }
     }
 
@@ -200,23 +199,24 @@ struct PaywallView: View {
     }
 
     private func purchase() {
-        guard !purchasing else { return }
+        guard !purchasing, !restoring else { return }
         purchasing = true
         Task {
             let ok = selected == .lifetime ? await premium.purchaseLifetime()
                                            : await premium.purchaseMonthly()
             purchasing = false
             if ok { Haptics.success(); onClose() }
+            else if premium.errorMessage != nil { showPurchaseAlert = true }
         }
     }
 
     private func restore() {
-        guard !restoring else { return }
+        guard !restoring, !purchasing else { return }
         restoring = true
         Task {
             let ok = await premium.restore()
             restoring = false
-            if ok { Haptics.success(); onClose() } else { showRestoreAlert = true }
+            if ok { Haptics.success(); onClose() } else { showPurchaseAlert = true }
         }
     }
 

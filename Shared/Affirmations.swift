@@ -68,6 +68,12 @@ enum Affirmations {
     /// or right after "Delete all data". One line from each of the first five focus areas.
     static let defaults: [String] = library.prefix(freeLimit).map { $0.lines[0] }
 
+    static var availableDefaults: [String] {
+        let deleted = Set(SharedState.defaults.stringArray(forKey: SharedState.Key.deletedAffirmations) ?? [])
+        let preferred = defaults.filter { !deleted.contains($0) }
+        return preferred.isEmpty ? Array(library.flatMap(\.lines).filter { !deleted.contains($0) }.prefix(freeLimit)) : preferred
+    }
+
     // MARK: Storage — the app group, so the widget and notification scheduler read the same list
 
     static var chosen: [String] {
@@ -79,7 +85,9 @@ enum Affirmations {
 
     /// What actually rotates: the picks (or the defaults), capped at `freeLimit` without Premium.
     static func rotation(from picks: [String], premium: Bool) -> [String] {
-        let list = picks.isEmpty ? defaults : picks
+        let deleted = Set(SharedState.defaults.stringArray(forKey: SharedState.Key.deletedAffirmations) ?? [])
+        let available = picks.filter { !deleted.contains($0) }
+        let list = available.isEmpty ? availableDefaults : available
         return premium ? list : Array(list.prefix(freeLimit))
     }
 
@@ -88,6 +96,7 @@ enum Affirmations {
     /// sharing any state beyond the list itself.
     static func line(on date: Date, from picks: [String], premium: Bool) -> String {
         let list = rotation(from: picks, premium: premium)
+        guard !list.isEmpty else { return "" }
         let day = Calendar.current.ordinality(of: .day, in: .era, for: date) ?? 0
         return list[day % list.count]
     }
@@ -102,7 +111,8 @@ enum Affirmations {
 
     /// Library lines go through the String Catalog; the user's own words are shown verbatim.
     static func text(_ line: String) -> Text {
-        isLibrary(line) ? Text(loc: line) : Text(verbatim: line)
+        if line.isEmpty { return Text(loc: "Choose your affirmations") }
+        return isLibrary(line) ? Text(loc: line) : Text(verbatim: line)
     }
 
     /// `text(_:)` for non-SwiftUI callers (notifications), in the in-app language rather than the
@@ -114,8 +124,6 @@ enum Affirmations {
     /// A String Catalog lookup in the in-app language. `String(localized:)` would follow the
     /// device language instead, which the in-app picker can override.
     static func localized(_ key: String) -> String {
-        guard let path = Bundle.main.path(forResource: SharedState.language, ofType: "lproj"),
-              let bundle = Bundle(path: path) else { return key }
-        return bundle.localizedString(forKey: key, value: key, table: nil)
+        L10n.localized(key)
     }
 }

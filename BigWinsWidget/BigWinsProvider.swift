@@ -15,7 +15,7 @@ struct BigWinsProvider: TimelineProvider {
     private static let daysAhead = 7
 
     func placeholder(in context: Context) -> BigWinsEntry {
-        BigWinsEntry(date: .now, affirmation: Affirmations.defaults[0])
+        BigWinsEntry(date: .now, affirmation: Affirmations.availableDefaults.first ?? "")
     }
 
     func getSnapshot(in context: Context, completion: @escaping (BigWinsEntry) -> Void) {

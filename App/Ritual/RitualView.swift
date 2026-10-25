@@ -6,44 +6,38 @@ struct RitualView: View {
     @Environment(JournalStore.self) private var store
     @Environment(PremiumManager.self) private var premium
     @Environment(AppFlow.self) private var flow
+    @Environment(PromptLibrary.self) private var prompts
     @Environment(AffirmationList.self) private var affirmations
 
     // 0: journal, 1: celebration — mood is no longer its own step; it's set via the mood-card
     // sheet, opened by tapping the mood icon on the journal page itself. Affirmations aren't
     // written here anymore either: the celebration shows the day's line from the picked rotation.
     @State private var step = 0
-    @State private var mood: Int? = nil
+    @State private var mood: Int? = ScreenshotPreview.screen == "write" ? 0 : nil
     @State private var showMoodSheet = false
-    @State private var richText = NSAttributedString()
+    @State private var richText = ScreenshotPreview.screen == "write"
+        ? NSAttributedString(string: ScreenshotPreview.journal,
+                             attributes: [.font: UIFont(name: "Manrope-Medium", size: 17) ?? .systemFont(ofSize: 17)])
+        : NSAttributedString()
     @State private var selectedRange = NSRange(location: 0, length: 0)
     @State private var tags: [String] = []
-    @State private var tagDraft = ""
+    @State private var showTagsSheet = false
     @FocusState private var journalFocused: Bool
-    @State private var promptIndex: Int = 0
+    @State private var showPromptPicker = false
     @State private var showImagePicker = false
     @State private var showDoodleSheet = false
     @State private var showStickerSheet = false
     @State private var showThemeSheet = false
+    @State private var showFormattingSheet = false
     @State private var theme: PageTheme = .paper
+
+    private var editorSheetPresented: Bool {
+        showFormattingSheet || showTagsSheet || showImagePicker || showDoodleSheet || showStickerSheet || showThemeSheet || showPromptPicker || showMoodSheet || flow.paywallPresented
+    }
 
     private var journalText: String { richText.plainText }
     private var wordCount: Int {
         journalText.split(whereSeparator: { $0.isWhitespace || $0.isNewline }).count
-    }
-
-    // MARK: Prompt helpers
-    private var promptPool: [JournalPrompt] { AppContent.prompts(for: mood) }
-    private var currentPromptText: String {
-        guard !promptPool.isEmpty else { return "" }
-        return promptPool[promptIndex % promptPool.count].text
-    }
-    private func shufflePrompt() {
-        guard promptPool.count > 1 else { return }
-        var next: Int
-        repeat { next = Int.random(in: 0..<promptPool.count) }
-        while next == promptIndex % promptPool.count
-        withAnimation(Motion.snappy) { promptIndex = next }
-        Haptics.select()
     }
 
     var body: some View {
@@ -77,20 +71,27 @@ struct RitualView: View {
                     // of the step CTA — same slot, same pattern as the rest of the ritual's chrome.
                     // The toolbar itself runs edge-to-edge (no horizontal margin) so its scrollable
                     // row gets full width; the CTA button keeps the page's usual side margin.
-                    Group {
-                        if journalFocused {
+                    VStack(spacing: 0) {
                             EditorToolbar(
                                 text: $richText,
                                 selectedRange: $selectedRange,
+                                tagCount: tags.count,
+                                onTags: { showTagsSheet = true },
                                 onPhoto: { showImagePicker = true },
                                 onDoodle: { showDoodleSheet = true },
                                 onSticker: { showStickerSheet = true },
                                 onTheme: { showThemeSheet = true },
-                                onDismissKeyboard: { journalFocused = false }
+                                onDismissKeyboard: { journalFocused = false },
+                                onFormattingOpened: { showFormattingSheet = true; journalFocused = false },
+                                onFormattingClosed: { showFormattingSheet = false; journalFocused = true }
                             )
-                        } else {
-                            footer
-                                .padding(.horizontal, 22)
+                            .frame(height: journalFocused ? nil : 0)
+                            .clipped()
+                            .opacity(journalFocused ? 1 : 0)
+                            .allowsHitTesting(journalFocused)
+                            .accessibilityHidden(!journalFocused)
+                        if !journalFocused {
+                            footer.padding(.horizontal, 22)
                         }
                     }
                     .padding(.top, 8)
@@ -110,6 +111,15 @@ struct RitualView: View {
         // UITextView, which flips `journalFocused` false and swaps the EditorToolbar (and its
         // buttons) out of the tree while the sheet is still presented, causing a present/dismiss
         // loop. This root view never disappears, so presentations are stable.
+        .onChange(of: editorSheetPresented) { _, presented in
+            if presented { journalFocused = false }
+        }
+        .fullScreenCover(isPresented: $showPromptPicker) {
+            PromptLibraryScreen()
+        }
+        .sheet(isPresented: $showTagsSheet, onDismiss: { journalFocused = true }) {
+            TagEditorSheet(tags: $tags)
+        }
         .sheet(isPresented: $showImagePicker) {
             ImagePickerWithCrop(
                 onImagePicked: { image in
@@ -147,36 +157,48 @@ struct RitualView: View {
     }
 
 
-    // MARK: Top bar — close icon + the prompt itself (tap to shuffle) instead of a generic label —
+    // MARK: Top bar — close icon and tappable prompt library
     // it doesn't compete with the writing area below, and it's real page content, unlike a title
     // would be. No progress dots, no mood badge here — the date/mood live on the page itself, below.
     private var topBar: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 10) {
             IconTileButton(icon: "xmark", size: 38, iconSize: 13) { onClose() }
             topBarTitleView
-            Spacer(minLength: 0)
         }
         .padding(.horizontal, 20)
         .padding(.top, 10)
         .padding(.bottom, 10)
         .animation(Motion.gentle, value: step)
-        .animation(Motion.snappy, value: promptIndex)
     }
 
     private var topBarTitleView: some View {
         Button {
-            if premium.isPremium { shufflePrompt() } else { flow.showPaywall() }
+            journalFocused = false
+            if premium.isPremium { showPromptPicker = true } else { flow.showPaywall() }
         } label: {
-            Text(loc: premium.isPremium ? currentPromptText : "Unlock daily morning prompts")
+            HStack(spacing: 10) {
+                Group {
+                    if premium.isPremium, let line = prompts.selected {
+                        if prompts.builtIn.contains(line) { Text(loc: line) }
+                        else { Text(verbatim: line) }
+                    } else {
+                        Text(loc: premium.isPremium ? "Choose a prompt" : "Unlock writing prompts")
+                    }
+                }
                 .font(Fonts.display(14, .bold))
+                .lineLimit(3)
                 .foregroundStyle(premium.isPremium ? Palette.ink : Palette.inkSofter)
                 .lineSpacing(1)
                 .multilineTextAlignment(.leading)
-                .lineLimit(2)
                 .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity, alignment: .leading)
+                .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
+                Image(systemName: "chevron.down").font(.system(size: 11, weight: .bold))
+                    .foregroundStyle(Palette.inkSofter)
+            }
         }
         .buttonStyle(.plain)
+        .accessibilityHint(Text(loc: "Choose a prompt"))
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     // MARK: Footer CTA — pinned at the bottom, floats above the keyboard
@@ -199,43 +221,20 @@ struct RitualView: View {
             }
 
             RichTextEditor(attributedText: $richText,
-                           selectedRange: $selectedRange, placeholder: "Start writing…")
+                           selectedRange: $selectedRange, placeholder: "Start writing…",
+                           keyboardAllowed: !editorSheetPresented)
                 .focused($journalFocused)
                 // See the matching comment in EntryEditorView.swift — `.frame(minHeight:)`
                 // defaults to center alignment, which is why the empty placeholder sat mid-box
                 // instead of at its top until typed content grew past the floor.
                 .frame(minHeight: 220, alignment: .top)
                 .padding(.top, 16)
+        }
 
-            TagEditorRow(tags: $tags, draft: $tagDraft)
-                .padding(.top, 16)
-
-            // Only shown once there's something to report — the prompt above is the only guidance
-            // the empty page needs.
-            if wordCount > 0 {
-                Text("\(wordCount) words — nice")
-                    .font(Fonts.ui(12.5, .semibold)).foregroundStyle(Palette.inkSofter)
-                    .padding(.top, 10)
-            }
-        }
-        .onAppear {
-            // Seed with today's daily prompt for this mood pool — stable all session, rotates daily.
-            promptIndex = AppContent.dailyPromptIndex(in: promptPool)
-        }
-        .onChange(of: mood) { _, _ in
-            // Picking a mood (any time, since it's no longer a step gate) re-seeds the prompt
-            // pool/index so the prompt actually reflects the mood just picked.
-            promptIndex = AppContent.dailyPromptIndex(in: promptPool)
-        }
-        .animation(Motion.gentle, value: wordCount > 0)
     }
 
     // MARK: Finish
     private func finish() {
-        // Flush any tag still sitting in the input — see `TagEditorRow`'s doc comment. Not a known
-        // issue in this flow, just closing off the same theoretical race as a no-cost safety net.
-        TagEditing.commit(draft: &tagDraft, into: &tags)
-
         let thumbnail = richText.firstPhotoThumbnail()
         let entry = store.saveRitual(mood: mood ?? 0, journal: journalText,
                                      richContent: richText.rtfdData(), tags: tags,
@@ -273,7 +272,7 @@ private struct MoodPickerSheet: View {
                 Text(loc: "How are you, really?")
                     .font(Fonts.display(19, .bold)).foregroundStyle(Palette.ink)
                 Spacer()
-                IconTileButton(icon: "xmark", size: 34, iconSize: 12) { dismiss() }
+                IconTileButton(icon: "xmark", size: 38, iconSize: 13) { dismiss() }
             }
             .padding(EdgeInsets(top: 18, leading: 20, bottom: 6, trailing: 20))
 
@@ -329,6 +328,7 @@ private struct CelebrationView: View {
     var onStart: () -> Void
 
     @Environment(\.requestReview) private var requestReview
+    @Environment(ScreenTimeManager.self) private var screenTime
 
     var body: some View {
         ZStack {
@@ -346,7 +346,8 @@ private struct CelebrationView: View {
                 }
                 .frame(height: 170)
 
-                Text("Your apps are awake")
+                Text(loc: screenTime.blockingPresentation.isScheduledNow
+                     ? "Your apps are awake" : "You made time for yourself.")
                     .font(Fonts.display(34, .heavy)).foregroundStyle(.white)
                     .multilineTextAlignment(.center)
                     .shadow(color: Color(hex: "78280A").opacity(0.3), radius: 14, y: 2)

@@ -53,12 +53,15 @@ struct OnboardingView: View {
         switch beat {
         case .brand:
             chrome(primary: .init(title: "Good morning") { advance() }) {
-                narrative(.brand)
+                OnbIllustration(kind: .brand)
             }
 
         case .problem:
             chrome(primary: .init(title: "Continue") { advance() }) {
-                narrative(.noise, title: AppContent.onbProblemTitle, body: AppContent.onbProblemBody)
+                VStack(spacing: 26) {
+                    OnbHeader(eyebrow: "Your morning", title: AppContent.onbProblemTitle)
+                    OnbIllustration(kind: .noise)
+                }
             }
 
         case .lock:
@@ -72,8 +75,8 @@ struct OnboardingView: View {
             }
 
         case .affirm:
-            chrome(primary: .init(title: picks.isEmpty ? "Pick at least one" : "These are mine",
-                                  enabled: !picks.isEmpty) {
+            chrome(primary: .init(title: picks.isEmpty ? (affirmations.availableLibrary.isEmpty ? "Continue" : "Pick at least one") : "These are mine",
+                                  enabled: !picks.isEmpty || affirmations.availableLibrary.isEmpty) {
                 affirmations.set(picks)
                 advance()
             }) {
@@ -88,18 +91,10 @@ struct OnboardingView: View {
         case .notif:
             chrome(primary: .init(title: "Allow notifications") { requestNotifications() },
                    secondary: .init(title: "Maybe later") { advance() }) {
-                VStack(spacing: 24) {
+                VStack(spacing: 26) {
+                    OnbHeader(eyebrow: "Stay connected", title: AppContent.notifTitle)
                     let lines = Affirmations.rotation(from: picks, premium: premium.isPremium)
-                    NotifStack(first: lines[0], second: lines[1 % lines.count])
-                    VStack(spacing: 10) {
-                        Text(loc: AppContent.notifTitle)
-                            .font(Fonts.display(24, .bold)).foregroundStyle(Palette.ink)
-                            .multilineTextAlignment(.center)
-                        Text(loc: AppContent.notifBody)
-                            .font(Fonts.ui(14.5, .semibold)).foregroundStyle(Palette.inkSoft)
-                            .multilineTextAlignment(.center).lineSpacing(3)
-                    }
-                    .padding(.horizontal, 8)
+                    NotifStack(first: lines.first ?? "", second: lines.count > 1 ? lines[1] : lines.first ?? "")
                 }
             }
 
@@ -156,7 +151,7 @@ struct OnboardingView: View {
     }
 
     private var backButton: some View {
-        IconTileButton(icon: "chevron.left", size: 56, iconSize: 16,
+        IconTileButton(icon: "chevron.backward", size: 56, iconSize: 16,
                        iconColor: Palette.ink, fill: Palette.cream, radius: 17) { back() }
     }
 
@@ -190,39 +185,13 @@ struct OnboardingView: View {
         let action: () -> Void
     }
 
-    // MARK: - Content builders
-
-    private func narrative(_ kind: OnbKind, title: String? = nil, body: String? = nil) -> some View {
-        VStack(spacing: 26) {
-            OnbIllustration(kind: kind)
-            if let title {
-                VStack(spacing: 11) {
-                    Text(loc: title)
-                        .font(Fonts.display(27, .bold)).foregroundStyle(Palette.ink)
-                        .multilineTextAlignment(.center).lineSpacing(2)
-                    if let body {
-                        Text(loc: body)
-                            .font(Fonts.ui(15.5, .semibold)).foregroundStyle(Palette.inkSoft)
-                            .multilineTextAlignment(.center).lineSpacing(4)
-                    }
-                }
-                .padding(.horizontal, 8)
-            }
-        }
-    }
-
     // MARK: - App-locking (passive — icons lock themselves, nothing to tap)
 
     @State private var lockedCount = 0
 
     private var lockAnimation: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            VStack(alignment: .leading, spacing: 9) {
-                Text(loc: AppContent.lockTitle)
-                    .font(Fonts.display(26, .bold)).foregroundStyle(Palette.ink).lineSpacing(2)
-                Text(loc: AppContent.lockSubtitle).font(Fonts.ui(14, .semibold)).foregroundStyle(Palette.inkSoft)
-            }
-            .padding(.bottom, 24)
+        VStack(spacing: 26) {
+            OnbHeader(eyebrow: "Your attention, on your terms", title: AppContent.lockTitle)
 
             let displayBrands: [(Int, Brand)] = Array([Brand.instagram, .tiktok, .whatsapp, .snapchat].enumerated())
             HStack(spacing: 0) {
@@ -284,7 +253,7 @@ struct OnboardingView: View {
 
     private func requestNotifications() {
         Task {
-            await AffirmationNudge.activate()
+            await AffirmationNudge.requestPermission()
             advance()
         }
     }
@@ -314,38 +283,124 @@ private struct OnbDots: View {
 }
 
 // MARK: - Plan reveal (how the ritual works — no personalization, same for everyone)
+private struct OnbHeader: View {
+    let eyebrow: String
+    let title: String
+
+    var body: some View {
+        VStack(spacing: 10) {
+            Eyebrow(text: eyebrow, tracking: 1.6, size: 12)
+            Text(loc: title)
+                .font(Fonts.display(24, .bold))
+                .foregroundStyle(Palette.ink)
+                .lineSpacing(2)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .multilineTextAlignment(.center)
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 8)
+    }
+}
+
 private struct OnbPlanView: View {
     var body: some View {
-        VStack(spacing: 20) {
-            Eyebrow(text: "How it works", tracking: 1.6, size: 12)
+        VStack(spacing: 28) {
+            OnbHeader(eyebrow: "How it works", title: "A little space to\nhear yourself.")
 
-            Text(loc: "Three small things, in order")
-                .font(Fonts.display(24, .bold)).foregroundStyle(Palette.ink)
-                .multilineTextAlignment(.center)
+            ZStack {
+                SoftGlow(color: Palette.sunDisc, opacity: 0.22, size: 320)
+                morningPage
+                    .rotationEffect(.degrees(-4))
 
-            VStack(spacing: 14) {
-                planRow(SunMark(size: 20), "The ritual",
-                        "Mood → a prompt → write  ·  ~3 min")
-                planRow(InkGlyph(kind: .moon, size: 20, fill: Palette.sunDisc, lineWidth: 1.6), "The quiet",
-                        "Instagram, TikTok & X stay asleep until you've written")
-                planRow(InkGlyph(kind: .flame, size: 19, fill: Palette.sunDisc, lineWidth: 1.6), "The goal",
-                        "A few mornings a week is enough — streaks build quietly")
+                Image(systemName: "pencil")
+                    .font(.system(size: 64, weight: .regular))
+                    .foregroundStyle(Palette.amber)
+                    .shadow(color: Palette.ink.opacity(0.14), radius: 3, x: 2, y: 4)
+                    .rotationEffect(.degrees(-12))
+                    .offset(x: 112, y: 62)
+                    .accessibilityHidden(true)
             }
-            .softCard(padding: 16, radius: 22, emphasized: true)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 12)
+
+            HStack(alignment: .top, spacing: 0) {
+                step(symbol: "face.smiling", title: "Check in")
+                connector
+                step(symbol: "pencil.line", title: "Write")
+                connector
+                step(symbol: "lock.open", title: "Begin")
+            }
+            .accessibilityElement(children: .combine)
         }
-        .background(alignment: .top) { SoftGlow(color: Palette.amber, opacity: 0.13, size: 300).offset(y: -10) }
     }
 
-    private func planRow<G: View>(_ glyph: G, _ title: String, _ body: String) -> some View {
-        HStack(alignment: .top, spacing: 12) {
-            IconTile(size: 38, fill: Palette.iconTile) { glyph }
-            VStack(alignment: .leading, spacing: 3) {
-                Text(loc: title).font(Fonts.ui(15, .heavy)).foregroundStyle(Palette.ink)
-                Text(loc: body).font(Fonts.ui(12.5, .semibold)).foregroundStyle(Palette.inkSoft).lineSpacing(2)
-                    .fixedSize(horizontal: false, vertical: true)
+    private var morningPage: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            HStack {
+                Text(loc: "A moment for me")
+                    .font(Fonts.ui(12, .heavy))
+                    .foregroundStyle(Palette.inkSoft)
+                Spacer(minLength: 8)
+                SunMark(size: 28)
             }
-            Spacer(minLength: 0)
+
+            Text(loc: "Today, I need…")
+                .font(Fonts.display(23, .bold))
+                .foregroundStyle(Palette.ink)
+                .fixedSize(horizontal: false, vertical: true)
+
+            VStack(alignment: .leading, spacing: 16) {
+                ForEach(0..<3, id: \.self) { index in
+                    Capsule()
+                        .fill(Palette.ink.opacity(0.12))
+                        .frame(height: 2)
+                        .padding(.trailing, index == 2 ? 48 : 0)
+                }
+            }
+            .accessibilityHidden(true)
+
+            HStack(spacing: 6) {
+                Image(systemName: "heart.fill")
+                    .foregroundStyle(Palette.amberDeep)
+                Text(loc: "A few honest lines are enough.")
+                    .foregroundStyle(Palette.inkSoft)
+            }
+            .font(Fonts.ui(11, .semibold))
+            .fixedSize(horizontal: false, vertical: true)
         }
+        .padding(22)
+        .frame(maxWidth: 260, alignment: .leading)
+        .background(Palette.cream, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous)
+            .stroke(Palette.ink, lineWidth: 2))
+        .tactile(5, cornerRadius: 20)
+        .shadow(color: Palette.ink.opacity(0.09), radius: 18, x: 0, y: 12)
+    }
+
+    private func step(symbol: String, title: String) -> some View {
+        VStack(spacing: 10) {
+            Image(systemName: symbol)
+                .font(.system(size: 21, weight: .semibold))
+                .foregroundStyle(Palette.ink)
+                .frame(width: 50, height: 50)
+                .background(Palette.iconTile, in: Circle())
+                .overlay(Circle().stroke(Palette.outlineSoft, lineWidth: 1.5))
+                .accessibilityHidden(true)
+            Text(loc: title)
+                .font(Fonts.ui(12, .heavy))
+                .foregroundStyle(Palette.ink)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    private var connector: some View {
+        Image(systemName: "arrow.forward")
+            .font(.system(size: 12, weight: .semibold))
+            .foregroundStyle(Palette.inkSofter)
+            .padding(.top, 19)
+            .accessibilityHidden(true)
     }
 }
 
@@ -356,21 +411,17 @@ private struct OnbAffirmView: View {
     let isPremium: Bool
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Eyebrow(text: "Your affirmations", tracking: 1.6, size: 12)
-            Text(loc: "Pick the ones that sound like you")
-                .font(Fonts.display(24, .bold)).foregroundStyle(Palette.ink)
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(.top, 10)
-            Text(loc: "One shows up each day, in the order you pick them.")
-                .font(Fonts.ui(14, .semibold)).foregroundStyle(Palette.inkSoft)
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(.top, 6)
-            AffirmationCount(count: picks.count, isPremium: isPremium)
-                .padding(.top, 14)
+        VStack(spacing: 20) {
+            VStack(spacing: 10) {
+                OnbHeader(eyebrow: "Your affirmations, in your order",
+                          title: "Pick words you need.\nSee one each day.")
+            }
+            .frame(maxWidth: .infinity)
+
             AffirmationPicker(selection: $picks, isPremium: isPremium)
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity)
     }
 }
 
@@ -449,46 +500,35 @@ private struct NotifStack: View {
 
 private struct OnbSocialProofView: View {
     private var sp: SocialProof { AppContent.socialProof }
+    @Environment(\.locale) private var locale
 
     var body: some View {
         VStack(spacing: 16) {
+            OnbHeader(eyebrow: "From the App Store", title: "A small part of\nsomeone’s morning.")
             HStack(spacing: 5) {
                 ForEach(0..<5, id: \.self) { _ in
                     InkGlyph(kind: .star, size: 28, fill: Color(hex: "F6C33F"), lineWidth: 1.4)
                 }
             }
             if sp.hasStats {
-                VStack(spacing: 2) {
-                    Text(sp.rating).font(Fonts.display(40, .heavy)).foregroundStyle(Palette.ink)
-                    if !sp.ratingsCount.isEmpty {
-                        Text(sp.ratingsCount).font(Fonts.ui(14, .semibold)).foregroundStyle(Palette.inkSoft)
-                    }
-                }
-            } else {
-                Text("Loved at\nfirst light")
-                    .font(Fonts.display(27, .bold)).foregroundStyle(Palette.ink)
+                Text(sp.rating).font(Fonts.display(40, .heavy)).foregroundStyle(Palette.ink)
             }
 
-            if sp.quotes.isEmpty {
-                VStack(spacing: 11) {
-                    quoteCard("“Meet yourself before the world logs on.”",
-                              "You're about to join people who reclaimed their mornings — one quiet page at a time.")
-                    quoteCard("“The first ten minutes that are finally mine.”",
-                              "The apps stay asleep until I've written — so the morning feels calm again.")
-                }
-            } else {
-                VStack(spacing: 12) {
-                    ForEach(sp.quotes) { q in
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("“\(q.text)”")
-                                .font(Fonts.ui(15, .bold)).foregroundStyle(Palette.ink).lineSpacing(3)
-                                .fixedSize(horizontal: false, vertical: true)
-                            Text("— \(q.author)")
-                                .font(Fonts.ui(12.5, .semibold)).foregroundStyle(Palette.inkSofter)
+            VStack(spacing: 12) {
+                ForEach(sp.quotes) { q in
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("“\(Text(loc: q.text))”")
+                            .font(Fonts.ui(15, .bold)).foregroundStyle(Palette.ink).lineSpacing(3)
+                            .fixedSize(horizontal: false, vertical: true)
+                        Text("— \(q.author)")
+                            .font(Fonts.ui(12.5, .semibold)).foregroundStyle(Palette.inkSofter)
+                        if locale.language.languageCode?.identifier != "en" {
+                            Text(loc: "Translated from English")
+                                .font(Fonts.ui(11, .medium)).foregroundStyle(Palette.inkSofter)
                         }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .softCard(padding: 16)
                     }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .softCard(padding: 16)
                 }
             }
         }
@@ -496,18 +536,6 @@ private struct OnbSocialProofView: View {
         .background(alignment: .top) { SoftGlow(color: Palette.sunDisc, opacity: 0.16, size: 300).offset(y: 40) }
     }
 
-    private func quoteCard(_ quote: String, _ sub: String) -> some View {
-        VStack(alignment: .leading, spacing: 9) {
-            Text(loc: quote)
-                .font(Fonts.display(16, .semibold)).foregroundStyle(Palette.ink)
-                .lineSpacing(3).fixedSize(horizontal: false, vertical: true)
-            Text(loc: sub)
-                .font(Fonts.ui(13, .semibold)).foregroundStyle(Palette.inkSoft)
-                .lineSpacing(3).fixedSize(horizontal: false, vertical: true)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .softCard(padding: 16, radius: 20, emphasized: true)
-    }
 }
 
 // MARK: - Illustrations (one per slide kind) — retained from the original deck
@@ -535,7 +563,6 @@ private struct OnbIllustration: View {
             .floaty(period: 6)
             .padding(.bottom, 22)
             Text("Honestly").font(Fonts.display(52, .heavy)).foregroundStyle(Palette.ink)
-                .underlineSquiggle(Palette.amber, weight: 5, height: 12)
             Text("The first few minutes of your day, finally yours.")
                 .font(Fonts.ui(16, .semibold)).foregroundStyle(Palette.inkSoft)
                 .multilineTextAlignment(.center).lineSpacing(3)

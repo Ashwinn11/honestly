@@ -38,6 +38,7 @@ struct BigWinsWidgetView: View {
         // placeholder — which the system auto-redacts — even once real timeline data is available.
         // `.unredacted()` guarantees actual content is still legible if that happens.
         .unredacted()
+        .widgetURL(AppLink.affirmations)
     }
 }
 
@@ -55,6 +56,7 @@ struct BigWinsWidget: Widget {
                 // they don't inherit the app's custom in-app language picker. Force the same
                 // language the app itself is showing.
                 .environment(\.locale, Locale(identifier: SharedState.language))
+                .environment(\.layoutDirection, Locale.Language(identifier: SharedState.language).characterDirection == .rightToLeft ? .rightToLeft : .leftToRight)
         }
         .configurationDisplayName("Today's affirmation")
         .description("See today's affirmation right on your Home Screen.")

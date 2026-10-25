@@ -30,38 +30,6 @@ struct SoftGlow: View {
     }
 }
 
-// MARK: - Squiggle underline (hand-drawn stroke beneath a heading)
-
-struct Squiggle: Shape {
-    func path(in r: CGRect) -> Path {
-        var p = Path()
-        let w = r.width, baseY = r.midY, amp = r.height * 0.42
-        let seg = w / 3
-        p.move(to: CGPoint(x: r.minX + w * 0.02, y: baseY + amp * 0.4))
-        p.addQuadCurve(to: CGPoint(x: r.minX + seg, y: baseY),
-                       control: CGPoint(x: r.minX + seg * 0.5, y: baseY - amp))
-        p.addQuadCurve(to: CGPoint(x: r.minX + seg * 2, y: baseY),
-                       control: CGPoint(x: r.minX + seg * 1.5, y: baseY + amp))
-        p.addQuadCurve(to: CGPoint(x: r.maxX - w * 0.02, y: baseY - amp * 0.2),
-                       control: CGPoint(x: r.minX + seg * 2.5, y: baseY - amp))
-        return p
-    }
-}
-
-extension View {
-    /// Adds a warm hand-drawn squiggle just beneath the content (sized to the content width),
-    /// matching the underlines the redesign draws under section headings.
-    func underlineSquiggle(_ color: Color = Palette.amber, weight: CGFloat = 4, height: CGFloat = 8) -> some View {
-        overlay(alignment: .bottomLeading) {
-            Squiggle()
-                .stroke(color, style: StrokeStyle(lineWidth: weight, lineCap: .round, lineJoin: .round))
-                .frame(height: height)
-                .offset(y: height + 2)          // sit just below the text baseline
-                .allowsHitTesting(false)
-        }
-    }
-}
-
 // MARK: - Floating decor glyphs (filled + black-outlined, from the HTML)
 
 /// A decor glyph, defined in a 24-unit SVG-style viewBox and scaled to fit its frame.

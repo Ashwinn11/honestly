@@ -43,7 +43,7 @@ struct TactileButtonStyle: ButtonStyle {
         let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
         return configuration.label
             .background(fill, in: shape)
-            .overlay(shape.stroke(Palette.ink, lineWidth: bordered ? 2 : 0))
+            .overlay(shape.strokeBorder(Palette.ink, lineWidth: bordered ? 2 : 0))
             .scaleEffect(pressed ? 0.99 : 1)
             .offset(y: pressed ? max(ledge - 1, 0) : 0)                 // sink onto the ledge
             .background(shape.fill(ledge > 0 ? Palette.ink : Color.clear).offset(y: ledge))
@@ -65,7 +65,7 @@ struct CreamButton: View {
             HStack(spacing: 9) {
                 Text(loc: title).font(Fonts.ui(16, .heavy)).foregroundStyle(textColor)
                 if arrow {
-                    Image(systemName: "arrow.right")
+                    Image(systemName: "arrow.forward")
                         .font(.system(size: DesignScale.s(14), weight: .bold)).foregroundStyle(textColor)
                 }
             }
@@ -99,7 +99,7 @@ struct SoftCard: ViewModifier {
         content
             .padding(DesignScale.s(padding))
             .background(Palette.cream, in: shape)
-            .overlay(shape.stroke(emphasized ? Palette.ink : Palette.outlineSoft,
+            .overlay(shape.strokeBorder(emphasized ? Palette.ink : Palette.outlineSoft,
                                   lineWidth: emphasized ? 2 : 1.5))
             .shadow(color: Color(hex: "78501E").opacity(0.09), radius: DesignScale.s(13), x: 0, y: DesignScale.s(10))
     }
@@ -124,7 +124,7 @@ struct IconTile<Content: View>: View {
             .frame(width: DesignScale.s(size), height: DesignScale.s(size))
             .background(fill, in: RoundedRectangle(cornerRadius: DesignScale.s(radius), style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: DesignScale.s(radius), style: .continuous)
-                .stroke(Palette.ink, lineWidth: 2))
+                .strokeBorder(Palette.ink, lineWidth: 2))
     }
 }
 
@@ -144,32 +144,55 @@ struct IconTileButton: View {
                     .font(.system(size: DesignScale.s(iconSize), weight: .bold))
                     .foregroundStyle(iconColor)
             }
+            .frame(minWidth: 44, minHeight: 44)
+            .contentShape(Rectangle())
         }
         .buttonStyle(PressableStyle())
     }
 }
 
-// MARK: - Small circular icon button (close / back / month arrows)
+// MARK: - Compact tool controls — shared by text formatting and drawing
 
-struct SoftCircleButton: View {
-    let icon: String                    // SF Symbol
-    var diameter: CGFloat = 38
-    var iconSize: CGFloat = 14
-    var iconColor: Color = Palette.inkSoft
-    var fill: Color = Palette.ink.opacity(0.06)
-    var shadow: Bool = false
-    var action: () -> Void
+enum CompactControlMetrics {
+    static let size: CGFloat = 36
+    static let iconSize: CGFloat = 14
+    static let radius: CGFloat = 10
+    static let borderWidth: CGFloat = 1.2
+}
+
+private struct CompactControlSurface: ViewModifier {
+    let active: Bool
+    let fill: Color
+
+    func body(content: Content) -> some View {
+        content
+            .foregroundStyle(active ? .white : Palette.ink)
+            .frame(width: DesignScale.s(CompactControlMetrics.size), height: DesignScale.s(CompactControlMetrics.size))
+            .background(active ? Palette.amber : fill,
+                        in: RoundedRectangle(cornerRadius: DesignScale.s(CompactControlMetrics.radius), style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: DesignScale.s(CompactControlMetrics.radius), style: .continuous)
+                .strokeBorder(active ? Palette.ink : Palette.outlineSoft,
+                        lineWidth: active ? 2 : CompactControlMetrics.borderWidth))
+            .frame(minWidth: 44, minHeight: 44)
+            .contentShape(Rectangle())
+    }
+}
+
+extension View {
+    func compactControl(active: Bool = false, fill: Color = Palette.paper) -> some View {
+        modifier(CompactControlSurface(active: active, fill: fill))
+    }
+}
+
+struct CompactIconFace: View {
+    let icon: String
+    var active = false
+    var fill = Palette.paper
 
     var body: some View {
-        Button { Haptics.tap(); action() } label: {
-            Image(systemName: icon)
-                .font(.system(size: DesignScale.s(iconSize), weight: .bold))
-                .foregroundStyle(iconColor)
-                .frame(width: DesignScale.s(diameter), height: DesignScale.s(diameter))
-                .background(shadow ? AnyShapeStyle(Color.white) : AnyShapeStyle(fill), in: Circle())
-                .shadow(color: shadow ? Color(hex: "78501E").opacity(0.08) : .clear, radius: 12, y: 4)
-        }
-        .buttonStyle(PressableStyle())
+        Image(systemName: icon)
+            .font(.system(size: DesignScale.s(CompactControlMetrics.iconSize), weight: .bold))
+            .compactControl(active: active, fill: fill)
     }
 }
 
@@ -220,11 +243,11 @@ struct AmberToggle: View {
         ZStack(alignment: isOn ? .trailing : .leading) {
             Capsule()
                 .fill(isOn ? Palette.amber : Palette.ink.opacity(0.18))
-                .overlay(Capsule().stroke(Palette.ink, lineWidth: 2))
+                .overlay(Capsule().strokeBorder(Palette.ink, lineWidth: 2))
                 .frame(width: 46, height: 27)
             Circle()
                 .fill(.white)
-                .overlay(Circle().stroke(Palette.ink, lineWidth: 1.5))
+                .overlay(Circle().strokeBorder(Palette.ink, lineWidth: 1.5))
                 .frame(width: 21, height: 21)
                 .padding(2.5)
         }

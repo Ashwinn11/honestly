@@ -1,0 +1,186 @@
+{
+  "appId": "6759817879",
+  "version": "4.0",
+  "updatedLocales": [
+    "en-US",
+    "en-GB",
+    "en-AU",
+    "en-CA"
+  ],
+  "fields": [
+    "description",
+    "promotionalText",
+    "whatsNew"
+  ],
+  "verified": true,
+  "data": [
+    {
+      "type": "appStoreVersionLocalizations",
+      "id": "1a944951-37b9-4a7e-ba46-c96c6dfbad38",
+      "attributes": {
+        "locale": "en-US",
+        "description": "Your morning belongs to you.\n\nBefore the messages, the feeds and everyone else's opinions, take a moment to hear your own.\n\nHonestly is your space to write what’s on your mind, understand how you feel and keep the words you need close. A few honest lines are enough. You don’t need a perfect routine or something profound to say.\n\nWRITE FIRST. UNLOCK YOUR APPS.\nEver open your phone for a moment and lose the morning? With Premium, the apps you choose stay blocked until you finish your journal entry. Give yourself a little space before you start scrolling.\n\nFIND WORDS WHEN YOUR MIND FEELS FULL.\nStart with how you feel. Premium journal prompts meet you there, whether you’re having a hard morning or looking forward to the day. Tap Shuffle when you need a different starting point, or simply write what comes.\n\nKEEP WORDS THAT FEEL LIKE YOURS.\nChoose affirmations for self-worth, calm, confidence, hard days, intention or gratitude. Build a rotation you want to come back to. Premium lets you add your own words, choose more affirmations, see them in widgets and receive a reminder at your chosen time.\n\nUNDERSTAND HOW YOU FEEL.\nSome days feel heavier than others. Check in with your mood and see your days together on a calendar. Give yourself room to notice what’s changing.\n\nSEE HOW FAR YOU’VE COME.\nKeep a record of the mornings you showed up for yourself. With Premium, search your full journal history and return to the thoughts, small wins and moments you might otherwise forget.\n\nMAKE THE PAGE YOURS.\nWrite a few lines or stay a little longer. Add a photo, a doodle or a small detail that helps you remember. Premium adds more ways to personalize your pages.\n\nSTART WITH WHAT YOU NEED.\nJournaling, mood tracking, your mood calendar, a streak and up to five affirmations in your rotation are free. Premium adds app blocking, mood-based prompts, full searchable history, unlimited affirmation picks, your own affirmations, widgets, reminders and manual iCloud backup and restore.\n\nPremium purchase options are shown in the app. A lifetime purchase is a one-time payment. If a monthly subscription is offered, it renews automatically unless canceled at least 24 hours before the current period ends. Manage or cancel subscriptions in your App Store account settings.\n\nYou don’t have to figure everything out this morning. Start with one honest line.\n\nTerms of Service: https://www.apple.com/legal/internet-services/itunes/dev/stdeula/",
+        "keywords": "prompts,diary,gratitude,tracker,feelings,healing,widget,daily,routine,stoicism,shadow,work,private",
+        "marketingUrl": "https://hosting-pages.netlify.app/honestly",
+        "promotionalText": "Your morning belongs to you. Journal before you scroll, make room for how you feel, and keep words that lift you up close. App blocking is available with Premium.",
+        "supportUrl": "https://hosting-pages.netlify.app/honestly/support",
+        "whatsNew": "A little more space for you in 4.0.\n\n• A simpler morning: check in with your mood and write. The old affirmation-writing step has been removed.\n• Keep the words that feel like yours. Choose affirmations by focus and build your own rotation.\n• Find your next thought with a visible Shuffle button for Premium journal prompts.\n• Browse affirmations more easily with sections you can expand or collapse.\n• Clearer Premium options and more reliable access to the features you’ve unlocked."
+      },
+      "relationships": {
+        "appScreenshotSets": {
+          "links": {
+            "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/1a944951-37b9-4a7e-ba46-c96c6dfbad38/relationships/appScreenshotSets",
+            "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/1a944951-37b9-4a7e-ba46-c96c6dfbad38/appScreenshotSets"
+          }
+        },
+        "appPreviewSets": {
+          "links": {
+            "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/1a944951-37b9-4a7e-ba46-c96c6dfbad38/relationships/appPreviewSets",
+            "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/1a944951-37b9-4a7e-ba46-c96c6dfbad38/appPreviewSets"
+          }
+        },
+        "searchKeywords": {
+          "links": {
+            "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/1a944951-37b9-4a7e-ba46-c96c6dfbad38/relationships/searchKeywords",
+            "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/1a944951-37b9-4a7e-ba46-c96c6dfbad38/searchKeywords"
+          }
+        },
+        "placements": {
+          "links": {
+            "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/1a944951-37b9-4a7e-ba46-c96c6dfbad38/relationships/placements",
+            "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/1a944951-37b9-4a7e-ba46-c96c6dfbad38/placements"
+          }
+        }
+      },
+      "links": {
+        "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/1a944951-37b9-4a7e-ba46-c96c6dfbad38"
+      }
+    },
+    {
+      "type": "appStoreVersionLocalizations",
+      "id": "55999f47-527c-484f-b760-2934c2c0ed29",
+      "attributes": {
+        "locale": "en-GB",
+        "description": "Your morning belongs to you.\n\nBefore the messages, the feeds and everyone else's opinions, take a moment to hear your own.\n\nHonestly is your space to write what’s on your mind, understand how you feel and keep the words you need close. A few honest lines are enough. You don’t need a perfect routine or something profound to say.\n\nWRITE FIRST. UNLOCK YOUR APPS.\nEver open your phone for a moment and lose the morning? With Premium, the apps you choose stay blocked until you finish your journal entry. Give yourself a little space before you start scrolling.\n\nFIND WORDS WHEN YOUR MIND FEELS FULL.\nStart with how you feel. Premium journal prompts meet you there, whether you’re having a hard morning or looking forward to the day. Tap Shuffle when you need a different starting point, or simply write what comes.\n\nKEEP WORDS THAT FEEL LIKE YOURS.\nChoose affirmations for self-worth, calm, confidence, hard days, intention or gratitude. Build a rotation you want to come back to. Premium lets you add your own words, choose more affirmations, see them in widgets and receive a reminder at your chosen time.\n\nUNDERSTAND HOW YOU FEEL.\nSome days feel heavier than others. Check in with your mood and see your days together on a calendar. Give yourself room to notice what’s changing.\n\nSEE HOW FAR YOU’VE COME.\nKeep a record of the mornings you showed up for yourself. With Premium, search your full journal history and return to the thoughts, small wins and moments you might otherwise forget.\n\nMAKE THE PAGE YOURS.\nWrite a few lines or stay a little longer. Add a photo, a doodle or a small detail that helps you remember. Premium adds more ways to personalize your pages.\n\nSTART WITH WHAT YOU NEED.\nJournaling, mood tracking, your mood calendar, a streak and up to five affirmations in your rotation are free. Premium adds app blocking, mood-based prompts, full searchable history, unlimited affirmation picks, your own affirmations, widgets, reminders and manual iCloud backup and restore.\n\nPremium purchase options are shown in the app. A lifetime purchase is a one-time payment. If a monthly subscription is offered, it renews automatically unless canceled at least 24 hours before the current period ends. Manage or cancel subscriptions in your App Store account settings.\n\nYou don’t have to figure everything out this morning. Start with one honest line.\n\nTerms of Service: https://www.apple.com/legal/internet-services/itunes/dev/stdeula/",
+        "keywords": "diary,tracker,prompts,writing,shadow,work,vent,gratitude,healing,routine,manifest,motivation",
+        "marketingUrl": "https://hosting-pages.netlify.app/honestly",
+        "promotionalText": "Your morning belongs to you. Journal before you scroll, make room for how you feel, and keep words that lift you up close. App blocking is available with Premium.",
+        "supportUrl": "https://hosting-pages.netlify.app/honestly/support",
+        "whatsNew": "A little more space for you in 4.0.\n\n• A simpler morning: check in with your mood and write. The old affirmation-writing step has been removed.\n• Keep the words that feel like yours. Choose affirmations by focus and build your own rotation.\n• Find your next thought with a visible Shuffle button for Premium journal prompts.\n• Browse affirmations more easily with sections you can expand or collapse.\n• Clearer Premium options and more reliable access to the features you’ve unlocked."
+      },
+      "relationships": {
+        "appScreenshotSets": {
+          "links": {
+            "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/55999f47-527c-484f-b760-2934c2c0ed29/relationships/appScreenshotSets",
+            "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/55999f47-527c-484f-b760-2934c2c0ed29/appScreenshotSets"
+          }
+        },
+        "appPreviewSets": {
+          "links": {
+            "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/55999f47-527c-484f-b760-2934c2c0ed29/relationships/appPreviewSets",
+            "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/55999f47-527c-484f-b760-2934c2c0ed29/appPreviewSets"
+          }
+        },
+        "searchKeywords": {
+          "links": {
+            "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/55999f47-527c-484f-b760-2934c2c0ed29/relationships/searchKeywords",
+            "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/55999f47-527c-484f-b760-2934c2c0ed29/searchKeywords"
+          }
+        },
+        "placements": {
+          "links": {
+            "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/55999f47-527c-484f-b760-2934c2c0ed29/relationships/placements",
+            "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/55999f47-527c-484f-b760-2934c2c0ed29/placements"
+          }
+        }
+      },
+      "links": {
+        "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/55999f47-527c-484f-b760-2934c2c0ed29"
+      }
+    },
+    {
+      "type": "appStoreVersionLocalizations",
+      "id": "c0eb572e-e429-464f-9e4d-e2a23aacf9a4",
+      "attributes": {
+        "locale": "en-AU",
+        "description": "Your morning belongs to you.\n\nBefore the messages, the feeds and everyone else's opinions, take a moment to hear your own.\n\nHonestly is your space to write what’s on your mind, understand how you feel and keep the words you need close. A few honest lines are enough. You don’t need a perfect routine or something profound to say.\n\nWRITE FIRST. UNLOCK YOUR APPS.\nEver open your phone for a moment and lose the morning? With Premium, the apps you choose stay blocked until you finish your journal entry. Give yourself a little space before you start scrolling.\n\nFIND WORDS WHEN YOUR MIND FEELS FULL.\nStart with how you feel. Premium journal prompts meet you there, whether you’re having a hard morning or looking forward to the day. Tap Shuffle when you need a different starting point, or simply write what comes.\n\nKEEP WORDS THAT FEEL LIKE YOURS.\nChoose affirmations for self-worth, calm, confidence, hard days, intention or gratitude. Build a rotation you want to come back to. Premium lets you add your own words, choose more affirmations, see them in widgets and receive a reminder at your chosen time.\n\nUNDERSTAND HOW YOU FEEL.\nSome days feel heavier than others. Check in with your mood and see your days together on a calendar. Give yourself room to notice what’s changing.\n\nSEE HOW FAR YOU’VE COME.\nKeep a record of the mornings you showed up for yourself. With Premium, search your full journal history and return to the thoughts, small wins and moments you might otherwise forget.\n\nMAKE THE PAGE YOURS.\nWrite a few lines or stay a little longer. Add a photo, a doodle or a small detail that helps you remember. Premium adds more ways to personalize your pages.\n\nSTART WITH WHAT YOU NEED.\nJournaling, mood tracking, your mood calendar, a streak and up to five affirmations in your rotation are free. Premium adds app blocking, mood-based prompts, full searchable history, unlimited affirmation picks, your own affirmations, widgets, reminders and manual iCloud backup and restore.\n\nPremium purchase options are shown in the app. A lifetime purchase is a one-time payment. If a monthly subscription is offered, it renews automatically unless canceled at least 24 hours before the current period ends. Manage or cancel subscriptions in your App Store account settings.\n\nYou don’t have to figure everything out this morning. Start with one honest line.\n\nTerms of Service: https://www.apple.com/legal/internet-services/itunes/dev/stdeula/",
+        "keywords": "wellbeing,care,prompts,widget,diary,gratitude,routine,manifest,shadow,work,stoicism,healing",
+        "marketingUrl": "https://hosting-pages.netlify.app/honestly",
+        "promotionalText": "Your morning belongs to you. Journal before you scroll, make room for how you feel, and keep words that lift you up close. App blocking is available with Premium.",
+        "supportUrl": "https://hosting-pages.netlify.app/honestly/support",
+        "whatsNew": "A little more space for you in 4.0.\n\n• A simpler morning: check in with your mood and write. The old affirmation-writing step has been removed.\n• Keep the words that feel like yours. Choose affirmations by focus and build your own rotation.\n• Find your next thought with a visible Shuffle button for Premium journal prompts.\n• Browse affirmations more easily with sections you can expand or collapse.\n• Clearer Premium options and more reliable access to the features you’ve unlocked."
+      },
+      "relationships": {
+        "appScreenshotSets": {
+          "links": {
+            "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/c0eb572e-e429-464f-9e4d-e2a23aacf9a4/relationships/appScreenshotSets",
+            "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/c0eb572e-e429-464f-9e4d-e2a23aacf9a4/appScreenshotSets"
+          }
+        },
+        "appPreviewSets": {
+          "links": {
+            "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/c0eb572e-e429-464f-9e4d-e2a23aacf9a4/relationships/appPreviewSets",
+            "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/c0eb572e-e429-464f-9e4d-e2a23aacf9a4/appPreviewSets"
+          }
+        },
+        "searchKeywords": {
+          "links": {
+            "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/c0eb572e-e429-464f-9e4d-e2a23aacf9a4/relationships/searchKeywords",
+            "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/c0eb572e-e429-464f-9e4d-e2a23aacf9a4/searchKeywords"
+          }
+        },
+        "placements": {
+          "links": {
+            "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/c0eb572e-e429-464f-9e4d-e2a23aacf9a4/relationships/placements",
+            "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/c0eb572e-e429-464f-9e4d-e2a23aacf9a4/placements"
+          }
+        }
+      },
+      "links": {
+        "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/c0eb572e-e429-464f-9e4d-e2a23aacf9a4"
+      }
+    },
+    {
+      "type": "appStoreVersionLocalizations",
+      "id": "d4d49913-29e2-4b00-868b-d1b0f59d0002",
+      "attributes": {
+        "locale": "en-CA",
+        "description": "Your morning belongs to you.\n\nBefore the messages, the feeds and everyone else's opinions, take a moment to hear your own.\n\nHonestly is your space to write what’s on your mind, understand how you feel and keep the words you need close. A few honest lines are enough. You don’t need a perfect routine or something profound to say.\n\nWRITE FIRST. UNLOCK YOUR APPS.\nEver open your phone for a moment and lose the morning? With Premium, the apps you choose stay blocked until you finish your journal entry. Give yourself a little space before you start scrolling.\n\nFIND WORDS WHEN YOUR MIND FEELS FULL.\nStart with how you feel. Premium journal prompts meet you there, whether you’re having a hard morning or looking forward to the day. Tap Shuffle when you need a different starting point, or simply write what comes.\n\nKEEP WORDS THAT FEEL LIKE YOURS.\nChoose affirmations for self-worth, calm, confidence, hard days, intention or gratitude. Build a rotation you want to come back to. Premium lets you add your own words, choose more affirmations, see them in widgets and receive a reminder at your chosen time.\n\nUNDERSTAND HOW YOU FEEL.\nSome days feel heavier than others. Check in with your mood and see your days together on a calendar. Give yourself room to notice what’s changing.\n\nSEE HOW FAR YOU’VE COME.\nKeep a record of the mornings you showed up for yourself. With Premium, search your full journal history and return to the thoughts, small wins and moments you might otherwise forget.\n\nMAKE THE PAGE YOURS.\nWrite a few lines or stay a little longer. Add a photo, a doodle or a small detail that helps you remember. Premium adds more ways to personalize your pages.\n\nSTART WITH WHAT YOU NEED.\nJournaling, mood tracking, your mood calendar, a streak and up to five affirmations in your rotation are free. Premium adds app blocking, mood-based prompts, full searchable history, unlimited affirmation picks, your own affirmations, widgets, reminders and manual iCloud backup and restore.\n\nPremium purchase options are shown in the app. A lifetime purchase is a one-time payment. If a monthly subscription is offered, it renews automatically unless canceled at least 24 hours before the current period ends. Manage or cancel subscriptions in your App Store account settings.\n\nYou don’t have to figure everything out this morning. Start with one honest line.\n\nTerms of Service: https://www.apple.com/legal/internet-services/itunes/dev/stdeula/",
+        "keywords": "tracker,diary,prompts,gratitude,manifest,routine,care,shadow,work,healing,widget,daily,stoicism",
+        "marketingUrl": "https://hosting-pages.netlify.app/honestly",
+        "promotionalText": "Your morning belongs to you. Journal before you scroll, make room for how you feel, and keep words that lift you up close. App blocking is available with Premium.",
+        "supportUrl": "https://hosting-pages.netlify.app/honestly/support",
+        "whatsNew": "A little more space for you in 4.0.\n\n• A simpler morning: check in with your mood and write. The old affirmation-writing step has been removed.\n• Keep the words that feel like yours. Choose affirmations by focus and build your own rotation.\n• Find your next thought with a visible Shuffle button for Premium journal prompts.\n• Browse affirmations more easily with sections you can expand or collapse.\n• Clearer Premium options and more reliable access to the features you’ve unlocked."
+      },
+      "relationships": {
+        "appScreenshotSets": {
+          "links": {
+            "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/d4d49913-29e2-4b00-868b-d1b0f59d0002/relationships/appScreenshotSets",
+            "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/d4d49913-29e2-4b00-868b-d1b0f59d0002/appScreenshotSets"
+          }
+        },
+        "appPreviewSets": {
+          "links": {
+            "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/d4d49913-29e2-4b00-868b-d1b0f59d0002/relationships/appPreviewSets",
+            "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/d4d49913-29e2-4b00-868b-d1b0f59d0002/appPreviewSets"
+          }
+        },
+        "searchKeywords": {
+          "links": {
+            "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/d4d49913-29e2-4b00-868b-d1b0f59d0002/relationships/searchKeywords",
+            "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/d4d49913-29e2-4b00-868b-d1b0f59d0002/searchKeywords"
+          }
+        },
+        "placements": {
+          "links": {
+            "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/d4d49913-29e2-4b00-868b-d1b0f59d0002/relationships/placements",
+            "related": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/d4d49913-29e2-4b00-868b-d1b0f59d0002/placements"
+          }
+        }
+      },
+      "links": {
+        "self": "https://api.appstoreconnect.apple.com/v1/appStoreVersionLocalizations/d4d49913-29e2-4b00-868b-d1b0f59d0002"
+      }
+    }
+  ]
+}

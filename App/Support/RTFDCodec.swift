@@ -22,6 +22,7 @@ extension NSAttributedString {
     static func from(rtfdData data: Data) -> NSAttributedString? {
         guard !data.isEmpty else { return NSAttributedString() }
         guard let wrapper = FileWrapper(serializedRepresentation: data) else { return nil }
+        remapLegacyFonts(in: wrapper)
 
         let tempDir = FileManager.default.temporaryDirectory
             .appendingPathComponent(UUID().uuidString, isDirectory: true)
@@ -36,6 +37,22 @@ extension NSAttributedString {
                                           documentAttributes: nil)
         } catch {
             return nil
+        }
+    }
+
+    private static func remapLegacyFonts(in wrapper: FileWrapper) {
+        guard let children = wrapper.fileWrappers else { return }
+        for (name, child) in children {
+            if child.isDirectory {
+                remapLegacyFonts(in: child)
+            } else if name.lowercased().hasSuffix(".rtf"), let original = child.regularFileContents {
+                let mapped = LegacyJournalFonts.remapFontTable(in: original)
+                guard mapped != original else { continue }
+                let replacement = FileWrapper(regularFileWithContents: mapped)
+                replacement.preferredFilename = name
+                wrapper.removeFileWrapper(child)
+                wrapper.addFileWrapper(replacement)
+            }
         }
     }
 }

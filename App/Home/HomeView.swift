@@ -1,4 +1,5 @@
 import SwiftUI
+import FamilyControls
 
 struct HomeView: View {
     @Environment(JournalStore.self) private var store
@@ -6,6 +7,9 @@ struct HomeView: View {
     @Environment(ScreenTimeManager.self) private var screenTime
     @Environment(PremiumManager.self) private var premium
     @Environment(AffirmationList.self) private var affirmations
+    @Environment(\.openURL) private var openURL
+    @State private var showBlockingPicker = false
+    @State private var showAccessHelp = false
 
     var body: some View {
         ScreenScaffold {
@@ -16,6 +20,14 @@ struct HomeView: View {
                 affirmationSection.padding(.top, 24)
             }
         }
+        .familyActivityPicker(isPresented: $showBlockingPicker, selection: Binding(
+            get: { screenTime.selection }, set: { screenTime.selection = $0 }))
+        .alert("Screen Time access is off", isPresented: $showAccessHelp) {
+            Button("Open Settings") { openURL(URL(string: UIApplication.openSettingsURLString)!) }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text(loc: "Allow Screen Time access, then choose the apps you want to hold.")
+        }
     }
 
     // MARK: Header
@@ -23,7 +35,6 @@ struct HomeView: View {
         VStack(alignment: .leading, spacing: 0) {
             Text(loc: HDate.greetingKey(Date())).font(Fonts.display(34, .bold)).foregroundStyle(Palette.ink)
                 .fixedSize()
-                .underlineSquiggle(Palette.amber, weight: 4.5, height: 10)
             Eyebrow(text: HDate.homeHeader(Date()), color: Palette.inkSoft, tracking: 1.4)
                 .padding(.top, 16)
         }
@@ -44,10 +55,9 @@ struct HomeView: View {
     }
 
     private var unwrittenCard: some View {
-        let count = screenTime.selectedCount
-        let appsLine: Text = count > 0
-            ? Text("\(count) apps stay asleep until you write. A few quiet minutes, just for you.")
-            : Text("Your apps stay asleep until you write. A few quiet minutes, just for you.")
+        let appsLine = Text(loc: screenTime.blockingPresentation.isHoldingApps
+            ? "Your apps can wait. This moment is yours."
+            : "A few honest lines. A little space for yourself.")
         return ZStack(alignment: .topTrailing) {
             Circle().fill(.white.opacity(0.16)).frame(width: 120, height: 120).offset(x: 30, y: -30)
             SunMark(size: 50, tint: Color(hex: "FFF4E0")).rotationEffect(.degrees(-8))
@@ -66,6 +76,24 @@ struct HomeView: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.top, 12)
+                if !screenTime.authorized || !screenTime.hasSelection {
+                    Button {
+                        if !premium.isPremium { flow.showPaywall(); return }
+                        Task {
+                            if await screenTime.ensureAuthorizedForPicker() { showBlockingPicker = true }
+                            else { showAccessHelp = true }
+                        }
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: "shield.lefthalf.filled")
+                            Text(loc: screenTime.authorized ? "Choose apps" : "Approve Screen Time")
+                            Image(systemName: "chevron.forward")
+                        }
+                        .font(Fonts.ui(12.5, .bold)).foregroundStyle(.white)
+                        .frame(minHeight: 44)
+                    }
+                    .buttonStyle(.plain)
+                }
                 CreamButton(title: "Write today's page") { flow.startRitual() }
                     .padding(.top, 18)
             }
@@ -89,7 +117,8 @@ struct HomeView: View {
                     .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(Palette.ink, lineWidth: 2))
                 VStack(alignment: .leading, spacing: 3) {
                     Eyebrow(text: "Today · done", color: Palette.ink.opacity(0.85), size: 11)
-                    Text("Your apps are awake")
+                    Text(loc: screenTime.blockingPresentation.isScheduledNow
+                         ? "Your apps are awake" : "You made time for yourself.")
                         .font(Fonts.display(23, .bold)).foregroundStyle(Palette.ink)
                     Group {
                         if premium.isPremium {
@@ -115,7 +144,7 @@ struct HomeView: View {
         HStack(spacing: 6) {
             Text("Read today's page")
                 .font(Fonts.ui(13.5, .heavy)).foregroundStyle(Palette.amberDeep)
-            Image(systemName: "arrow.right")
+            Image(systemName: "arrow.forward")
                 .font(.system(size: 11, weight: .bold)).foregroundStyle(Palette.amberDeep)
         }
         .overlay(alignment: .bottom) {
@@ -130,8 +159,10 @@ struct HomeView: View {
                 IconTile(size: 52, fill: Palette.iconTile, radius: 16) { SunMark(size: 28) }
                 HStack(alignment: .center, spacing: 10) {
                     Text("\(monthCount)").font(Fonts.display(30, .heavy)).foregroundStyle(Palette.ink)
-                    Text("mornings written\nin \(HDate.monthShort(Date()))")
-                        .font(Fonts.ui(13, .semibold)).foregroundStyle(Palette.inkSoft).lineSpacing(1)
+                    Text("Mornings in \(HDate.monthShort(Date()))")
+                        .font(Fonts.ui(13, .semibold)).foregroundStyle(Palette.inkSoft)
+                        .lineLimit(1).minimumScaleFactor(0.8)
+                        .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 Spacer(minLength: 0)
             }
@@ -181,27 +212,35 @@ struct HomeView: View {
             HStack(alignment: .firstTextBaseline) {
                 Text("Today's affirmation").font(Fonts.display(21, .bold)).foregroundStyle(Palette.ink)
                     .fixedSize()
-                    .underlineSquiggle(Palette.sunDisc, weight: 3.5, height: 8)
                 Spacer(minLength: 8)
                 NavigationLink {
                     AffirmationsScreen().toolbar(.hidden, for: .navigationBar)
                 } label: {
-                    Text("Edit").font(Fonts.ui(13.5, .heavy)).foregroundStyle(Palette.amberDeep)
+                    Text(loc: "Explore").font(Fonts.ui(13.5, .heavy)).foregroundStyle(Palette.amberDeep)
                 }
                 .simultaneousGesture(TapGesture().onEnded { Haptics.tap() })
             }
             .padding(.bottom, 13)
 
-            HStack(spacing: 12) {
-                SunMark(size: 22, rays: false)
-                Affirmations.text(affirmations.today(premium: premium.isPremium))
-                    .font(Fonts.ui(14.5, .semibold)).foregroundStyle(Palette.ink)
-                    .fixedSize(horizontal: false, vertical: true)
-                Spacer(minLength: 0)
+            NavigationLink {
+                AffirmationReaderScreen().toolbar(.hidden, for: .navigationBar)
+            } label: {
+                HStack(spacing: 12) {
+                    SunMark(size: 22, rays: false)
+                    Affirmations.text(affirmations.today(premium: premium.isPremium))
+                        .font(Fonts.ui(14.5, .semibold)).foregroundStyle(Palette.ink)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                    Image(systemName: "chevron.forward")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(Palette.inkSofter)
+                }
+                .padding(EdgeInsets(top: 14, leading: 14, bottom: 14, trailing: 14))
+                .background(Palette.cream, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(Palette.outlineSoft, lineWidth: 1.5))
             }
-            .padding(EdgeInsets(top: 11, leading: 14, bottom: 11, trailing: 14))
-            .background(Palette.cream, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(Palette.outlineSoft, lineWidth: 1.5))
+            .buttonStyle(PressableStyle(scale: 0.99))
+            .accessibilityHint(Text(loc: "Read and browse affirmations"))
             .staggeredAppear(index: 2)
         }
     }

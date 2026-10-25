@@ -129,7 +129,7 @@ final class AttachmentEditController {
 /// The floating two-tile bar itself — UIKit because it lives inside the UITextView, styled to
 /// match the SwiftUI toolbar tiles (paper fill, soft outline, ink icons).
 final class AttachmentEditBar: UIView {
-    private static let tile: CGFloat = 34
+    private static var tile: CGFloat { max(44, DesignScale.s(CompactControlMetrics.size)) }
     private static let spacing: CGFloat = 6
     private static let padding: CGFloat = 5
 
@@ -171,14 +171,17 @@ final class AttachmentEditBar: UIView {
     private static func tileButton(icon: String, action: @escaping () -> Void) -> UIButton {
         var config = UIButton.Configuration.plain()
         config.image = UIImage(systemName: icon,
-                               withConfiguration: UIImage.SymbolConfiguration(pointSize: 13, weight: .bold))
+                               withConfiguration: UIImage.SymbolConfiguration(pointSize: DesignScale.s(CompactControlMetrics.iconSize), weight: .bold))
         config.baseForegroundColor = UIColor(Palette.ink)
+        let inset = (tile - DesignScale.s(CompactControlMetrics.size)) / 2
+        config.background.backgroundColor = UIColor(Palette.paper)
+        config.background.cornerRadius = DesignScale.s(CompactControlMetrics.radius)
+        config.background.strokeWidth = CompactControlMetrics.borderWidth
+        config.background.strokeColor = UIColor(Palette.outlineSoft)
+        config.background.backgroundInsets = NSDirectionalEdgeInsets(top: inset, leading: inset,
+                                                                     bottom: inset, trailing: inset)
         let button = UIButton(configuration: config, primaryAction: UIAction { _ in action() })
-        button.backgroundColor = UIColor(Palette.paper)
-        button.layer.cornerRadius = 9
         button.layer.cornerCurve = .continuous
-        button.layer.borderWidth = 1.2
-        button.layer.borderColor = UIColor(Palette.outlineSoft).cgColor
         NSLayoutConstraint.activate([
             button.widthAnchor.constraint(equalToConstant: tile),
             button.heightAnchor.constraint(equalToConstant: tile),

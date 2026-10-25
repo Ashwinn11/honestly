@@ -3,6 +3,8 @@ import SwiftUI
 struct EntryDetailView: View {
     let dayKey: String
     @Environment(JournalStore.self) private var store
+    @Environment(PremiumManager.self) private var premium
+    @Environment(AppFlow.self) private var flow
     @Environment(\.dismiss) private var dismiss
     @State private var selectedKey: String
     @State private var showEditor = false
@@ -29,7 +31,12 @@ struct EntryDetailView: View {
     var body: some View {
         ZStack(alignment: .top) {
             background
-            if store.entry(for: dayKey) != nil {
+            if !premium.isPremium {
+                PremiumUnlockCard(title: "Unlock your full history",
+                                  subtitle: "Every morning you've written, always here to revisit.",
+                                  action: { flow.showPaywall() })
+                    .padding(.top, 80)
+            } else if store.entry(for: dayKey) != nil {
                 reader
             } else {
                 missing
@@ -40,9 +47,12 @@ struct EntryDetailView: View {
                 selectedKey = dayKey
             }
         }
+        .onChange(of: premium.isPremium) { _, active in
+            if !active { showEditor = false }
+        }
         .onChange(of: selectedKey) { _, _ in Haptics.select() }
         .fullScreenCover(isPresented: $showEditor) {
-            if let entry = store.entry(for: selectedKey) {
+            if premium.isPremium, let entry = store.entry(for: selectedKey) {
                 EntryEditorView(entry: entry)
             }
         }
@@ -66,7 +76,7 @@ struct EntryDetailView: View {
     // itself (PageDateRow), same as the writing screen, so this chrome doesn't need to repeat it.
     private var readerHeader: some View {
         HStack(spacing: 12) {
-            IconTileButton(icon: "chevron.left", size: 38, iconSize: 15) { dismiss() }
+            IconTileButton(icon: "chevron.backward", size: 38, iconSize: 15) { dismiss() }
             Spacer(minLength: 0)
             if store.entry(for: selectedKey) != nil {
                 IconTileButton(icon: "pencil", size: 38, iconSize: 15) {
@@ -81,7 +91,7 @@ struct EntryDetailView: View {
 
     private var missing: some View {
         VStack(spacing: 14) {
-            IconTileButton(icon: "chevron.left", size: 38, iconSize: 15) { dismiss() }
+            IconTileButton(icon: "chevron.backward", size: 38, iconSize: 15) { dismiss() }
                 .frame(maxWidth: .infinity, alignment: .leading)
             Spacer()
             Text("This page has drifted off.").font(Fonts.ui(15, .semibold)).foregroundStyle(Palette.inkSofter)

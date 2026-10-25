@@ -30,6 +30,7 @@ struct BigWinsLockScreenWidgetView: View {
         // Defensive against the same WidgetKit "stuck placeholder" platform bug as the Home
         // Screen widget — see BigWinsWidgetView for details.
         .unredacted()
+        .widgetURL(AppLink.affirmations)
     }
 }
 
@@ -42,6 +43,7 @@ struct BigWinsLockScreenWidget: Widget {
                 // Widgets default to the device's system locale, not the app's in-app language
                 // picker — force the same language the app itself is showing.
                 .environment(\.locale, Locale(identifier: SharedState.language))
+                .environment(\.layoutDirection, Locale.Language(identifier: SharedState.language).characterDirection == .rightToLeft ? .rightToLeft : .leftToRight)
         }
         .configurationDisplayName("Today's affirmation")
         .description("See today's affirmation on your Lock Screen.")

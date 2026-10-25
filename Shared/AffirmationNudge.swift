@@ -36,19 +36,24 @@ enum AffirmationNudge {
         SharedState.defaults.object(forKey: SharedState.Key.affirmationMinutes) as? Int ?? defaultMinutes
     }
 
-    /// The single "nudge became active" path — the onboarding permission beat and the profile
-    /// toggle both go through here. Requests permission, then lays out the daily schedule.
+    /// Used when reminders are enabled in Profile. Requests permission, then lays out the schedule.
+    /// Onboarding requests permission separately without enabling reminders.
     /// Scheduling only sticks if iOS is authorized at the moment `add` runs — a later grant never
     /// resurrects dropped requests — which is why grant and schedule live together.
     /// Returns false when iOS won't allow notifications (a fresh denial, or one from earlier —
     /// iOS never re-prompts after that) so callers can surface the Settings hand-off.
     @discardableResult
     static func activate() async -> Bool {
-        let granted = (try? await UNUserNotificationCenter.current()
-            .requestAuthorization(options: [.alert, .sound])) ?? false
+        let granted = await requestPermission()
         guard granted else { return false }
         schedule()
         return true
+    }
+
+    /// Permission alone does not enable or schedule Premium reminders.
+    static func requestPermission() async -> Bool {
+        (try? await UNUserNotificationCenter.current()
+            .requestAuthorization(options: [.alert, .sound])) ?? false
     }
 
     /// Re-lays the next `horizonDays` of daily affirmations from scratch. Idempotent — call it
@@ -69,7 +74,9 @@ enum AffirmationNudge {
                   fire > now else { continue }
             let content = UNMutableNotificationContent()
             content.title = title
-            content.body = Affirmations.display(Affirmations.line(on: day))
+            let line = Affirmations.line(on: day)
+            guard !line.isEmpty else { continue }
+            content.body = Affirmations.display(line)
             content.sound = .default
             let when = cal.dateComponents([.year, .month, .day, .hour, .minute], from: fire)
             let trigger = UNCalendarNotificationTrigger(dateMatching: when, repeats: false)
@@ -97,7 +104,7 @@ enum AffirmationNudge {
         let content = UNMutableNotificationContent()
         content.title = "Honestly"   // brand name — not localized
         // Not SwiftUI here, so `Text(loc:)` doesn't apply — do the String Catalog lookup directly.
-        content.body = String(localized: "Write today's page — a few quiet minutes, just for you.")
+        content.body = Affirmations.localized("Write today's page — a few quiet minutes, just for you.")
         content.sound = .default
 
         var when = DateComponents()

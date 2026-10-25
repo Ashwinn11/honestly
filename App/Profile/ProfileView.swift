@@ -6,6 +6,7 @@ struct ProfileView: View {
     @Environment(ScreenTimeManager.self) private var screenTime
     @Environment(PremiumManager.self) private var premium
     @Environment(AppFlow.self) private var flow
+    @Environment(PromptLibrary.self) private var prompts
     @Environment(AffirmationList.self) private var affirmations
     @Environment(\.openURL) private var openURL
     @Environment(\.requestReview) private var requestReview
@@ -33,7 +34,6 @@ struct ProfileView: View {
             VStack(alignment: .leading, spacing: 0) {
                 Text("You").font(Fonts.display(30, .bold)).foregroundStyle(Palette.ink)
                     .fixedSize()
-                    .underlineSquiggle(Palette.sunDisc, weight: 4, height: 9)
                 Text("Little rituals, big mornings.")
                     .font(Fonts.ui(14, .semibold)).foregroundStyle(Palette.inkSoft).padding(.top, 5)
 
@@ -57,7 +57,7 @@ struct ProfileView: View {
         .familyActivityPicker(isPresented: $showPicker, selection: $st.selection)
         .alert("Delete all data?", isPresented: $confirmDelete) {
             Button("Delete everything", role: .destructive) {
-                store.deleteAll(); screenTime.wipe(); affirmations.set([]); Haptics.rigid()
+                store.deleteAll(); screenTime.wipe(); affirmations.clear(); prompts.clear(); Haptics.rigid()
             }
             Button("Cancel", role: .cancel) { }
         } message: {
@@ -95,22 +95,30 @@ struct ProfileView: View {
     private var subscriptionCard: some View {
         Group {
             if premium.isPremium {
-                Button {
-                    Haptics.tap()
-                    openURL(URL(string: "https://apps.apple.com/account/subscriptions")!)
-                } label: {
+                if premium.isLifetime {
                     settingRow {
-                        rowText("Honestly Premium", "Manage your subscription")
-                    } trailing: { chevron }
+                        rowText("Honestly Premium", "Lifetime access · paid once")
+                    } trailing: {
+                        Image(systemName: "checkmark.seal.fill")
+                            .foregroundStyle(Palette.success)
+                    }
+                } else {
+                    Button {
+                        openURL(URL(string: "https://apps.apple.com/account/subscriptions")!)
+                    } label: {
+                        settingRow {
+                            rowText("Honestly Premium", "Manage your subscription")
+                        } trailing: { chevron }
+                    }
+                    .buttonStyle(RowPressStyle())
                 }
-                .buttonStyle(RowPressStyle())
             } else {
                 Button {
                     Haptics.tap()
                     flow.showPaywall()
                 } label: {
                     settingRow {
-                        rowText("Go Premium", "Full history, iCloud sync & app blocking")
+                        rowText("Go Premium", "Full history, iCloud backup & app blocking")
                     } trailing: {
                         Text(loc: "Upgrade").font(Fonts.ui(13, .heavy)).foregroundStyle(.white)
                             .padding(.horizontal, 14).padding(.vertical, 7)
@@ -135,7 +143,8 @@ struct ProfileView: View {
                     Text("\(store.streak)").font(Fonts.display(44, .heavy)).foregroundStyle(.white)
                     Text("day streak").font(Fonts.ui(16, .heavy)).foregroundStyle(.white)
                 }
-                Text("Longest yet — keep the sun rising.")
+                Text(loc: JournalStatusCopy.streak(current: store.streak, best: store.bestStreak,
+                                                  total: store.totalMornings))
                     .font(Fonts.ui(13, .semibold)).foregroundStyle(.white.opacity(0.92)).padding(.top, 4)
                 Rectangle().fill(.white.opacity(0.35)).frame(height: 1.5).padding(.top, 14)
                 HStack(spacing: 26) {
@@ -267,12 +276,10 @@ struct ProfileView: View {
                 if premium.isPremium { showICloud = true } else { flow.showPaywall() }
             } label: {
                 settingRow {
-                    rowText("iCloud sync", "Back up or restore your pages")
+                    rowText("iCloud backup", "Manually back up or restore your pages")
                 } trailing: {
                     HStack(spacing: 9) {
-                        if premium.isPremium {
-                            Text("On").font(Fonts.ui(14, .bold)).foregroundStyle(Palette.success)
-                        } else {
+                        if !premium.isPremium {
                             Image(systemName: "lock.fill").font(.system(size: 11, weight: .bold))
                                 .foregroundStyle(Palette.inkSofter)
                         }
@@ -403,7 +410,7 @@ struct ProfileView: View {
     }
     private var divider: some View { Rectangle().fill(Palette.ink.opacity(0.06)).frame(height: 1).padding(.leading, 18) }
     private var chevron: some View {
-        Image(systemName: "chevron.right").font(.system(size: 12, weight: .bold)).foregroundStyle(Palette.hairline)
+        Image(systemName: "chevron.forward").font(.system(size: 12, weight: .bold)).foregroundStyle(Palette.hairline)
     }
 }
 

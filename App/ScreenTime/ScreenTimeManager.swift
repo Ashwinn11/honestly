@@ -27,20 +27,29 @@ final class ScreenTimeManager {
     init() {
         let loaded = BlockingCodec.load()
         selection = loaded
-        authorized = AuthorizationCenter.shared.authorizationStatus == .approved
+        authorized = !ScreenshotPreview.enabled && AuthorizationCenter.shared.authorizationStatus == .approved
     }
 
-    var selectedCount: Int { BlockingCodec.selectedCount }
-    var hasSelection: Bool { BlockingCodec.hasSelection }
+    var selectedCount: Int {
+        selection.applicationTokens.count + selection.categoryTokens.count + selection.webDomainTokens.count
+    }
+    var hasSelection: Bool { selectedCount > 0 }
+
+    var blockingPresentation: BlockingPresentation {
+        BlockingPresentation(authorized: authorized, hasSelection: hasSelection,
+                             hasPremium: isPremiumActive,
+                             isWithinWindow: AppConfig.isWithinBlockWindow(Date()),
+                             ritualDone: SharedState.ritualCompleted())
+    }
 
     var selectionSummary: String {
         let s = BlockingCodec.load()
         var parts: [String] = []
         let cats = s.categoryTokens.count, apps = s.applicationTokens.count, web = s.webDomainTokens.count
-        if cats > 0 { parts.append("\(cats) categor\(cats == 1 ? "y" : "ies")") }
-        if apps > 0 { parts.append("\(apps) app\(apps == 1 ? "" : "s")") }
-        if web > 0 { parts.append("\(web) site\(web == 1 ? "" : "s")") }
-        return parts.isEmpty ? "None yet" : parts.joined(separator: ", ")
+        if cats > 0 { parts.append(String(format: L10n.localized("Categories: %lld"), locale: HDate.appLocale, Int64(cats))) }
+        if apps > 0 { parts.append(String(format: L10n.localized("Apps: %lld"), locale: HDate.appLocale, Int64(apps))) }
+        if web > 0 { parts.append(String(format: L10n.localized("Websites: %lld"), locale: HDate.appLocale, Int64(web))) }
+        return parts.isEmpty ? L10n.localized("None yet") : parts.joined(separator: ", ")
     }
 
     func wipe() {

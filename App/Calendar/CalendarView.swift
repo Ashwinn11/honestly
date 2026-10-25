@@ -2,6 +2,8 @@ import SwiftUI
 
 struct CalendarView: View {
     @Environment(JournalStore.self) private var store
+    @Environment(PremiumManager.self) private var premium
+    @Environment(AppFlow.self) private var flow
     @State private var monthAnchor = Calendar.current.startOfDay(
         for: Calendar.current.date(from: Calendar.current.dateComponents([.year, .month], from: Date()))!)
 
@@ -24,7 +26,6 @@ struct CalendarView: View {
             VStack(alignment: .leading, spacing: 0) {
                 Text("Your mornings").font(Fonts.display(30, .bold)).foregroundStyle(Palette.ink)
                     .fixedSize()
-                    .underlineSquiggle(Palette.sunDisc, weight: 4, height: 9)
                 Text("A month at a glance.")
                     .font(Fonts.ui(14, .semibold)).foregroundStyle(Palette.inkSoft).padding(.top, 12)
 
@@ -43,12 +44,12 @@ struct CalendarView: View {
 
     private var monthNav: some View {
         HStack {
-            IconTileButton(icon: "chevron.left", size: 34, iconSize: 12, fill: Palette.iconTile) { shift(-1) }
+            IconTileButton(icon: "chevron.backward", size: 38, iconSize: 15) { shift(-1) }
             Spacer()
             Text(HDate.monthTitle(monthAnchor)).font(Fonts.display(20, .bold)).foregroundStyle(Palette.ink)
                 .contentTransition(.numericText())
             Spacer()
-            IconTileButton(icon: "chevron.right", size: 34, iconSize: 12, fill: Palette.iconTile) { shift(1) }
+            IconTileButton(icon: "chevron.forward", size: 38, iconSize: 15) { shift(1) }
         }
     }
 
@@ -107,7 +108,11 @@ struct CalendarView: View {
             }
 
         if entry != nil {
-            NavigationLink(value: key) { cell }.buttonStyle(PressableStyle())
+            if premium.isPremium {
+                NavigationLink(value: key) { cell }.buttonStyle(PressableStyle())
+            } else {
+                Button { flow.showPaywall() } label: { cell }.buttonStyle(PressableStyle())
+            }
         } else {
             cell
         }

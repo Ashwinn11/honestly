@@ -329,7 +329,7 @@ struct ThemePickerSheet: View {
                 Text(loc: "Page theme")
                     .font(Fonts.display(19, .bold)).foregroundStyle(Palette.ink)
                 Spacer()
-                IconTileButton(icon: "xmark", size: 34, iconSize: 12) { dismiss() }
+                IconTileButton(icon: "xmark", size: 38, iconSize: 13) { dismiss() }
             }
             .padding(EdgeInsets(top: 18, leading: 20, bottom: 6, trailing: 20))
 

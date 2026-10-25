@@ -12,17 +12,17 @@ enum LegalDoc: Identifiable {
         ("The short version",
          "Honestly is built to be private. Your morning pages — your moods, your writing, your affirmations — belong to you. We don't sell them, mine them, or read them. There are no third-party trackers or advertising SDKs in this app."),
         ("What stays on your device",
-         "Everything you write is stored locally on your iPhone. If you have iCloud enabled, your pages are backed up to your own private iCloud account (Apple's CloudKit) so they follow you between devices. We never receive a copy on our servers — your iCloud data is encrypted and accessible only to you."),
+         "Everything you write is stored locally on your iPhone. If you choose Back up to iCloud, a snapshot of your pages is saved to your own private iCloud account (Apple's CloudKit). Backup and restore are manual; pages do not automatically sync between devices. We never receive a copy on our servers — your iCloud data is encrypted and accessible only to you."),
         ("Screen Time",
          "When you choose apps to keep asleep each morning, that selection is handled entirely by Apple's Screen Time (Family Controls) framework. Honestly is shown opaque tokens — never the names of the apps or websites you picked, and never any record of how you use them. That information never leaves your device and is never visible to us."),
         ("Purchases",
-         "Honestly Premium is a one-time purchase processed by Apple. We use RevenueCat to verify your purchase and unlock premium features. This involves an anonymous purchase identifier only — no name, email, or contact information is required or collected."),
+         "Honestly Premium purchases, including lifetime access and monthly subscriptions when offered, are processed by Apple. We use RevenueCat to verify your purchase and unlock premium features. This involves an anonymous purchase identifier only — no name, email, or contact information is required or collected."),
         ("Notifications",
          "If you turn on affirmation reminders, one local notification a day carrying that day's affirmation is scheduled on your device. It is generated on-device and is not sent through any server."),
         ("What we don't do",
          "We do not collect analytics, we do not fingerprint your device, we do not build a profile of you, and we do not share anything with advertisers. There is nothing to opt out of because there is nothing being gathered."),
         ("Your control",
-         "You can delete every page and reset your history at any time from the You tab (\"Delete all data\"). Deleting the app removes all local data; disabling iCloud sync for Honestly removes the backup from your iCloud account."),
+         "You can delete every page and reset your history at any time from the You tab (\"Delete all data\"). Deleting the app removes all local data; you can separately manage or delete the iCloud backup in your iCloud storage settings."),
         ("Contact",
          "Questions about your privacy? Email ashwinnanbazhagan@gmail.com and a human will answer."),
     ]
@@ -33,7 +33,7 @@ enum LegalDoc: Identifiable {
         ("Your license",
          "We grant you a personal, non-transferable license to use Honestly on devices you own or control, for your own morning ritual. The app and its design are ours; please don't copy, resell, or reverse-engineer it."),
         ("Honestly Premium",
-         "Honestly Premium is a one-time purchase that unlocks your full history and additional features for the lifetime of the app on your Apple account. Purchases are handled and billed by Apple under Apple's terms. Refunds are managed by Apple through the App Store."),
+         "Honestly Premium unlocks your full history and additional features. Lifetime access is a one-time purchase for the lifetime of the app on your Apple account. When offered, a monthly subscription provides access while active and automatically renews each month unless cancelled. You can manage or cancel subscriptions in your App Store account settings. The price and billing period are shown before purchase. Purchases are handled and billed by Apple under Apple's terms. Refunds are managed by Apple through the App Store."),
         ("Your content",
          "Your pages are yours. You retain all rights to everything you write. We claim no ownership and take no license over your journal entries, moods, or affirmations."),
         ("Acceptable use",
@@ -60,10 +60,9 @@ struct LegalView: View {
             PaperBackground()
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
-                    SoftCircleButton(icon: "chevron.left", iconSize: 15) { dismiss() }
+                    LibraryHeader(title: doc.title) { dismiss() }
                         .padding(.bottom, 16)
 
-                    Text(loc: doc.title).font(Fonts.display(30, .bold)).foregroundStyle(Palette.ink)
                     Eyebrow(text: doc.effective, color: Palette.inkSofter, tracking: 1.2, size: 11)
                         .padding(.top, 6).padding(.bottom, 22)
 

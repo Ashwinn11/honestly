@@ -107,6 +107,7 @@ struct DoodleSheet: View {
             }
             .padding(.horizontal, 20)
         }
+        .scrollClipDisabled()
         .padding(.top, 12)
         .padding(.bottom, 14)
         .animation(Motion.snappy, value: tool)
@@ -125,16 +126,9 @@ struct DoodleSheet: View {
             Haptics.select()
             action()
         } label: {
-            Image(systemName: icon)
-                .font(.system(size: 14, weight: .bold))
-                .foregroundStyle(active ? .white : Palette.ink)
-                .frame(width: 36, height: 36)
-                .background(active ? Palette.amber : Palette.cream,
-                            in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .stroke(active ? Palette.ink : Palette.outlineSoft, lineWidth: active ? 2 : 1.2))
+            CompactIconFace(icon: icon, active: active)
         }
-        .buttonStyle(PressableStyle(scale: 0.9))
+        .buttonStyle(PressableStyle())
     }
 
     private func applyTool() {

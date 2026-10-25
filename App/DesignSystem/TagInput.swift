@@ -1,5 +1,9 @@
 import SwiftUI
 
+private enum TagMetrics {
+    static var height: CGFloat { DesignScale.s(36) }
+}
+
 /// A rounded "# tag" pill — matches the app's existing chip styling. Pass `onRemove` for an
 /// editable "×" affordance (the ritual, writing today's page); omit it for read-only display
 /// (`EntryDetailView`, a past page).
@@ -12,6 +16,7 @@ struct TagChip: View {
             Text("#\(text)")
                 .font(Fonts.ui(12.5, .heavy))
                 .foregroundStyle(Palette.ink)
+                .lineLimit(1)
             if let onRemove {
                 Button(action: onRemove) {
                     Image(systemName: "xmark")
@@ -22,75 +27,13 @@ struct TagChip: View {
             }
         }
         .padding(.horizontal, 12)
-        .padding(.vertical, 7)
+        .frame(height: TagMetrics.height)
         .background(Palette.cream, in: Capsule())
-        .overlay(Capsule().stroke(Palette.outlineSoft, lineWidth: 1.5))
+        .overlay(Capsule().strokeBorder(Palette.outlineSoft, lineWidth: 1.5))
     }
 }
 
-/// Tag editor: existing chips (removable) plus an inline "+ tag" field, capped at 5 — matching
-/// the app's existing "up to 5" affirmations convention. Free for everyone.
-///
-/// `draft` is a binding, not private state: the caller (`RitualView`/`EntryEditorView`) needs to
-/// be able to flush it into `tags` itself right before saving. Tapping "Save"/"Finish" directly
-/// after typing a tag — without hitting Return or tapping elsewhere to drop focus first — fires
-/// that button's own action; whether *this* view's focus-loss commit (below) has actually run by
-/// then isn't guaranteed, so a save reading only `tags` can miss whatever's still sitting in the
-/// field. `TagEditing.commit` is the one place the parse/append logic lives, called both from here
-/// (Return / losing focus) and from the parent (immediately before save).
-struct TagEditorRow: View {
-    @Binding var tags: [String]
-    @Binding var draft: String
-
-    @FocusState private var draftFocused: Bool
-
-    private var canAddMore: Bool { tags.count < TagEditing.maxTags }
-
-    // Plain HStack, not a ScrollView. The `TextField` is given a fixed width, not just a
-    // minimum — unlike `Text`, a `TextField` genuinely expands to claim any leftover space a
-    // plain HStack offers it, which is what made the input pill (and the row as a whole) balloon
-    // once nothing bounded it.
-    var body: some View {
-        HStack(alignment: .bottom, spacing: 8) {
-            ForEach(tags, id: \.self) { tag in
-                TagChip(text: tag) {
-                    withAnimation(Motion.snappy) { tags.removeAll { $0 == tag } }
-                }
-            }
-            if canAddMore {
-                HStack(spacing: 3) {
-                    Text("#").font(Fonts.ui(12.5, .heavy)).foregroundStyle(Palette.inkSofter)
-                    TextField(LocalizedStringKey("Add tag"), text: $draft)
-                        .font(Fonts.ui(12.5, .heavy))
-                        .foregroundStyle(Palette.ink)
-                        .submitLabel(.done)
-                        .focused($draftFocused)
-                        .onSubmit(commitDraft)
-                        // Typing a tag and tapping elsewhere (another field, a toolbar button, the
-                        // CTA) without hitting Return used to silently drop the draft — commit on
-                        // losing focus too, not just on explicit submit.
-                        .onChange(of: draftFocused) { wasFocused, isFocused in
-                            if wasFocused, !isFocused { commitDraft() }
-                        }
-                        .frame(width: 70)
-                }
-                .padding(.horizontal, 12)
-                .padding(.vertical, 7)
-                .background(Palette.paper, in: Capsule())
-                .overlay(Capsule().stroke(Palette.ink.opacity(0.12), lineWidth: 1.5))
-            }
-            Spacer(minLength: 0)
-        }
-    }
-
-    private func commitDraft() {
-        Haptics.select()
-        withAnimation(Motion.snappy) { TagEditing.commit(draft: &draft, into: &tags) }
-    }
-}
-
-/// Shared with the parent view so a tag typed but never explicitly submitted still makes it into
-/// `tags` when save/finish is triggered directly — see `TagEditorRow`'s doc comment.
+/// Shared normalization and limit for typed and reused tags.
 enum TagEditing {
     static let maxTags = 5
 
@@ -105,12 +48,54 @@ enum TagEditing {
 /// Read-only chip row — past entries in `EntryDetailView`. Only rendered when tags exist.
 struct TagRow: View {
     let tags: [String]
+    @Environment(\.layoutDirection) private var direction
 
     var body: some View {
         if !tags.isEmpty {
-            HStack(alignment: .bottom, spacing: 8) {
+            TagFlowLayout(rightToLeft: direction == .rightToLeft) {
                 ForEach(tags, id: \.self) { TagChip(text: $0) }
             }
         }
+    }
+}
+
+/// Content-sized chips with a fixed gap; long rows wrap instead of stretching into columns.
+struct TagFlowLayout: Layout {
+    var rightToLeft = false
+    var spacing: CGFloat = 8
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        arrange(width: proposal.width, subviews: subviews).size
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let result = arrange(width: bounds.width, subviews: subviews)
+        for (view, rect) in zip(subviews, result.frames) {
+            let x = rightToLeft ? bounds.maxX - rect.maxX : bounds.minX + rect.minX
+            view.place(at: CGPoint(x: x, y: bounds.minY + rect.minY), anchor: .topLeading,
+                       proposal: ProposedViewSize(rect.size))
+        }
+    }
+
+    private func arrange(width proposed: CGFloat?, subviews: Subviews) -> (size: CGSize, frames: [CGRect]) {
+        let natural = subviews.map { $0.sizeThatFits(.unspecified) }
+        let intrinsic = natural.reduce(0) { $0 + $1.width } + spacing * CGFloat(max(0, natural.count - 1))
+        let width = max(0, proposed.flatMap { $0.isFinite ? $0 : nil } ?? intrinsic)
+        var frames: [CGRect] = []
+        var x: CGFloat = 0, y: CGFloat = 0, rowHeight: CGFloat = 0
+        for (index, view) in subviews.enumerated() {
+            let size = natural[index].width > width
+                ? view.sizeThatFits(ProposedViewSize(width: width, height: nil)) : natural[index]
+            let itemWidth = min(width, size.width)
+            if x > 0 && x + itemWidth > width {
+                x = 0
+                y += rowHeight + spacing
+                rowHeight = 0
+            }
+            frames.append(CGRect(x: x, y: y, width: itemWidth, height: size.height))
+            x += itemWidth + spacing
+            rowHeight = max(rowHeight, size.height)
+        }
+        return (CGSize(width: width, height: y + rowHeight), frames)
     }
 }

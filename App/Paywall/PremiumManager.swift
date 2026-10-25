@@ -2,41 +2,46 @@ import Foundation
 import Observation
 import RevenueCat
 
-/// RevenueCat wrapper for the lifetime "Honestly Premium" unlock. Fails soft everywhere so the
-/// app doesn't get stuck if the network or the store is unavailable.
-///
-/// Premium is a one-time lifetime purchase, so the flag only ever moves in one direction:
-/// `isPremium` seeds from the app-group mirror (correct from the first frame — offline, mid-launch,
-/// before RevenueCat resolves), RevenueCat is consulted only while it's still false, and `ratchet`
-/// is the single place it flips on. Nothing ever writes it back to false — a fresh install starts
-/// false and "Restore purchases" re-ratchets it on a new device.
+/// Cached access keeps purchases usable offline; successful verification updates access.
 @MainActor
 @Observable
 final class PremiumManager {
-    private(set) var isPremium = false
-    var offerings: Offerings? = nil
+    private(set) var isPremium = ScreenshotPreview.enabled || SharedState.premiumActive
+    private(set) var isLifetime = SharedState.premiumLifetime
+    private(set) var offerings: Offerings?
+    var errorMessage: String?
+    private var configured = false
 
     func configure() {
+        guard !configured, !ScreenshotPreview.enabled else { return }
+        configured = true
         Purchases.logLevel = .warn
         Purchases.configure(withAPIKey: AppConfig.revenueCatAPIKey)
         Task {
-            if !isPremium { await refresh() }   // once premium, the entitlement is never re-checked
+            for await info in Purchases.shared.customerInfoStream {
+                apply(info)
+            }
+        }
+        Task {
+            await refresh()
             await loadOfferings()
         }
     }
 
     func refresh() async {
-        guard !isPremium else { return }
-        guard let info = try? await Purchases.shared.customerInfo() else { return }
-        ratchet(info)
+        guard configured else { return }
+        isPremium = SharedState.premiumActive
+        // Keep cached access on network failure; never mistake a failed request for a revocation.
+        guard let info = try? await Purchases.shared.customerInfo(fetchPolicy: .fetchCurrent) else { return }
+        apply(info)
     }
 
-    /// The single write path for premium: flips on once and mirrors into the app group in the same
-    /// breath (the background monitor extension gates shielding on that mirror). No downgrade path.
-    private func ratchet(_ info: CustomerInfo) {
-        guard !isPremium, info.entitlements[AppConfig.entitlementID]?.isActive == true else { return }
-        isPremium = true
-        SharedState.premiumActive = true
+    private func apply(_ info: CustomerInfo) {
+        isPremium = info.entitlements[AppConfig.entitlementID]?.isActive == true
+        isLifetime = isPremium && info.entitlements[AppConfig.entitlementID]?.expirationDate == nil
+        SharedState.premiumExpiration = info.entitlements[AppConfig.entitlementID]?.expirationDate
+        SharedState.premiumLifetime = isLifetime
+        SharedState.premiumActive = isPremium
     }
 
     func loadOfferings() async {
@@ -45,44 +50,69 @@ final class PremiumManager {
 
     var lifetimePackage: Package? {
         guard let current = offerings?.current else { return nil }
-        return current.availablePackages.first { $0.identifier == AppConfig.lifetimePackageID }
-            ?? current.lifetime
+        return current.availablePackages.first {
+            $0.identifier == AppConfig.lifetimePackageID && $0.packageType == .lifetime
+        } ?? current.lifetime
             ?? current.availablePackages.first { $0.packageType == .lifetime }
     }
 
     var monthlyPackage: Package? {
         guard let current = offerings?.current else { return nil }
-        return current.availablePackages.first { $0.identifier == AppConfig.monthlyPackageID }
-            ?? current.monthly
+        return current.availablePackages.first {
+            $0.identifier == AppConfig.monthlyPackageID && $0.packageType == .monthly
+        } ?? current.monthly
             ?? current.availablePackages.first { $0.packageType == .monthly }
     }
 
-    var hasLifetime: Bool { lifetimePackage != nil }
     var hasMonthly: Bool { monthlyPackage != nil }
-    var lifetimePriceString: String { lifetimePackage?.storeProduct.localizedPriceString ?? "" }
     var monthlyPriceString: String { monthlyPackage?.storeProduct.localizedPriceString ?? "" }
 
-    @discardableResult func purchaseLifetime() async -> Bool {
-        guard let p = lifetimePackage else { return false }
-        return await purchase(p)
-    }
-    @discardableResult func purchaseMonthly() async -> Bool {
-        guard let p = monthlyPackage else { return false }
-        return await purchase(p)
+    var hasLifetime: Bool { lifetimePackage != nil }
+    var lifetimePriceString: String { lifetimePackage?.storeProduct.localizedPriceString ?? "" }
+
+    @discardableResult
+    func purchaseLifetime() async -> Bool {
+        await purchaseLifetimeOrMonthly(lifetime: true)
     }
 
     @discardableResult
-    func purchase(_ package: Package) async -> Bool {
-        guard let result = try? await Purchases.shared.purchase(package: package), !result.userCancelled
-        else { return false }
-        ratchet(result.customerInfo)
-        return isPremium
+    func purchaseMonthly() async -> Bool {
+        await purchaseLifetimeOrMonthly(lifetime: false)
+    }
+
+    private func purchaseLifetimeOrMonthly(lifetime: Bool) async -> Bool {
+        errorMessage = nil
+        if (lifetime ? lifetimePackage : monthlyPackage) == nil { await loadOfferings() }
+        guard let package = lifetime ? lifetimePackage : monthlyPackage else {
+            errorMessage = L10n.localized("This purchase is unavailable. Please try again shortly.")
+            return false
+        }
+        do {
+            let result = try await Purchases.shared.purchase(package: package)
+            guard !result.userCancelled else { return false }
+            apply(result.customerInfo)
+            if !isPremium {
+                errorMessage = L10n.localized("Your purchase hasn't unlocked Premium yet. Please try Restore purchases.")
+            }
+            return isPremium
+        } catch {
+            errorMessage = L10n.localized("Couldn't complete your purchase. Please check your connection and try again.")
+            return false
+        }
     }
 
     @discardableResult
     func restore() async -> Bool {
-        guard let info = try? await Purchases.shared.restorePurchases() else { return false }
-        ratchet(info)
-        return isPremium
+        errorMessage = nil
+        do {
+            apply(try await Purchases.shared.restorePurchases())
+            if !isPremium {
+                errorMessage = L10n.localized("No active Premium purchase was found on this Apple ID.")
+            }
+            return isPremium
+        } catch {
+            errorMessage = L10n.localized("Couldn't restore purchases. Please check your connection and try again.")
+            return false
+        }
     }
 }

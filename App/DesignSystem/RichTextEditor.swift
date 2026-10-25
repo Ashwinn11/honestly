@@ -2,6 +2,12 @@ import SwiftUI
 import UIKit
 import UniformTypeIdentifiers
 
+/// Prevent UIKit menu focus restoration from reopening the journal keyboard behind a sheet.
+private final class JournalTextView: UITextView {
+    var keyboardAllowed = true
+    override var canBecomeFirstResponder: Bool { keyboardAllowed && super.canBecomeFirstResponder }
+}
+
 extension Notification.Name {
     static let editorApplyDefaultTransform  = Notification.Name("editorApplyDefaultTransform")
     static let journalEntryDidUpdate        = Notification.Name("journalEntryDidUpdate")
@@ -18,9 +24,10 @@ struct RichTextEditor: UIViewRepresentable {
     @Binding var attributedText: NSAttributedString
     @Binding var selectedRange: NSRange
     var placeholder: String = ""
+    var keyboardAllowed = true
 
     static let defaultFont: UIFont =
-        UIFont(name: "Nunito-Regular", size: DesignScale.s(16)) ?? .systemFont(ofSize: DesignScale.s(16))
+        UIFont(name: "Manrope-Regular", size: DesignScale.s(16)) ?? .systemFont(ofSize: DesignScale.s(16))
 
     /// Default paragraph style — consistent 4 pt line spacing for all fonts; prevents the
     /// layout engine from packing lines so tight that tall ascenders/descenders clip adjacent lines.
@@ -37,7 +44,8 @@ struct RichTextEditor: UIViewRepresentable {
     }
 
     func makeUIView(context: Context) -> UITextView {
-        let tv = UITextView()
+        let tv = JournalTextView()
+        tv.keyboardAllowed = keyboardAllowed
         tv.backgroundColor = .clear
         tv.isOpaque = false
         tv.textContainerInset = UIEdgeInsets(top: 4, left: 6, bottom: 4, right: 6)
@@ -69,7 +77,7 @@ struct RichTextEditor: UIViewRepresentable {
         let label = UILabel()
         // Not SwiftUI here, so `Text(loc:)` doesn't apply — do the String Catalog lookup directly
         // (matching `AffirmationNudge.swift`'s pattern for non-SwiftUI localized strings).
-        label.text = String(localized: String.LocalizationValue(placeholder))
+        label.text = L10n.localized(placeholder)
         label.font = Self.defaultFont
         label.textColor = UIColor(Palette.inkSofter)
         label.numberOfLines = 0
@@ -91,11 +99,15 @@ struct RichTextEditor: UIViewRepresentable {
         context.coordinator.parent = self
         context.coordinator.isApplyingSwiftUIUpdate = true
         defer { context.coordinator.isApplyingSwiftUIUpdate = false }
+        if let journal = uiView as? JournalTextView {
+            journal.keyboardAllowed = keyboardAllowed
+            if !keyboardAllowed && journal.isFirstResponder { journal.resignFirstResponder() }
+        }
         uiView.backgroundColor = .clear
         uiView.isOpaque = false
         uiView.allowsEditingTextAttributes = true
         uiView.smartInsertDeleteType = .no
-        context.coordinator.placeholderLabel?.text = String(localized: String.LocalizationValue(placeholder))
+        context.coordinator.placeholderLabel?.text = L10n.localized(placeholder)
         context.coordinator.placeholderLabel?.isHidden = !attributedText.string.isEmpty
         // Only replace textStorage when content actually differs — setting `attributedText` via the
         // property setter unconditionally resets NSUndoManager and triggers a full re-layout on
@@ -395,6 +407,18 @@ enum RichTextFormatting {
         return mutable
     }
 
+    static func setHighlight(_ color: UIColor?, in text: NSAttributedString, range: NSRange) -> NSAttributedString {
+        guard range.length > 0, range.location <= text.length,
+              range.length <= text.length - range.location else { return text }
+        let mutable = NSMutableAttributedString(attributedString: text)
+        if let color {
+            mutable.addAttribute(.backgroundColor, value: color, range: range)
+        } else {
+            mutable.removeAttribute(.backgroundColor, range: range)
+        }
+        return mutable
+    }
+
     static func setTextColor(_ color: UIColor, in text: NSAttributedString, range: NSRange) -> NSAttributedString {
         guard range.length > 0 else { return text }
         let mutable = NSMutableAttributedString(attributedString: text)
@@ -419,7 +443,7 @@ enum RichTextFormatting {
                         base.fontDescriptor.symbolicTraits.union(keepTraits)) {
                     newFont = UIFont(descriptor: descriptor, size: old.pointSize)
                 } else {
-                    // Step 2: custom bundled fonts (Nunito, Shantell Sans) — use explicit lookups
+                    // Step 2: bundled Manrope — use explicit variant lookups
                     for trait: UIFontDescriptor.SymbolicTraits in [.traitBold, .traitItalic] {
                         if keepTraits.contains(trait), let promoted = newFont.addingTrait(trait) {
                             newFont = promoted
@@ -489,7 +513,7 @@ enum RichTextFormatting {
     /// `kind`, the prefixes come off; otherwise any other list prefix is swapped out for `kind`'s
     /// (numbered items count 1, 2, 3… down the selection). Prefixes are plain text, so they
     /// serialize in the RTFD with zero special handling anywhere else.
-    static func toggleList(_ kind: ListKind, in text: NSAttributedString, range: NSRange) -> NSAttributedString {
+    static func setList(_ kind: ListKind?, in text: NSAttributedString, range: NSRange) -> NSAttributedString {
         let paraRange = paragraphRange(in: text, for: range)
         guard paraRange.length > 0 else { return text }
         let ns = text.string as NSString
@@ -500,7 +524,6 @@ enum RichTextFormatting {
         let nonEmpty = paragraphs.filter { $0.length > 0 }
         guard !nonEmpty.isEmpty else { return text }
 
-        let allAlready = nonEmpty.allSatisfy { ListKind.parseItem(ns.substring(with: $0))?.kind == kind }
         let mutable = NSMutableAttributedString(attributedString: text)
         var delta = 0
         var number = 1
@@ -514,7 +537,7 @@ enum RichTextFormatting {
                 mutable.replaceCharacters(in: NSRange(location: location, length: prefixLength), with: "")
                 delta -= prefixLength
             }
-            guard !allAlready else { continue }
+            guard let kind else { continue }
             let prefix = kind.prefix(number: number)
             mutable.insert(NSAttributedString(string: prefix, attributes: prefixAttributes(in: mutable, at: location)),
                            at: location)
@@ -641,9 +664,9 @@ enum RichTextFormatting {
         // Attributes active at the insertion point — NOT the hardcoded global default. Using
         // `RichTextEditor.defaultAttributes` here unconditionally meant every photo/doodle's
         // surrounding newlines (and the attachment character itself) silently reset to
-        // Nunito-Regular-16, regardless of whatever font/size/color the paragraph actually used:
+        // the default font at 16 points, regardless of whatever font/size/color the paragraph actually used:
         // the toolbar reads the attachment's own font when the caret lands on it (always showing
-        // "Nunito" as active there), and the first character typed after the image inherited the
+        // the default font as active there), and the first character typed after the image inherited the
         // trailing newline's hardcoded font instead of the paragraph's real one. Same reasoning as
         // `insertSticker` below, which already gets this right.
         let contextAttributes = prefixAttributes(in: text, at: min(max(location, 0), text.length))
@@ -896,12 +919,10 @@ enum TextSize: String, CaseIterable, Identifiable {
     }
 }
 
-// MARK: - Curated font choices — the two bundled families plus hand-picked faces every iPhone
-// ships with (addressed by PostScript name), so "lots of fonts" costs zero app size.
+// MARK: - Curated font choices — bundled Manrope plus built-in iPhone faces.
 
 enum FontChoice: String, CaseIterable, Identifiable {
-    case nunito = "Nunito"
-    case handwritten = "Shantell Sans"
+    case manrope = "Manrope"
     case serif = "New York"
     case georgia = "Georgia"
     case baskerville = "Baskerville"
@@ -924,8 +945,7 @@ enum FontChoice: String, CaseIterable, Identifiable {
     /// PostScript name of the bold variant, if the family is a bundled custom font.
     var boldFontName: String? {
         switch self {
-        case .nunito:      return "Nunito-Bold"
-        case .handwritten: return "ShantellSans-Bold"
+        case .manrope:     return "Manrope-Bold"
         default:           return nil
         }
     }
@@ -933,23 +953,12 @@ enum FontChoice: String, CaseIterable, Identifiable {
     /// PostScript name of the regular/base variant to return to when removing bold.
     var regularFontName: String? {
         switch self {
-        case .nunito:      return "Nunito-Regular"
-        case .handwritten: return "ShantellSans-Medium"
+        case .manrope:     return "Manrope-Regular"
         default:           return nil
         }
     }
 
-    /// Find the FontChoice whose base UIFont — or, for the bundled custom fonts, whose *bold*
-    /// sibling — shares the given family name.
-    ///
-    /// Nunito and Shantell Sans ship as separate static font files per weight, and each one
-    /// registers its OWN font family (confirmed via the files' `name` table: "Nunito Regular",
-    /// "Nunito Bold", "Nunito SemiBold"… are three distinct families, not one "Nunito" family
-    /// with weight variants). A plain `uiFont(size:).familyName` check only ever covers the
-    /// Regular file's family, so once bold is applied the family flips to "Nunito Bold" and stops
-    /// matching anything here — `removingTrait` below then can't map back to `.nunito` to find
-    /// `regularFontName`, and bold silently becomes impossible to turn back off. Checking the
-    /// bold sibling's family too closes that loop.
+    /// Match the base or explicit bold variant so toggling bold preserves the font family.
     static func matching(familyName: String) -> FontChoice? {
         allCases.first { choice in
             if choice.uiFont(size: 12).familyName == familyName { return true }
@@ -970,8 +979,7 @@ enum FontChoice: String, CaseIterable, Identifiable {
 
     private var postScriptName: String {
         switch self {
-        case .nunito:      return "Nunito-Regular"
-        case .handwritten: return "ShantellSans-Medium"
+        case .manrope:     return "Manrope-Regular"
         case .serif:       return ""
         case .georgia:     return "Georgia"
         case .baskerville: return "Baskerville"
@@ -1055,7 +1063,7 @@ extension UIImage {
 extension UIFont {
     /// Returns a variant of this font with `trait` added. Tries descriptor synthesis first (works
     /// for system fonts); falls back to scanning the font family for a registered member that
-    /// carries the trait (needed for custom fonts loaded by PostScript name like Nunito-SemiBold).
+    /// carries the trait (needed for custom fonts loaded by PostScript name like Manrope-SemiBold).
     func addingTrait(_ trait: UIFontDescriptor.SymbolicTraits) -> UIFont? {
         let newTraits = fontDescriptor.symbolicTraits.union(trait)
         if let desc = fontDescriptor.withSymbolicTraits(newTraits) {
@@ -1070,7 +1078,7 @@ extension UIFont {
             }
         }
         // Fallback 2: explicit PostScript name for bundled custom fonts whose metadata
-        // doesn't advertise traits reliably (Nunito, Shantell Sans, etc.)
+        // doesn't advertise traits reliably (such as Manrope)
         if trait.contains(.traitBold),
            let choice = FontChoice.matching(familyName: family),
            let boldName = choice.boldFontName,

@@ -10,6 +10,7 @@ struct HonestlyApp: App {
     @State private var flow = AppFlow()
     @State private var l10n = LocalizationManager()
     @State private var affirmations = AffirmationList()
+    @State private var prompts = PromptLibrary()
     @State private var store: JournalStore
     @Environment(\.scenePhase) private var scenePhase
     private let container: ModelContainer
@@ -28,15 +29,34 @@ struct HonestlyApp: App {
         // `cloudKitDatabase` defaults to `.automatic` when omitted — it must be passed as `.none`
         // explicitly, or the store silently mirrors to CloudKit anyway.
         // Degrade gracefully: disk → in-memory. No force-try.
-        let disk   = ModelConfiguration(groupContainer: .identifier(AppConfig.appGroupID), cloudKitDatabase: .none)
-        let memory = ModelConfiguration(isStoredInMemoryOnly: true)
-        let made = (try? ModelContainer(for: JournalEntry.self, configurations: disk))
+        let memory = ModelConfiguration(isStoredInMemoryOnly: true, groupContainer: .none, cloudKitDatabase: .none)
+        let disk = ScreenshotPreview.enabled ? memory
+            : ModelConfiguration(groupContainer: .identifier(AppConfig.appGroupID), cloudKitDatabase: .none)
+        let made = (try? ModelContainer(for: JournalEntry.self, configurations: ScreenshotPreview.enabled ? memory : disk))
             ?? (try? ModelContainer(for: JournalEntry.self, configurations: memory))
 
         guard let made else {
             // Unreachable in practice (an in-memory store cannot fail to initialize); a clear
             // message beats a bare `try!` if the impossible ever happens.
             fatalError("Honestly could not initialize any data store.")
+        }
+        if ScreenshotPreview.enabled {
+            let samples = [
+                "A little more present today. I took a walk without my headphones and noticed how quiet the street can be.",
+                "I don't have every answer yet, and that's okay. Today I can start with one small, kind thing.",
+                ScreenshotPreview.journal,
+                "A good conversation, a slow lunch, and a chapter before bed. There is a lot to be grateful for.",
+                "Some days ask for less. I'm learning to listen instead of pushing through."
+            ]
+            for offset in 1...18 {
+                let date = Calendar.current.date(byAdding: .day, value: -offset, to: Date())!
+                let text = samples[(offset - 1) % samples.count]
+                made.mainContext.insert(JournalEntry(content: text, affirmationsRaw: "",
+                    mood: Mood(rawValue: (offset - 1) % 5)!.storageKey,
+                    wordCount: JournalEntry.wordCount(of: text), createdAt: date,
+                    tags: offset % 2 == 0 ? ["small joys"] : ["morning thoughts"]))
+            }
+            try? made.mainContext.save()
         }
         container = made
         _store = State(initialValue: JournalStore(context: made.mainContext))
@@ -51,6 +71,7 @@ struct HonestlyApp: App {
                 .environment(flow)
                 .environment(l10n)
                 .environment(affirmations)
+                .environment(prompts)
                 .environment(\.locale, l10n.locale)                   // live String Catalog switch
                 .environment(\.layoutDirection, l10n.layoutDirection)  // RTL for Arabic
                 // `Text(loc:)`/literal `Text` re-resolve automatically on a locale change, but
@@ -60,10 +81,16 @@ struct HonestlyApp: App {
                 .id(l10n.code)
                 .modelContainer(container)
                 .preferredColorScheme(.light)
+                .onOpenURL { url in
+                    guard AppLink.opensAffirmations(url) else { return }
+                    flow.selectedTab = .home
+                    flow.widgetAffirmationsPresented = true
+                }
                 .task {
+                    guard !ScreenshotPreview.enabled else { return }
                     premium.configure()
                     screenTime.refreshAuthStatus()
-                    // `isPremium` is the persisted lifetime flag — already correct at first frame,
+                    // `isPremium` starts from the cached entitlement — already correct at first frame,
                     // so the schedule/shield decisions below never see a transient "free" while
                     // RevenueCat is still resolving. Seed explicitly rather than relying on
                     // `didSet` (which only fires on change).
@@ -73,7 +100,7 @@ struct HonestlyApp: App {
                     AffirmationNudge.schedule()
                 }
                 .onChange(of: premium.isPremium) { _, isPremium in
-                    // Fires once in the app's life: the moment the lifetime unlock ratchets on.
+                    // Apply purchases and revocations to the app and its extensions.
                     screenTime.isPremiumActive = isPremium
                     Shielding.reconcile()
                     // The widget unlocks and the rotation grows past the free cap.
@@ -88,7 +115,8 @@ struct HonestlyApp: App {
                     // foreground: `reload()` re-publishes `entries` (forcing date-computed views
                     // to re-evaluate) and `reconcile()` doubles as the fallback for the days iOS
                     // drops the 04:00 DeviceActivity callback entirely.
-                    guard phase == .active else { return }
+                    guard phase == .active, !ScreenshotPreview.enabled else { return }
+                    Task { await premium.refresh() }
                     store.reload()
                     screenTime.refreshAuthStatus()
                     Shielding.reconcile()

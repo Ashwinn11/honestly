@@ -3,12 +3,13 @@ import SwiftUI
 struct EntryEditorView: View {
     let entry: JournalEntry
     @Environment(JournalStore.self) private var store
+    @Environment(AppFlow.self) private var flow
     @Environment(\.dismiss) private var dismiss
 
     @State private var richText = NSAttributedString()
     @State private var selectedRange = NSRange(location: 0, length: 0)
     @State private var tags: [String] = []
-    @State private var tagDraft = ""
+    @State private var showTagsSheet = false
     @State private var theme: PageTheme = .paper
     @FocusState private var journalFocused: Bool
 
@@ -16,6 +17,11 @@ struct EntryEditorView: View {
     @State private var showDoodleSheet = false
     @State private var showStickerSheet = false
     @State private var showThemeSheet = false
+    @State private var showFormattingSheet = false
+
+    private var editorSheetPresented: Bool {
+        showFormattingSheet || showTagsSheet || showImagePicker || showDoodleSheet || showStickerSheet || showThemeSheet || flow.paywallPresented
+    }
 
     init(entry: JournalEntry) {
         self.entry = entry
@@ -31,18 +37,12 @@ struct EntryEditorView: View {
         _richText = State(initialValue: initialText)
     }
 
-    private var wordCount: Int {
-        JournalEntry.wordCount(of: richText.plainText)
-    }
-
     var body: some View {
         VStack(spacing: 0) {
             topBar.capWidth(Metrics.maxContentWidth)
 
             // One scroll, not two: `RichTextEditor` grows to its actual content height (like
-            // `RichContentView`, the read-only reader) instead of scrolling internally, so tags and
-            // word count sit right after wherever the text actually ends, not stretched to the
-            // bottom of the screen — this outer `ScrollView` is the page's only scrolling region.
+            // `RichContentView`, the read-only reader). This outer ScrollView is the only scrolling region.
             ScrollView {
                 JournalPageSurface(cornerRadius: 0, showsBinderHoles: false, bordered: false) {
                     VStack(alignment: .leading, spacing: 0) {
@@ -50,7 +50,8 @@ struct EntryEditorView: View {
                             .padding(.bottom, 16)
 
                         RichTextEditor(attributedText: $richText,
-                                       selectedRange: $selectedRange, placeholder: "Start writing…")
+                                       selectedRange: $selectedRange, placeholder: "Start writing…",
+                           keyboardAllowed: !editorSheetPresented)
                             .focused($journalFocused)
                             // `.frame(minHeight:)` defaults to *center* alignment: when the editor
                             // is empty, `sizeThatFits` reports just the placeholder's one-line
@@ -62,15 +63,6 @@ struct EntryEditorView: View {
                             // regardless of how much (or little) it's holding.
                             .frame(minHeight: 200, alignment: .top)
                             .padding(.top, 16)
-
-                        TagEditorRow(tags: $tags, draft: $tagDraft)
-                            .padding(.top, 16)
-
-                        if wordCount > 0 {
-                            Text("\(wordCount) words — nice")
-                                .font(Fonts.ui(12.5, .semibold)).foregroundStyle(Palette.inkSofter)
-                                .padding(.top, 10)
-                        }
                     }
                     .padding(EdgeInsets(top: 14, leading: Metrics.pageHorizontalInset,
                                         bottom: 24, trailing: Metrics.pageHorizontalInset))
@@ -82,23 +74,35 @@ struct EntryEditorView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .background(PageThemeBackground(theme: theme))
         .safeAreaInset(edge: .bottom) {
-            Group {
-                if journalFocused {
+            VStack(spacing: 0) {
                     EditorToolbar(
                         text: $richText,
                         selectedRange: $selectedRange,
+                                tagCount: tags.count,
+                                onTags: { showTagsSheet = true },
                         onPhoto: { showImagePicker = true },
                         onDoodle: { showDoodleSheet = true },
                         onSticker: { showStickerSheet = true },
                         onTheme: { showThemeSheet = true },
-                        onDismissKeyboard: { journalFocused = false }
+                        onDismissKeyboard: { journalFocused = false },
+                        onFormattingOpened: { showFormattingSheet = true; journalFocused = false },
+                                onFormattingClosed: { showFormattingSheet = false; journalFocused = true }
                     )
-                } else {
-                    Spacer().frame(height: 10)
-                }
+                    .frame(height: journalFocused ? nil : 0)
+                    .clipped()
+                    .opacity(journalFocused ? 1 : 0)
+                    .allowsHitTesting(journalFocused)
+                    .accessibilityHidden(!journalFocused)
+                if !journalFocused { Spacer().frame(height: 10) }
             }
             .padding(.top, 8)
             .padding(.bottom, 14)
+        }
+        .onChange(of: editorSheetPresented) { _, presented in
+            if presented { journalFocused = false }
+        }
+        .sheet(isPresented: $showTagsSheet, onDismiss: { journalFocused = true }) {
+            TagEditorSheet(tags: $tags)
         }
         .sheet(isPresented: $showImagePicker) {
             ImagePickerWithCrop(
@@ -160,11 +164,6 @@ struct EntryEditorView: View {
     }
 
     private func save() {
-        // Flush any tag that's still sitting in the input, typed but never submitted — tapping
-        // this checkmark directly (rather than dismissing the keyboard first) doesn't reliably
-        // commit it via TagEditorRow's own focus-loss handler before this reads `tags`.
-        TagEditing.commit(draft: &tagDraft, into: &tags)
-
         let plain = richText.plainText
         let data = richText.rtfdData()
         let thumbnail = richText.firstPhotoThumbnail()

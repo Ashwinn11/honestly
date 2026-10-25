@@ -77,7 +77,6 @@ struct HistoryView: View {
         VStack(alignment: .leading, spacing: 0) {
             Text("Your pages").font(Fonts.display(30, .bold)).foregroundStyle(Palette.ink)
                 .fixedSize()
-                .underlineSquiggle(Palette.sunDisc, weight: 4, height: 9)
             Text("\(store.totalMornings) mornings, and counting.")
                 .font(Fonts.ui(14, .semibold)).foregroundStyle(Palette.inkSoft).padding(.top, 12)
         }

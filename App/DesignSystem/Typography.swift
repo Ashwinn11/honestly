@@ -34,40 +34,31 @@ extension View {
     }
 }
 
-/// Two-family type system, mirroring the prototype:
-/// • **Shantell Sans** — the warm handwritten display face (titles, greetings, big numbers).
-/// • **Nunito** — the rounded UI/body sans (labels, buttons, body copy, eyebrows).
+/// Single-family type system built around **Manrope** — a clean geometric sans that works
+/// across display headlines, UI labels, buttons, and body copy.
 ///
-/// Both are bundled as static per-weight instances (see `App/Resources/Fonts`) and addressed
-/// by PostScript name so the exact design weight always renders. Base sizes match the prototype
-/// 1:1; every size is multiplied by `DesignScale.factor` so text is responsive across devices.
+/// Manrope ships as a variable font (`Manrope.ttf`) bundled in `App/Resources/Fonts`.
+/// iOS registers named instances per weight (Manrope-Regular, Manrope-Medium, etc.),
+/// addressed by PostScript name so the exact design weight always renders. Base sizes match
+/// the prototype 1:1; every size is multiplied by `DesignScale.factor` so text is responsive
+/// across devices.
 enum Fonts {
 
     static func display(_ size: CGFloat, _ weight: Font.Weight = .bold) -> Font {
-        .custom(shantell(weight), fixedSize: DesignScale.s(size))
+        .custom(manrope(weight), fixedSize: DesignScale.s(size))
     }
 
     static func ui(_ size: CGFloat, _ weight: Font.Weight = .bold) -> Font {
-        .custom(nunito(weight), fixedSize: DesignScale.s(size))
+        .custom(manrope(weight), fixedSize: DesignScale.s(size))
     }
 
-    private static func nunito(_ w: Font.Weight) -> String {
+    private static func manrope(_ w: Font.Weight) -> String {
         switch w {
-        case .ultraLight, .thin, .light, .regular: return "Nunito-Regular"
-        case .medium:                              return "Nunito-Medium"
-        case .semibold:                            return "Nunito-SemiBold"
-        case .bold:                                return "Nunito-Bold"
-        case .heavy:                               return "Nunito-ExtraBold"
-        default:                                   return "Nunito-Black"        // .black
-        }
-    }
-
-    private static func shantell(_ w: Font.Weight) -> String {
-        switch w {
-        case .ultraLight, .thin, .light, .regular, .medium: return "ShantellSans-Medium"
-        case .semibold:                                     return "ShantellSans-SemiBold"
-        case .bold:                                         return "ShantellSans-Bold"
-        default:                                            return "ShantellSans-ExtraBold" // heavy/black
+        case .ultraLight, .thin, .light, .regular: return "Manrope-Regular"
+        case .medium:                              return "Manrope-Medium"
+        case .semibold:                            return "Manrope-SemiBold"
+        case .bold:                                return "Manrope-Bold"
+        default:                                   return "Manrope-ExtraBold" // heavy/black
         }
     }
 }

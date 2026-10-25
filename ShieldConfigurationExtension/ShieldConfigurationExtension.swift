@@ -33,12 +33,12 @@ final class ShieldConfigurationExtension: ShieldConfigurationDataSource {
         ShieldConfiguration(
             backgroundBlurStyle: .systemUltraThinMaterialLight,
             backgroundColor: Palette.paperUI.withAlphaComponent(0.92),
-            icon: SunMarkGlyph.image(side: 96),
+            icon: SunMarkGlyph.image(side: 96, bottomPadding: 24),
             title: .init(text: L10n.t("shield.title"), color: Palette.inkUI),
-            subtitle: .init(text: L10n.t("shield.subtitle"), color: Palette.inkSoftUI),
+            subtitle: .init(text: "\n" + L10n.t("shield.subtitle"), color: Palette.inkSoftUI),
             primaryButtonLabel: .init(text: L10n.t("shield.primary"), color: .white),
             primaryButtonBackgroundColor: Palette.amberUI,
-            secondaryButtonLabel: .init(text: L10n.t("shield.secondary"), color: Palette.inkSoftUI))
+            secondaryButtonLabel: .init(text: L10n.t("shield.secondary"), color: .white))
     }
 }
 
@@ -53,8 +53,8 @@ enum SunMarkGlyph {
         [19, 19, 27.5, 27.5], [72.5, 72.5, 81, 81], [81, 19, 72.5, 27.5], [27.5, 72.5, 19, 81],
     ]
 
-    static func image(side: CGFloat) -> UIImage {
-        let size = CGSize(width: side, height: side)
+    static func image(side: CGFloat, bottomPadding: CGFloat = 0) -> UIImage {
+        let size = CGSize(width: side, height: side + bottomPadding)
         let renderer = UIGraphicsImageRenderer(size: size)
         return renderer.image { ctx in
             let c = ctx.cgContext

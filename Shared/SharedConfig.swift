@@ -44,6 +44,8 @@ enum SharedState {
         static let weeklyGoal         = "onboarding.weeklyGoal"     // mornings/week the user committed to
         static let premiumActive      = "premium.active"             // mirrors PremiumManager.isPremium for the background extension
         static let affirmationList    = "affirmations.list"          // [String] — the picked rotation, in order (see `Affirmations`)
+        static let customAffirmations = "affirmations.custom"        // Saved independently of the selected rotation.
+        static let deletedAffirmations = "affirmations.deleted"
         static let affirmationMinutes = "affirmations.notifyMinutes" // Int — minutes after midnight the daily notification lands
     }
 
@@ -114,8 +116,21 @@ enum SharedState {
     // MARK: Premium (mirrored so the background DeviceActivityMonitor extension, which has no
     // RevenueCat access, can bail out of re-shielding once a subscription lapses)
 
+    static var premiumExpiration: Date? {
+        get { defaults.object(forKey: "premium.expiration") as? Date }
+        set { defaults.set(newValue, forKey: "premium.expiration") }
+    }
+
+    static var premiumLifetime: Bool {
+        get { defaults.bool(forKey: "premium.lifetime") }
+        set { defaults.set(newValue, forKey: "premium.lifetime") }
+    }
+
     static var premiumActive: Bool {
-        get { defaults.bool(forKey: Key.premiumActive) }
+        get {
+            guard defaults.bool(forKey: Key.premiumActive) else { return false }
+            return premiumExpiration.map { $0 > Date() } ?? true
+        }
         set { defaults.set(newValue, forKey: Key.premiumActive) }
     }
 
