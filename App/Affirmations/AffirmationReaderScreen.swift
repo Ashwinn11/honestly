@@ -8,11 +8,7 @@ struct AffirmationReaderScreen: View {
     var startingLine: String? = nil
     @State private var lines: [String] = []
     @State private var page = 0
-    @State private var showingTopics = false
-    @State private var readerTopics: [String] = []
-    @State private var topicDraft: [String] = []
-    @State private var filter: AffirmationReaderFilter = .topics
-    @State private var filterDraft: AffirmationReaderFilter = .topics
+    @State private var filter: AffirmationReaderFilter = .allTopics
 
     private var current: String? { lines.indices.contains(page) ? lines[page] : nil }
     private var isFavorite: Bool { current.map { list.favorites.contains($0) } ?? false }
@@ -26,10 +22,15 @@ struct AffirmationReaderScreen: View {
                     Text(loc: "Affirmations")
                         .font(Fonts.ui(15, .bold)).foregroundStyle(Palette.ink)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                    Button {
-                        topicDraft = readerTopics
-                        filterDraft = filter
-                        showingTopics = true
+                    Menu {
+                        filterMenuItem("All topics", value: .allTopics)
+                        Divider()
+                        ForEach(filterTopics, id: \.self) { topic in
+                            filterMenuItem(topic, value: .topic(topic))
+                        }
+                        Divider()
+                        filterMenuItem("Favorites", value: .favorites)
+                        filterMenuItem("Recently read", value: .recentlyRead)
                     } label: {
                         Image(systemName: "line.3.horizontal.decrease")
                             .font(.system(size: 15, weight: .semibold)).foregroundStyle(Palette.ink)
@@ -37,8 +38,8 @@ struct AffirmationReaderScreen: View {
                             .background(Palette.paper, in: RoundedRectangle(cornerRadius: 12))
                             .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Palette.ink, lineWidth: 1.5))
                     }
-                    .buttonStyle(.plain)
                     .accessibilityLabel(Text(loc: "Filter affirmations"))
+                    .accessibilityValue(Text(loc: filter.title))
                 }
                 .padding(.horizontal, 20)
                 .padding(.top, 12)
@@ -107,49 +108,7 @@ struct AffirmationReaderScreen: View {
             .capWidth(Metrics.maxContentWidth)
         }
         .toolbar(.hidden, for: .tabBar)
-        .sheet(isPresented: $showingTopics) {
-            VStack(alignment: .leading, spacing: 16) {
-                HStack {
-                    LibraryHeader(title: "Filter affirmations", onBack: { showingTopics = false })
-                    Spacer()
-                    Button("Done") {
-                        if filterDraft == .topics { readerTopics = topicDraft }
-                        filter = filterDraft
-                        showingTopics = false
-                        refresh(preserving: current)
-                    }
-                    .font(Fonts.ui(14, .bold)).foregroundStyle(Palette.amberDeep)
-                }
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 18) {
-                        LibrarySectionTitle(title: "Your collection")
-                        VStack(spacing: 0) {
-                            filterRow("Favorites", selected: filterDraft == .favorites) { filterDraft = .favorites }
-                            Rectangle().fill(Palette.ink.opacity(0.06)).frame(height: 1)
-                            filterRow("Recently read", selected: filterDraft == .recentlyRead) { filterDraft = .recentlyRead }
-                        }
-                        .padding(.horizontal, 16)
-                        .background(Palette.cream, in: RoundedRectangle(cornerRadius: 18))
-                        .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(Palette.outlineSoft, lineWidth: 1.2))
-
-                        LibrarySectionTitle(title: "Topics")
-                        AffirmationTopicPicker(selection: $topicDraft) { filterDraft = .topics }
-                            .padding(.horizontal, 16)
-                            .background(Palette.cream, in: RoundedRectangle(cornerRadius: 18))
-                            .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(Palette.outlineSoft, lineWidth: 1.2))
-                    }
-                }
-                .scrollIndicators(.hidden)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-            .padding(.horizontal, 20)
-            .padding(.top, 20)
-            .background(PaperBackground())
-            .presentationDetents([.medium, .large])
-            .presentationDragIndicator(.visible)
-        }
         .onAppear {
-            readerTopics = list.selectedTopics
             refresh(preserving: startingLine)
         }
         .onChange(of: list.favorites) { _, _ in
@@ -159,8 +118,10 @@ struct AffirmationReaderScreen: View {
 
     private func refresh(preserving line: String?) {
         switch filter {
-        case .topics:
-            lines = Affirmations.feedRotation(focusTitles: readerTopics, premium: premium.isPremium)
+        case .allTopics:
+            lines = Affirmations.feedRotation(focusTitles: [], premium: premium.isPremium)
+        case .topic(let title):
+            lines = Affirmations.feedRotation(focusTitles: [title], premium: premium.isPremium)
         case .favorites:
             lines = list.favorites
         case .recentlyRead:
@@ -179,7 +140,7 @@ struct AffirmationReaderScreen: View {
 
     private var emptyTitle: String {
         switch filter {
-        case .topics: return "No affirmations here"
+        case .allTopics, .topic: return "No affirmations here"
         case .favorites: return "No favorites yet"
         case .recentlyRead: return "Nothing read yet"
         }
@@ -187,29 +148,44 @@ struct AffirmationReaderScreen: View {
 
     private var emptyMessage: String {
         switch filter {
-        case .topics: return "Choose topics to personalize your feed."
+        case .allTopics, .topic: return "No affirmations available"
         case .favorites: return "Save affirmations with the heart to find them here."
         case .recentlyRead: return "Affirmations you read will appear here."
         }
     }
 
-    private func filterRow(_ title: String, selected: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack(spacing: 10) {
-                Text(loc: title).font(Fonts.ui(14, .semibold)).foregroundStyle(Palette.ink)
-                Spacer()
-                if selected {
-                    Image(systemName: "checkmark.circle.fill").foregroundStyle(Palette.amberDeep)
-                } else {
-                    Circle().strokeBorder(Palette.outlineSoft, lineWidth: 1.4).frame(width: 19, height: 19)
-                }
+    private var filterTopics: [String] {
+        list.availableLibrary.map(\.title) + (premium.isPremium && !list.savedCustom.isEmpty ? ["Your own"] : [])
+    }
+
+    private func filterMenuItem(_ title: String, value: AffirmationReaderFilter) -> some View {
+        Button {
+            guard filter != value else { return }
+            filter = value
+            refresh(preserving: current)
+        } label: {
+            if filter == value {
+                Label { Text(loc: title) } icon: { Image(systemName: "checkmark") }
+            } else {
+                Text(loc: title)
             }
-            .frame(minHeight: 44).contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
-        .accessibilityAddTraits(selected ? .isSelected : [])
     }
 
 }
 
-private enum AffirmationReaderFilter: Equatable { case topics, favorites, recentlyRead }
+private enum AffirmationReaderFilter: Hashable {
+    case allTopics
+    case topic(String)
+    case favorites
+    case recentlyRead
+
+    var title: String {
+        switch self {
+        case .allTopics: return "All topics"
+        case .topic(let title): return title
+        case .favorites: return "Favorites"
+        case .recentlyRead: return "Recently read"
+        }
+    }
+}

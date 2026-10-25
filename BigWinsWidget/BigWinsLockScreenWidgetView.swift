@@ -1,9 +1,8 @@
 import SwiftUI
 import WidgetKit
 
-/// Lock Screen widgets are always rendered monochrome/tinted by the system regardless of the
-/// colors set here — `SunMark`'s shape (rays + disc outline) still comes through, just not its
-/// amber fill, which is expected/standard for this widget family.
+/// Lock Screen widgets use a fixed white foreground for legibility. Home Screen widget colors
+/// remain customizable independently.
 struct BigWinsLockScreenWidgetView: View {
     let entry: BigWinsEntry
 
@@ -12,7 +11,7 @@ struct BigWinsLockScreenWidgetView: View {
             if let line = entry.affirmation {
                 Affirmations.text(line)
                     .font(AffirmationWidgetFont.make(name: entry.fontName, size: 13, weight: .semibold))
-                    .foregroundStyle(Color(hex: entry.textHex))
+                    .foregroundStyle(.white)
                     .multilineTextAlignment(.leading)
                     .lineSpacing(1)
                     .lineLimit(3)
@@ -20,6 +19,7 @@ struct BigWinsLockScreenWidgetView: View {
             } else {
                 Text(loc: "Unlock this widget with Premium")
                     .font(Fonts.ui(10.5, .medium))
+                    .foregroundStyle(.white)
                     .lineLimit(3)
             }
         }

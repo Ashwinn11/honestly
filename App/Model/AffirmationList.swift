@@ -43,6 +43,7 @@ final class AffirmationList {
         defaults.removeObject(forKey: SharedState.Key.affirmationFeedFocuses)
         defaults.removeObject(forKey: SharedState.Key.affirmationReminderFocuses)
         defaults.removeObject(forKey: SharedState.Key.affirmationWidgetFocuses)
+        selectedTopics = migrateTopicNames(selectedTopics)
         selectedTopics = normalizedFocuses(selectedTopics)
         defaults.set(selectedTopics, forKey: topicsKey)
         if needsTopicMigration {
@@ -135,6 +136,26 @@ final class AffirmationList {
         let valid = Set(availableLibrary.map(\.title) + (savedCustom.isEmpty ? [] : ["Your own"]))
         var seen = Set<String>()
         return values.filter { valid.contains($0) && seen.insert($0).inserted }
+    }
+
+    /// Carry existing topic choices forward while splitting dataset categories that used to share
+    /// a single app topic.
+    private func migrateTopicNames(_ values: [String]) -> [String] {
+        var migrated: [String] = []
+        for value in values {
+            let replacements: [String]
+            switch value {
+            case "Self-worth": replacements = ["Self-esteem"]
+            case "Hard days": replacements = ["Safety"]
+            case "Intention": replacements = ["Focus"]
+            case "Confidence": replacements = ["Confidence", "Success"]
+            default: replacements = [value]
+            }
+            for replacement in replacements where !migrated.contains(replacement) {
+                migrated.append(replacement)
+            }
+        }
+        return migrated
     }
 
     /// Today's line from the shared topic selection, used on Home and throughout delivery.

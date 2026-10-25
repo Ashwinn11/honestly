@@ -167,7 +167,6 @@ enum AffirmationWidgetFont {
         "Marker Felt": "MarkerFelt-Thin",
         "Chalkboard": "ChalkboardSE-Regular",
         "Snell Roundhand": "SnellRoundhand-Bold",
-        "Zapfino": "Zapfino",
     ]
 
     static func make(name: String, size: CGFloat, weight: Font.Weight) -> Font {

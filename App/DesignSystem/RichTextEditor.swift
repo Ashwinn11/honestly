@@ -936,7 +936,6 @@ enum FontChoice: String, CaseIterable, Identifiable {
     case marker = "Marker Felt"
     case chalkboard = "Chalkboard"
     case snell = "Snell Roundhand"
-    case zapfino = "Zapfino"
     var id: String { rawValue }
 
     // MARK: Explicit variant names for bundled custom fonts
@@ -993,7 +992,6 @@ enum FontChoice: String, CaseIterable, Identifiable {
         case .marker:      return "MarkerFelt-Thin"
         case .chalkboard:  return "ChalkboardSE-Regular"
         case .snell:       return "SnellRoundhand-Bold"
-        case .zapfino:     return "Zapfino"
         }
     }
 }
@@ -1054,7 +1052,7 @@ extension UIImage {
     }
 }
 
-// MARK: - Font variant availability — some iOS faces (Zapfino, Snell Roundhand, Marker Felt,
+// MARK: - Font variant availability — some iOS faces (Snell Roundhand, Marker Felt,
 // Bradley Hand…) ship with only one weight/style and have no bold or italic sibling registered
 // in the system font database. `withSymbolicTraits` returns nil in those cases, meaning bold/italic
 // commands silently do nothing. Checking via the family's registered names is more reliable than
