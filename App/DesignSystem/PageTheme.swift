@@ -317,19 +317,38 @@ private struct SeededRandom {
 
 struct ThemePickerSheet: View {
     @Binding var selection: PageTheme
+    var title: String = "Page theme"
+    var confirmSelection = false
     @Environment(\.dismiss) private var dismiss
     @Environment(PremiumManager.self) private var premium
     @Environment(AppFlow.self) private var flow
+    @State private var initialSelection: PageTheme?
 
     private let columns = [GridItem(.adaptive(minimum: 96), spacing: 12)]
 
     var body: some View {
         VStack(spacing: 0) {
             HStack {
-                Text(loc: "Page theme")
+                Text(loc: title)
                     .font(Fonts.display(19, .bold)).foregroundStyle(Palette.ink)
                 Spacer()
-                IconTileButton(icon: "xmark", size: 38, iconSize: 13) { dismiss() }
+                if confirmSelection {
+                    let active = selection != (initialSelection ?? selection)
+                    Button { dismiss() } label: {
+                        Image(systemName: "checkmark")
+                            .font(.system(size: 14, weight: .bold))
+                            .foregroundStyle(active ? .white : Palette.inkSofter)
+                            .frame(width: 38, height: 38)
+                            .background(active ? Palette.amber : Palette.paper,
+                                        in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .strokeBorder(Palette.ink, lineWidth: 1.5))
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(Text(loc: "Done"))
+                } else {
+                    IconTileButton(icon: "xmark", size: 38, iconSize: 13) { dismiss() }
+                }
             }
             .padding(EdgeInsets(top: 18, leading: 20, bottom: 6, trailing: 20))
 
@@ -343,6 +362,7 @@ struct ThemePickerSheet: View {
             }
         }
         .background(Palette.cream)
+        .onAppear { initialSelection = selection }
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.hidden)
     }

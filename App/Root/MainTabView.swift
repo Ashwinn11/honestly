@@ -25,9 +25,14 @@ struct MainTabView: View {
                 .toolbar(.hidden, for: .navigationBar)
                 .navigationDestination(isPresented: Binding(
                     get: { tag == .home && flow.widgetAffirmationsPresented },
-                    set: { if tag == .home { flow.widgetAffirmationsPresented = $0 } }
+                    set: {
+                        guard tag == .home else { return }
+                        flow.widgetAffirmationsPresented = $0
+                        if !$0 { flow.widgetAffirmationLine = nil }
+                    }
                 )) {
-                    AffirmationReaderScreen().toolbar(.hidden, for: .navigationBar)
+                    AffirmationReaderScreen(startingLine: flow.widgetAffirmationLine)
+                        .toolbar(.hidden, for: .navigationBar)
                 }
         }
         .tabItem { Label { Text(loc: title) } icon: { Image(systemName: icon) } }

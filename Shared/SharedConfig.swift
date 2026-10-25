@@ -53,6 +53,10 @@ enum SharedState {
         static let affirmationReminderWeekdays = "affirmations.reminderWeekdays"
         static let affirmationReminderFocuses = "affirmations.reminderFocuses"
         static let affirmationWidgetFocuses = "affirmations.widgetFocuses"
+        static let affirmationWidgetTheme = "affirmations.widgetTheme"
+        static let affirmationWidgetBackgroundColor = "affirmations.widgetBackgroundColor"
+        static let affirmationWidgetTextColor = "affirmations.widgetTextColor"
+        static let affirmationWidgetFont = "affirmations.widgetFont"
         static let affirmationMinutes = "affirmations.notifyMinutes" // Legacy single-time reminder value, retained for migration.
     }
 
@@ -122,6 +126,33 @@ enum SharedState {
             return value == 0 || value == 5 ? 7 : value
         }
         set { defaults.set(newValue, forKey: Key.weeklyGoal) }
+    }
+
+    /// Last editor theme, mirrored so affirmation widgets can share the journal's look.
+    static var affirmationWidgetTheme: String {
+        get { defaults.string(forKey: Key.affirmationWidgetTheme) ?? "paper" }
+        set { defaults.set(newValue, forKey: Key.affirmationWidgetTheme) }
+    }
+
+    static var affirmationWidgetBackgroundColor: String? {
+        get {
+            guard let value = defaults.string(forKey: Key.affirmationWidgetBackgroundColor), !value.isEmpty else { return nil }
+            return value
+        }
+        set {
+            if let newValue { defaults.set(newValue, forKey: Key.affirmationWidgetBackgroundColor) }
+            else { defaults.removeObject(forKey: Key.affirmationWidgetBackgroundColor) }
+        }
+    }
+
+    static var affirmationWidgetTextColor: String {
+        get { defaults.string(forKey: Key.affirmationWidgetTextColor) ?? "33261A" }
+        set { defaults.set(newValue, forKey: Key.affirmationWidgetTextColor) }
+    }
+
+    static var affirmationWidgetFont: String {
+        get { defaults.string(forKey: Key.affirmationWidgetFont) ?? "Manrope" }
+        set { defaults.set(newValue, forKey: Key.affirmationWidgetFont) }
     }
 
     // MARK: Premium (mirrored so the background DeviceActivityMonitor extension, which has no

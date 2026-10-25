@@ -76,7 +76,6 @@ enum AffirmationNudge {
         let cal = Calendar.current
         let now = Date()
         let today = cal.startOfDay(for: now)
-        let title = Affirmations.localized("Today's affirmation")
         let activeDays = Set(weekdays)
         var requestIndex = 0
         for offset in 0..<horizonDays {
@@ -85,7 +84,8 @@ enum AffirmationNudge {
             for (timeIndex, time) in times.enumerated() {
                 guard let fire = cal.date(bySettingHour: time / 60, minute: time % 60, second: 0, of: day), fire > now else { continue }
                 let content = UNMutableNotificationContent()
-                content.title = title
+                // iOS shows the app name in the notification header automatically; keeping the
+                // title empty lets the affirmation itself be the only notification message.
                 let line = Affirmations.deliveryLine(on: day, occurrence: timeIndex,
                                                      focusTitles: selectedTopics, premium: SharedState.premiumActive)
                 guard !line.isEmpty else { continue }

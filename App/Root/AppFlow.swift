@@ -10,6 +10,7 @@ final class AppFlow {
     var ritualPresented = false
     var paywallPresented = false
     var widgetAffirmationsPresented = false
+    var widgetAffirmationLine: String?
 
     func startRitual() {
         Haptics.tap()

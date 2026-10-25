@@ -83,8 +83,9 @@ struct HonestlyApp: App {
                 .modelContainer(container)
                 .preferredColorScheme(.light)
                 .onOpenURL { url in
-                    guard AppLink.opensAffirmations(url) else { return }
+                    guard let line = AppLink.affirmationLine(from: url) else { return }
                     flow.selectedTab = .home
+                    flow.widgetAffirmationLine = line
                     flow.widgetAffirmationsPresented = true
                 }
                 .task {

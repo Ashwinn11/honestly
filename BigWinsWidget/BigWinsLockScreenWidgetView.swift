@@ -8,29 +8,29 @@ struct BigWinsLockScreenWidgetView: View {
     let entry: BigWinsEntry
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            HStack(spacing: 4) {
-                Text(loc: "Today's affirmation")
-                    .font(Fonts.ui(10, .heavy))
-                    .textCase(.uppercase)
-                SunMark(size: 12, muted: entry.affirmation == nil)
-            }
+        Group {
             if let line = entry.affirmation {
                 Affirmations.text(line)
-                    .font(Fonts.ui(12.5, .semibold))
-                    .lineLimit(2)
+                    .font(AffirmationWidgetFont.make(name: entry.fontName, size: 13, weight: .semibold))
+                    .foregroundStyle(Color(hex: entry.textHex))
+                    .multilineTextAlignment(.leading)
+                    .lineSpacing(1)
+                    .lineLimit(3)
+                    .minimumScaleFactor(0.78)
             } else {
                 Text(loc: "Unlock this widget with Premium")
                     .font(Fonts.ui(10.5, .medium))
-                    .lineLimit(2)
+                    .lineLimit(3)
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .containerBackground(for: .widget) { Color.clear }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+        .containerBackground(for: .widget) {
+            AffirmationWidgetThemeBackground(themeID: entry.themeID, colorOverrideHex: entry.backgroundHex)
+        }
         // Defensive against the same WidgetKit "stuck placeholder" platform bug as the Home
         // Screen widget — see BigWinsWidgetView for details.
         .unredacted()
-        .widgetURL(AppLink.affirmations)
+        .widgetURL(entry.affirmation.flatMap(AppLink.affirmation) ?? AppLink.affirmations)
     }
 }
 

@@ -1,5 +1,6 @@
 import SwiftUI
 import WidgetKit
+import UIKit
 
 /// Reminder timing lives here. Affirmations use the same topics everywhere in the app.
 struct AffirmationDeliverySettingsScreen: View {
@@ -7,9 +8,17 @@ struct AffirmationDeliverySettingsScreen: View {
     @Environment(AppFlow.self) private var flow
     @Environment(\.dismiss) private var dismiss
     @AppStorage("affirmationNudgeOn", store: SharedState.defaults) private var enabled = false
+    @AppStorage(SharedState.Key.affirmationWidgetTheme, store: SharedState.defaults) private var widgetThemeID = "paper"
+    @AppStorage(SharedState.Key.affirmationWidgetBackgroundColor, store: SharedState.defaults) private var widgetBackgroundHex = ""
+    @AppStorage(SharedState.Key.affirmationWidgetTextColor, store: SharedState.defaults) private var widgetTextHex = "33261A"
+    @AppStorage(SharedState.Key.affirmationWidgetFont, store: SharedState.defaults) private var widgetFontName = "Manrope"
     @State private var reminderTimes = [AffirmationNudge.defaultMinutes]
     @State private var reminderDays = Array(1...7)
     @State private var notifDenied = false
+    @State private var showingWidgetTheme = false
+    @State private var showingBackgroundColor = false
+    @State private var showingTextColor = false
+    @State private var showingWidgetFont = false
 
     private let weekdaySymbols = Calendar.current.veryShortStandaloneWeekdaySymbols
 
@@ -75,9 +84,58 @@ struct AffirmationDeliverySettingsScreen: View {
                     VStack(alignment: .leading, spacing: 12) {
                         sectionTitle("Affirmation widgets")
                         if premium.isPremium {
-                            Text(loc: "Widgets show affirmations from your selected topics.")
-                                .font(Fonts.ui(13, .medium)).foregroundStyle(Palette.inkSoft)
-                                .fixedSize(horizontal: false, vertical: true)
+                            card {
+                                VStack(spacing: 12) {
+                                    Button { showingWidgetTheme = true } label: {
+                                        HStack(spacing: 12) {
+                                            PageThemeBackground(theme: PageTheme.from(widgetThemeID))
+                                                .frame(width: 56, height: 44)
+                                                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                                                .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                                    .strokeBorder(Palette.ink.opacity(0.22), lineWidth: 1))
+                                            VStack(alignment: .leading, spacing: 2) {
+                                                Text(loc: "Page theme")
+                                                    .font(Fonts.ui(14, .bold)).foregroundStyle(Palette.ink)
+                                                Text(loc: PageTheme.from(widgetThemeID).label)
+                                                    .font(Fonts.ui(12, .medium)).foregroundStyle(Palette.inkSofter)
+                                            }
+                                            Spacer(minLength: 4)
+                                            Image(systemName: "chevron.forward")
+                                                .font(.system(size: 12, weight: .bold)).foregroundStyle(Palette.inkSofter)
+                                        }
+                                        .frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
+                                        .contentShape(Rectangle())
+                                    }
+                                    .buttonStyle(.plain)
+
+                                    HStack(spacing: 12) {
+                                        widgetColorButton(title: "Background color", hex: effectiveBackgroundHex) {
+                                            showingBackgroundColor = true
+                                        }
+                                        widgetColorButton(title: "Text color", hex: widgetTextHex) {
+                                            showingTextColor = true
+                                        }
+                                    }
+
+                                    Button { showingWidgetFont = true } label: {
+                                        HStack(spacing: 10) {
+                                            Image(systemName: "textformat")
+                                                .font(.system(size: 15, weight: .semibold))
+                                                .foregroundStyle(Palette.ink)
+                                                .frame(width: 32, height: 32)
+                                                .background(Palette.paper, in: RoundedRectangle(cornerRadius: 9))
+                                            Text(loc: "Font").font(Fonts.ui(14, .bold)).foregroundStyle(Palette.ink)
+                                            Spacer()
+                                            Text(widgetFontName).font(Fonts.ui(12, .medium)).foregroundStyle(Palette.inkSofter)
+                                            Image(systemName: "chevron.forward")
+                                                .font(.system(size: 12, weight: .bold)).foregroundStyle(Palette.inkSofter)
+                                        }
+                                        .frame(maxWidth: .infinity, minHeight: 40)
+                                        .contentShape(Rectangle())
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
                         } else {
                             card {
                                 Button { flow.showPaywall() } label: {
@@ -98,6 +156,18 @@ struct AffirmationDeliverySettingsScreen: View {
         .capWidth(Metrics.maxContentWidth)
         .background(PaperBackground())
         .toolbar(.hidden, for: .navigationBar)
+        .sheet(isPresented: $showingWidgetTheme, onDismiss: persistWidgetStyleAndReload) {
+            ThemePickerSheet(selection: widgetThemeSelection, title: "Page theme", confirmSelection: true)
+        }
+        .sheet(isPresented: $showingBackgroundColor, onDismiss: persistWidgetStyleAndReload) {
+            WidgetColorPickerSheet(title: "Background color", hex: backgroundColorBinding)
+        }
+        .sheet(isPresented: $showingTextColor, onDismiss: persistWidgetStyleAndReload) {
+            WidgetColorPickerSheet(title: "Text color", hex: $widgetTextHex)
+        }
+        .sheet(isPresented: $showingWidgetFont, onDismiss: persistWidgetStyleAndReload) {
+            WidgetFontPickerSheet(selection: $widgetFontName)
+        }
         .onAppear {
             reminderTimes = AffirmationNudge.times
             reminderDays = AffirmationNudge.weekdays
@@ -130,6 +200,61 @@ struct AffirmationDeliverySettingsScreen: View {
                 .padding(16)
                 .background(Palette.cream, in: RoundedRectangle(cornerRadius: 18))
                 .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(Palette.outlineSoft, lineWidth: 1.3))
+    }
+
+    private var widgetThemeSelection: Binding<PageTheme> {
+        Binding(
+            get: { PageTheme.from(widgetThemeID) },
+            set: { theme in
+                widgetThemeID = theme.rawValue
+                widgetBackgroundHex = ""
+                SharedState.affirmationWidgetTheme = theme.rawValue
+                SharedState.affirmationWidgetBackgroundColor = nil
+            }
+        )
+    }
+
+    private var effectiveBackgroundHex: String {
+        widgetBackgroundHex.isEmpty ? colorHex(PageTheme.from(widgetThemeID).baseColor) : widgetBackgroundHex
+    }
+
+    private var backgroundColorBinding: Binding<String> {
+        Binding(
+            get: { effectiveBackgroundHex },
+            set: { widgetBackgroundHex = $0 }
+        )
+    }
+
+    private func widgetColorButton(title: String, hex: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 7) {
+                Circle().fill(Color(hex: hex)).frame(width: 24, height: 24)
+                    .overlay(Circle().strokeBorder(Palette.ink.opacity(0.35), lineWidth: 1))
+                Text(loc: title).font(Fonts.ui(11.5, .semibold)).foregroundStyle(Palette.ink)
+                    .lineLimit(1).minimumScaleFactor(0.8)
+                Spacer(minLength: 0)
+            }
+            .frame(maxWidth: .infinity, minHeight: 40, alignment: .leading)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func persistWidgetStyleAndReload() {
+        SharedState.affirmationWidgetTheme = widgetThemeID
+        SharedState.affirmationWidgetBackgroundColor = widgetBackgroundHex.isEmpty ? nil : widgetBackgroundHex
+        SharedState.affirmationWidgetTextColor = widgetTextHex
+        SharedState.affirmationWidgetFont = widgetFontName
+        SharedState.defaults.synchronize()
+        WidgetCenter.shared.reloadAllTimelines()
+    }
+
+    private func colorHex(_ color: Color) -> String {
+        let uiColor = UIColor(color)
+        var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0
+        uiColor.getRed(&red, green: &green, blue: &blue, alpha: nil)
+        return String(format: "%02X%02X%02X", Int((red * 255).rounded()),
+                      Int((green * 255).rounded()), Int((blue * 255).rounded()))
     }
 
     private func sectionTitle(_ title: String) -> some View {
@@ -185,5 +310,99 @@ struct AffirmationDeliverySettingsScreen: View {
         SharedState.defaults.set(reminderDays, forKey: SharedState.Key.affirmationReminderWeekdays)
         WidgetCenter.shared.reloadAllTimelines()
         AffirmationNudge.schedule()
+    }
+}
+
+private struct WidgetColorPickerSheet: View {
+    let title: String
+    @Binding var hex: String
+    @Environment(\.dismiss) private var dismiss
+    private let columns = Array(repeating: GridItem(.flexible(), spacing: 8), count: 6)
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            LibraryHeader(title: title, onBack: { dismiss() })
+            ScrollView {
+                VStack(alignment: .leading, spacing: 14) {
+                    InlineJournalColorPicker(color: UIColor(Color(hex: hex)), onChange: { hex = Self.hex($0) })
+                    LazyVGrid(columns: columns, spacing: 8) {
+                        ForEach(EditorToolbar.textColors, id: \.self) { color in
+                            Button { hex = color } label: {
+                                Circle().fill(Color(hex: color))
+                                    .frame(width: 32, height: 32)
+                                    .overlay(Circle().strokeBorder(Palette.ink,
+                                        lineWidth: hex.caseInsensitiveCompare(color) == .orderedSame ? 2.5 : 0.6))
+                                    .overlay {
+                                        if hex.caseInsensitiveCompare(color) == .orderedSame {
+                                            Image(systemName: "checkmark")
+                                                .font(.system(size: 11, weight: .black))
+                                                .foregroundStyle(.white)
+                                        }
+                                    }
+                                    .frame(maxWidth: .infinity, minHeight: 44)
+                                    .contentShape(Rectangle())
+                            }
+                            .buttonStyle(PressableStyle())
+                            .accessibilityLabel(Text(loc: title) + Text(" #" + color))
+                        }
+                    }
+                }
+                .padding(.bottom, 18)
+            }
+            .scrollIndicators(.hidden)
+        }
+        .padding(20)
+        .background(PaperBackground())
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
+    }
+
+    private static func hex(_ color: UIColor) -> String {
+        var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0
+        color.getRed(&red, green: &green, blue: &blue, alpha: nil)
+        return String(format: "%02X%02X%02X", Int((red * 255).rounded()),
+                      Int((green * 255).rounded()), Int((blue * 255).rounded()))
+    }
+}
+
+private struct WidgetFontPickerSheet: View {
+    @Binding var selection: String
+    @Environment(\.dismiss) private var dismiss
+    private let columns = [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            LibraryHeader(title: "Font", onBack: { dismiss() })
+            ScrollView {
+                LazyVGrid(columns: columns, spacing: 10) {
+                    ForEach(FontChoice.allCases) { choice in
+                        let active = selection == choice.rawValue
+                        Button {
+                            selection = choice.rawValue
+                            dismiss()
+                        } label: {
+                            Text(choice.rawValue)
+                                .font(Font(choice.uiFont(size: 16)))
+                                .foregroundStyle(active ? .white : Palette.ink)
+                                .frame(maxWidth: .infinity, minHeight: 48)
+                                .background(active ? Palette.amber : Palette.cream,
+                                            in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                    .strokeBorder(active ? Palette.ink : Palette.outlineSoft,
+                                                  lineWidth: active ? 2 : 1.2))
+                        }
+                        .buttonStyle(PressableStyle(scale: 0.97))
+                        .accessibilityAddTraits(active ? .isSelected : [])
+                    }
+                }
+            }
+            .scrollIndicators(.hidden)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .padding(.horizontal, 20)
+        .padding(.top, 20)
+        .background(PaperBackground())
+        .presentationDetents([.medium, .large])
+        .presentationDragIndicator(.visible)
     }
 }

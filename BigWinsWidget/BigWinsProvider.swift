@@ -5,6 +5,10 @@ import WidgetKit
 struct BigWinsEntry: TimelineEntry {
     let date: Date
     let affirmation: String?
+    let themeID: String
+    let backgroundHex: String?
+    let textHex: String
+    let fontName: String
 }
 
 /// Reads the widget's own topic selection from the app group
@@ -15,7 +19,7 @@ struct BigWinsProvider: TimelineProvider {
     private static let daysAhead = 7
 
     func placeholder(in context: Context) -> BigWinsEntry {
-        BigWinsEntry(date: .now, affirmation: Affirmations.library.first?.lines.first ?? "")
+        makeEntry(date: .now, affirmation: Affirmations.library.first?.lines.first ?? "")
     }
 
     func getSnapshot(in context: Context, completion: @escaping (BigWinsEntry) -> Void) {
@@ -27,7 +31,7 @@ struct BigWinsProvider: TimelineProvider {
     func getTimeline(in context: Context, completion: @escaping (Timeline<BigWinsEntry>) -> Void) {
         guard SharedState.premiumActive else {
             // Nothing to roll over; the Premium ratchet reloads every timeline when it flips.
-            completion(Timeline(entries: [BigWinsEntry(date: .now, affirmation: nil)], policy: .never))
+            completion(Timeline(entries: [makeEntry(date: .now, affirmation: nil)], policy: .never))
             return
         }
         completion(Timeline(entries: dailyEntries(), policy: .atEnd))
@@ -39,13 +43,24 @@ struct BigWinsProvider: TimelineProvider {
         let today = cal.startOfDay(for: .now)
         return (0..<Self.daysAhead).compactMap { offset in
             cal.date(byAdding: .day, value: offset, to: today)
-                .map { BigWinsEntry(date: $0, affirmation: widgetLine(on: $0)) }
+                .map { makeEntry(date: $0, affirmation: widgetLine(on: $0)) }
         }
     }
 
     private func currentEntry() -> BigWinsEntry {
-        guard SharedState.premiumActive else { return BigWinsEntry(date: .now, affirmation: nil) }
-        return BigWinsEntry(date: .now, affirmation: widgetLine(on: .now))
+        guard SharedState.premiumActive else {
+            return makeEntry(date: .now, affirmation: nil)
+        }
+        return makeEntry(date: .now, affirmation: widgetLine(on: .now))
+    }
+
+    private func makeEntry(date: Date, affirmation: String?) -> BigWinsEntry {
+        BigWinsEntry(date: date,
+                     affirmation: affirmation,
+                     themeID: SharedState.affirmationWidgetTheme,
+                     backgroundHex: SharedState.affirmationWidgetBackgroundColor,
+                     textHex: SharedState.affirmationWidgetTextColor,
+                     fontName: SharedState.affirmationWidgetFont)
     }
 
     private func widgetLine(on date: Date) -> String {
