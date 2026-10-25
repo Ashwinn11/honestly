@@ -15,24 +15,39 @@ struct BigWinsWidgetView: View {
 
     private var quoteLineLimit: Int {
         switch family {
-        case .systemSmall: return 7
-        case .systemLarge: return 9
-        default: return 5
+        case .systemSmall: return 6
+        case .systemLarge: return 8
+        default: return 4
+        }
+    }
+
+    private var quoteGlyphSize: CGFloat {
+        switch family {
+        case .systemSmall: return 14
+        case .systemLarge: return 24
+        default: return 18
         }
     }
 
     var body: some View {
         Group {
             if let line = entry.affirmation {
-                Affirmations.text(line)
-                    .font(AffirmationWidgetFont.make(name: entry.fontName, size: quoteSize, weight: .semibold))
-                    .foregroundStyle(Color(hex: entry.textHex))
-                    .multilineTextAlignment(.center)
-                    .lineSpacing(family == .systemSmall ? 1 : 3)
-                    .lineLimit(quoteLineLimit)
-                    .minimumScaleFactor(0.72)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .padding(family == .systemSmall ? 12 : 20)
+                VStack(spacing: family == .systemSmall ? 4 : 7) {
+                    Image(systemName: "quote.opening")
+                        .font(.system(size: quoteGlyphSize, weight: .semibold))
+                        .foregroundStyle(Color(hex: entry.textHex))
+                        .accessibilityHidden(true)
+                    Affirmations.text(line)
+                        .font(AffirmationWidgetFont.make(name: entry.fontName, size: quoteSize, weight: .semibold))
+                        .foregroundStyle(Color(hex: entry.textHex))
+                        .multilineTextAlignment(.center)
+                        .lineSpacing(family == .systemSmall ? 1 : 3)
+                        .lineLimit(quoteLineLimit)
+                        .minimumScaleFactor(0.68)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding(family == .systemSmall ? 10 : 18)
             } else {
                 Text(loc: "Unlock this widget with Premium")
                     .font(Fonts.ui(family == .systemSmall ? 13 : 16, .semibold))

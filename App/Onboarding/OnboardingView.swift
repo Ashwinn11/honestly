@@ -9,9 +9,11 @@ struct OnboardingView: View {
     @State private var index = 0
     @State private var forward = true
     @State private var picks: [String] = []
+    @State private var morningAnswer: MorningAnswer?
+    @State private var journalAnswer: JournalAnswer?
 
     private enum Beat: Int, CaseIterable {
-        case brand, problem, lock, plan, affirm, social, notif, paywall
+        case brand, morning, journaling, affirmations, personal, social, notif, paywall
     }
     private let beats = Beat.allCases
     private var beat: Beat { beats[index] }
@@ -52,34 +54,31 @@ struct OnboardingView: View {
     @ViewBuilder private var beatView: some View {
         switch beat {
         case .brand:
-            chrome(primary: .init(title: "Good morning") { advance() }) {
-                OnbIllustration(kind: .brand)
+            chrome(primary: .init(title: "Start my morning") { advance() }) {
+                OnbWelcomeView()
             }
 
-        case .problem:
-            chrome(primary: .init(title: "Continue") { advance() }) {
-                VStack(spacing: 26) {
-                    OnbHeader(eyebrow: "Your morning", title: AppContent.onbProblemTitle)
-                    OnbIllustration(kind: .noise)
-                }
+        case .morning:
+            chrome(primary: .init(title: "Continue", enabled: morningAnswer != nil) { advance() }) {
+                OnbMorningQuestionView(selection: $morningAnswer)
             }
 
-        case .lock:
-            chrome(primary: .init(title: "Continue") { advance() }) {
-                lockAnimation
+        case .journaling:
+            chrome(primary: .init(title: "Continue", enabled: journalAnswer != nil) { advance() }) {
+                OnbJournalQuestionView(selection: $journalAnswer)
             }
 
-        case .plan:
-            chrome(primary: .init(title: "This is me") { advance() }) {
-                OnbPlanView()
-            }
-
-        case .affirm:
+        case .affirmations:
             chrome(primary: .init(title: "Continue") {
                 affirmations.setSelectedTopics(picks)
                 advance()
             }) {
-                OnbAffirmView(picks: $picks)
+                OnbAffirmationQuestionView(picks: $picks, sample: sampleAffirmation)
+            }
+
+        case .personal:
+            chrome(primary: .init(title: "Continue") { advance() }) {
+                OnbPersonalizedPlanView(title: planTitle, affirmation: sampleAffirmation)
             }
 
         case .social:
@@ -90,11 +89,7 @@ struct OnboardingView: View {
         case .notif:
             chrome(primary: .init(title: "Allow notifications") { requestNotifications() },
                    secondary: .init(title: "Maybe later") { advance() }) {
-                VStack(spacing: 26) {
-                    OnbHeader(eyebrow: "Stay connected", title: AppContent.notifTitle)
-                    let lines = Affirmations.feedRotation(focusTitles: picks, premium: premium.isPremium)
-                    NotifStack(first: lines.first ?? "", second: lines.count > 1 ? lines[1] : lines.first ?? "")
-                }
+                OnbReminderView(affirmations: reminderSamples)
             }
 
         case .paywall:
@@ -109,6 +104,9 @@ struct OnboardingView: View {
                                  secondary: FooterLink? = nil,
                                  @ViewBuilder content: @escaping () -> C) -> some View {
         VStack(spacing: 0) {
+            OnbDots(index: index, total: dotTotal)
+                .padding(.top, beat == .brand ? 42 : 8)
+                .padding(.bottom, 8)
             GeometryReader { geo in
                 ScrollView {
                     content()
@@ -129,7 +127,6 @@ struct OnboardingView: View {
 
     private func footer(primary: FooterButton, secondary: FooterLink?) -> some View {
         VStack(spacing: 18) {
-            OnbDots(index: index, total: dotTotal)
             HStack(spacing: 12) {
                 if canGoBack { backButton }
                 ctaButton(primary)
@@ -184,56 +181,36 @@ struct OnboardingView: View {
         let action: () -> Void
     }
 
-    // MARK: - App-locking (passive — icons lock themselves, nothing to tap)
-
-    @State private var lockedCount = 0
-
-    private var lockAnimation: some View {
-        VStack(spacing: 26) {
-            OnbHeader(eyebrow: "Your attention, on your terms", title: AppContent.lockTitle)
-
-            let displayBrands: [(Int, Brand)] = Array([Brand.instagram, .tiktok, .whatsapp, .snapchat].enumerated())
-            HStack(spacing: 0) {
-                ForEach(displayBrands, id: \.1) { i, b in
-                    let locked = i < lockedCount
-                    VStack(spacing: 8) {
-                        ZStack(alignment: .topTrailing) {
-                            BrandIcon(brand: b, size: 68)
-                                .grayscale(locked ? 1 : 0)
-                                .opacity(locked ? 0.5 : 1)
-                            if locked {
-                                lockBadge.transition(.scale.combined(with: .opacity))
-                            }
-                        }
-                        Text(b.displayName)
-                            .font(Fonts.ui(12, .bold))
-                            .foregroundStyle(locked ? Palette.inkSofter : Palette.ink)
-                    }
-                    .animation(Motion.pop, value: locked)
-                    .frame(maxWidth: .infinity)
-                }
-            }
+    private var sampleAffirmation: String {
+        if sampleAffirmationTopic == "Your own", premium.isPremium {
+            return affirmations.savedCustom.first ?? "You deserve care and kindness."
         }
-        .task { await animateLocks() }
+        let topic = sampleAffirmationTopic
+        return affirmations.availableLibrary.first(where: { $0.title == topic })?.lines.first
+            ?? affirmations.availableLibrary.first?.lines.first
+            ?? "You deserve care and kindness."
     }
 
-    private var lockBadge: some View {
-        Image(systemName: "lock.fill")
-            .font(.system(size: 10, weight: .bold))
-            .foregroundStyle(.white)
-            .frame(width: 20, height: 20)
-            .background(Palette.ink, in: Circle())
-            .overlay(Circle().strokeBorder(Palette.paper, lineWidth: 2))
-            .offset(x: 6, y: -6)
+    private var sampleAffirmationTopic: String {
+        picks.last ?? affirmations.availableLibrary.first?.title ?? ""
     }
 
-    private func animateLocks() async {
-        try? await Task.sleep(for: .seconds(0.4))
-        for i in 1...4 {
-            withAnimation(Motion.pop) { lockedCount = i }
-            Haptics.tap()
-            try? await Task.sleep(for: .seconds(0.18))
+    private var reminderSamples: [String] {
+        let topic = sampleAffirmationTopic
+        let lines: [String]
+        if topic == "Your own", premium.isPremium {
+            lines = affirmations.savedCustom
+        } else {
+            lines = affirmations.availableLibrary.first(where: { $0.title == topic })?.lines
+                ?? affirmations.availableLibrary.first?.lines
+                ?? []
         }
+        return Array(lines.prefix(2)).isEmpty ? [sampleAffirmation] : Array(lines.prefix(2))
+    }
+
+    // The morning answer (where app blocking speaks) titles the plan.
+    private var planTitle: String {
+        morningAnswer?.summaryTitle ?? "A morning with more room for you."
     }
 
     // MARK: - Navigation
@@ -281,7 +258,7 @@ private struct OnbDots: View {
     }
 }
 
-// MARK: - Plan reveal (how the ritual works — no personalization, same for everyone)
+// MARK: - The opening promise and personalizer
 private struct OnbHeader: View {
     let eyebrow: String
     let title: String
@@ -301,61 +278,449 @@ private struct OnbHeader: View {
     }
 }
 
-private struct OnbPlanView: View {
+private enum MorningAnswer: String, CaseIterable, Identifiable {
+    case phone, racingMind, rushing, routine
+    var id: String { rawValue }
+    var title: String {
+        switch self {
+        case .phone: "I reach for my phone first"
+        case .racingMind: "My mind is already racing"
+        case .rushing: "I rush into everyone else’s needs"
+        case .routine: "It’s hard to keep a morning routine"
+        }
+    }
+    var summaryTitle: String {
+        switch self {
+        case .phone: "Give yourself a moment before the feed."
+        case .racingMind: "Give your thoughts a little room."
+        case .rushing: "Make space for what you need, too."
+        case .routine: "A small ritual can be easier to return to."
+        }
+    }
+}
+
+private enum JournalAnswer: String, CaseIterable, Identifiable {
+    case blankPage, time, tangled, consistency
+    var id: String { rawValue }
+    var title: String {
+        switch self {
+        case .blankPage: "I don’t know where to start"
+        case .time: "I struggle to make time"
+        case .tangled: "My thoughts feel tangled"
+        case .consistency: "I forget to come back to it"
+        }
+    }
+    var summaryTitle: String {
+        switch self {
+        case .blankPage: "You don’t need the perfect words."
+        case .time: "A few honest lines can make room for you."
+        case .tangled: "Give your thoughts somewhere to land."
+        case .consistency: "A small ritual can be easier to return to."
+        }
+    }
+}
+
+private struct OnbWelcomeView: View {
     var body: some View {
-        VStack(spacing: 28) {
-            OnbHeader(eyebrow: "How it works", title: "A little space to\nhear yourself.")
-
+        VStack(spacing: 0) {
             ZStack {
-                SoftGlow(color: Palette.sunDisc, opacity: 0.22, size: 320)
-                morningPage
-                    .rotationEffect(.degrees(-4))
-
-                Image(systemName: "pencil")
-                    .font(.system(size: 64, weight: .regular))
-                    .foregroundStyle(Palette.amber)
-                    .shadow(color: Palette.ink.opacity(0.14), radius: 3, x: 2, y: 4)
-                    .rotationEffect(.degrees(-12))
-                    .offset(x: 112, y: 62)
-                    .accessibilityHidden(true)
+                SoftGlow(color: Palette.sunDisc, opacity: 0.22, size: 280)
+                SunMark(size: 118).spin(period: 26)
+                InkGlyph(kind: .sparkle, size: 24, fill: Color(hex: "F6C33F"))
+                    .offset(x: -74, y: -60)
+                    .floaty(period: 4)
+                InkGlyph(kind: .heart, size: 20, fill: Color(hex: "F19DA6"))
+                    .offset(x: 76, y: -44)
+                    .floaty(period: 5, delay: 0.4)
             }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 12)
+            .floaty(period: 6)
+            .padding(.bottom, 22)
+            Text("Honestly")
+                .font(Fonts.display(52, .heavy))
+                .foregroundStyle(Palette.ink)
+            Text(loc: "Let it out on the page. Find words that lift you.")
+                .font(Fonts.ui(16, .semibold))
+                .foregroundStyle(Palette.inkSoft)
+                .multilineTextAlignment(.center)
+                .lineSpacing(3)
+                .frame(maxWidth: 280)
+                .padding(.top, 18)
+        }
+    }
+}
 
-            HStack(alignment: .top, spacing: 0) {
-                step(symbol: "face.smiling", title: "Check in")
-                connector
-                step(symbol: "pencil.line", title: "Write")
-                connector
-                step(symbol: "lock.open", title: "Begin")
+private struct OnbMorningQuestionView: View {
+    @Binding var selection: MorningAnswer?
+
+    var body: some View {
+        VStack(spacing: 16) {
+            OnbHeader(eyebrow: "Your mornings", title: "What gets in the way of a morning that feels like yours?")
+            VStack(spacing: 9) {
+                ForEach(MorningAnswer.allCases) { answer in
+                    OnbChoiceRow(title: answer.title, selected: selection == answer) {
+                        Haptics.select()
+                        selection = answer
+                    }
+                }
             }
-            .accessibilityElement(children: .combine)
+            AppBlockLoop()
+        }
+    }
+}
+
+private struct OnbJournalQuestionView: View {
+    @Binding var selection: JournalAnswer?
+
+    var body: some View {
+        VStack(spacing: 10) {
+            OnbHeader(eyebrow: "Your journaling", title: "What makes journaling hard to return to?")
+            VStack(spacing: 9) {
+                ForEach(JournalAnswer.allCases) { answer in
+                    OnbChoiceRow(title: answer.title, selected: selection == answer) {
+                        Haptics.select()
+                        selection = answer
+                    }
+                }
+            }
+            JournalWritingIllustration()
+                .offset(y: -12)
+        }
+    }
+}
+
+private struct OnbAffirmationQuestionView: View {
+    @Binding var picks: [String]
+    let sample: String
+
+    var body: some View {
+        VStack(spacing: 0) {
+            OnbHeader(eyebrow: "Your affirmations", title: "What would you like affirmations to support?")
+                .padding(.bottom, 18)
+            AffirmationTopicPicker(selection: $picks, onSelection: { Haptics.select() })
+                .padding(.bottom, 5)
+            OnbAffirmationPreview(text: sample, topic: picks.last ?? "")
+        }
+    }
+}
+
+private struct OnbPersonalizedPlanView: View {
+    let title: String
+    let affirmation: String
+
+    var body: some View {
+        VStack(spacing: 26) {
+            OnbHeader(eyebrow: "Made for your mornings", title: title)
+            MorningOutcomeCard(affirmation: affirmation)
+                .rotationEffect(.degrees(-4))
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 8)
+        .background(alignment: .center) {
+            SoftGlow(color: Palette.sunDisc, opacity: 0.14, size: 300)
+        }
+    }
+}
+
+// MARK: - Tomorrow morning, played once (locked → write → apps unlock → affirmation)
+
+/// Shows the outcome rather than the steps: the apps from the morning question sit locked while the
+/// pencil writes a page, the meter fills with the ink, and the apps wake up the moment the page is
+/// done — then the user's own affirmation arrives. It ends, and stays, there; Reduce Motion lands
+/// on that end state straight away.
+private struct MorningOutcomeCard: View {
+    let affirmation: String
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var phase = Phase.locked
+    @State private var written = [0, 0, 0]          // characters typed per line
+    @State private var penLine = 0
+    @State private var penX: CGFloat = 0             // end of the line being written
+    private let brands: [Brand] = [.instagram, .tiktok, .snapchat]
+
+    private static let pageLines = [
+        "Woke up a little anxious,",
+        "but writing it out helps.",
+        "Today, I’ll go slow."
+    ]
+
+    private enum Phase: Int {
+        case locked, writing, unlocked, affirming
+    }
+
+    private var unlocked: Bool { phase.rawValue >= Phase.unlocked.rawValue }
+
+    private var inkFraction: CGFloat {
+        let total = Self.pageLines.reduce(0) { $0 + L10n.localized($1).count }
+        return total == 0 ? 1 : CGFloat(written.reduce(0, +)) / CGFloat(total)
+    }
+
+    var body: some View {
+        VStack(spacing: 18) {
+            HStack {
+                Text(verbatim: clock)
+                    .font(Fonts.ui(12.5, .heavy))
+                    .monospacedDigit()
+                    .foregroundStyle(Palette.inkSoft)
+                    .contentTransition(.numericText())
+                    .animation(Motion.snappy, value: clock)
+                Spacer(minLength: 8)
+                SunMark(size: 24)
+                    .scaleEffect(unlocked ? 1.15 : 1)
+            }
+            VStack(spacing: 14) {
+                apps
+                meter
+            }
+            stage
+        }
+        .padding(18)
+        .frame(maxWidth: 300)
+        .background(Palette.cream, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous)
+            .stroke(Palette.ink, lineWidth: 2))
+        .tactile(5, cornerRadius: 24)
+        .shadow(color: Palette.ink.opacity(0.09), radius: 18, x: 0, y: 12)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(loc: "Block apps until you write"))
+        .task { await play() }
+    }
+
+    /// 7:00, ticking while the page is written, 7:04 at the unlock, in the app's language.
+    private var clock: String {
+        let minute = switch phase {
+        case .locked:    0
+        case .writing:   1 + min(2, Int(inkFraction * 3))
+        case .unlocked:  4
+        case .affirming: 5
+        }
+        let time = Calendar.current.date(bySettingHour: 7, minute: minute, second: 0, of: .now) ?? .now
+        return time.formatted(.dateTime.hour().minute().locale(HDate.appLocale))
+    }
+
+    private var apps: some View {
+        HStack(spacing: 18) {
+            ForEach(Array(brands.enumerated()), id: \.offset) { index, brand in
+                BrandIcon(brand: brand, size: 50)
+                    .grayscale(unlocked ? 0 : 1)
+                    .opacity(unlocked ? 1 : 0.45)
+                    .scaleEffect(unlocked ? 1 : 0.9)
+                    .overlay(alignment: .topTrailing) {
+                        if !unlocked {
+                            Image(systemName: "lock.fill")
+                                .font(.system(size: 9, weight: .bold))
+                                .foregroundStyle(.white)
+                                .frame(width: 18, height: 18)
+                                .background(Palette.ink, in: Circle())
+                                .overlay(Circle().strokeBorder(Palette.cream, lineWidth: 1.5))
+                                .offset(x: 5, y: -5)
+                                .transition(.scale.combined(with: .opacity))
+                        }
+                    }
+                    .animation(Motion.pop.delay(Double(index) * 0.09), value: unlocked)
+            }
+        }
+        .background {
+            SoftGlow(color: Palette.sunDisc, opacity: unlocked ? 0.4 : 0, size: 240)
+                .animation(.easeOut(duration: 0.8), value: unlocked)
         }
     }
 
-    private var morningPage: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            HStack {
-                Text(loc: "A moment for me")
-                    .font(Fonts.ui(12, .heavy))
-                    .foregroundStyle(Palette.inkSoft)
-                Spacer(minLength: 8)
-                SunMark(size: 28)
-            }
-
-            Text(loc: "Today, I need…")
-                .font(Fonts.display(23, .bold))
-                .foregroundStyle(Palette.ink)
-                .fixedSize(horizontal: false, vertical: true)
-
-            VStack(alignment: .leading, spacing: 16) {
-                ForEach(0..<3, id: \.self) { index in
+    /// Fills with the ink as the page is written; full means unlocked.
+    private var meter: some View {
+        let fill = unlocked ? 1 : max(0.04, inkFraction)
+        return Capsule()
+            .fill(Palette.ink.opacity(0.08))
+            .frame(maxWidth: 190)
+            .frame(height: 5)
+            .overlay(alignment: .leading) {
+                GeometryReader { geo in
                     Capsule()
-                        .fill(Palette.ink.opacity(0.12))
-                        .frame(height: 2)
-                        .padding(.trailing, index == 2 ? 48 : 0)
+                        .fill(Palette.amber)
+                        .frame(width: geo.size.width * fill)
                 }
             }
+            .animation(.linear(duration: 0.12), value: fill)
+    }
+
+    @ViewBuilder private var stage: some View {
+        ZStack {
+            if phase != .affirming {
+                page.transition(.opacity.combined(with: .scale(scale: 0.96)))
+            } else {
+                VStack(spacing: 6) {
+                    Image(systemName: "quote.opening")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(Palette.amberDeep)
+                    Affirmations.text(affirmation)
+                        .font(Font(FontChoice.baskerville.uiFont(size: DesignScale.s(17))))
+                        .foregroundStyle(Palette.ink)
+                        .lineSpacing(2)
+                        .multilineTextAlignment(.center)
+                        .lineLimit(3)
+                        .minimumScaleFactor(0.75)
+                }
+                .transition(.opacity.combined(with: .offset(y: 8)))
+            }
+        }
+        // Fixed, so the card never resizes as the page gives way to the affirmation.
+        .frame(maxWidth: .infinity)
+        .frame(height: 92)
+    }
+
+    /// The same pencil-and-ruled-lines writing as the journaling screen, at card size.
+    private var page: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            ForEach(Self.pageLines.indices, id: \.self) { index in
+                pageLine(index)
+            }
+        }
+        .overlay(alignment: .topLeading) {
+            Image(systemName: "pencil")
+                .font(.system(size: 26, weight: .regular))
+                .foregroundStyle(Palette.amber)
+                .shadow(color: Palette.ink.opacity(0.14), radius: 2, x: 1, y: 3)
+                .rotationEffect(.degrees(-12))
+                // Tip on the end of the line being written (rows are 25pt + 6pt spacing).
+                .offset(x: penX - 4, y: CGFloat(penLine) * 31 - 9)
+                .opacity(unlocked ? 0 : 1)
+                .animation(.easeOut(duration: 0.3), value: unlocked)
+        }
+        .padding(.horizontal, 6)
+    }
+
+    private func pageLine(_ index: Int) -> some View {
+        let line = L10n.localized(Self.pageLines[index])
+        return ZStack(alignment: .leading) {
+            Capsule()
+                .fill(Palette.ink.opacity(0.14))
+                .frame(height: 2)
+                .offset(y: 8)
+            Text(verbatim: String(line.prefix(written[index])))
+                .font(Fonts.ui(13, .semibold))
+                .foregroundStyle(Palette.ink)
+                .lineLimit(1)
+                .minimumScaleFactor(0.78)
+                .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width in
+                    if index == penLine { penX = width }
+                }
+        }
+        .frame(maxWidth: .infinity, minHeight: 25, alignment: .leading)
+    }
+
+    private func play() async {
+        guard !reduceMotion else {
+            written = Self.pageLines.map { L10n.localized($0).count }
+            phase = .affirming
+            return
+        }
+        do {
+            try await Task.sleep(for: .milliseconds(700))
+            phase = .writing
+            for (line, key) in Self.pageLines.enumerated() {
+                penLine = line
+                penX = 0
+                for character in 0...L10n.localized(key).count {
+                    try Task.checkCancellation()
+                    written[line] = character
+                    try await Task.sleep(for: .milliseconds(48))
+                }
+                try await Task.sleep(for: .milliseconds(140))
+            }
+            // The page is written, so the apps wake up.
+            withAnimation(Motion.gentle) { phase = .unlocked }
+            Haptics.success()
+            try await Task.sleep(for: .milliseconds(1100))
+            withAnimation(Motion.gentle) { phase = .affirming }
+        } catch {
+            return
+        }
+    }
+}
+
+private struct OnbChoiceRow: View {
+    let title: String
+    let selected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 12) {
+                Text(loc: title)
+                    .font(Fonts.ui(14, .semibold))
+                    .foregroundStyle(Palette.ink)
+                    .multilineTextAlignment(.leading)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 4)
+                Image(systemName: selected ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 19, weight: .medium))
+                    .foregroundStyle(selected ? Palette.ink : Palette.outlineSoft)
+            }
+            .padding(.horizontal, 14)
+            .frame(maxWidth: .infinity, minHeight: 50)
+            .background(selected ? Palette.amber : Palette.cream,
+                        in: RoundedRectangle(cornerRadius: 15, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 15, style: .continuous)
+                .strokeBorder(selected ? Palette.ink : Palette.outlineSoft, lineWidth: selected ? 1.8 : 1.2))
+            .contentShape(RoundedRectangle(cornerRadius: 15, style: .continuous))
+        }
+        .buttonStyle(PressableStyle(scale: 0.98))
+        .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+}
+
+private struct JournalWritingIllustration: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var activeLine = 0
+    @State private var pencilProgress: CGFloat = 0
+
+    var body: some View {
+        ZStack {
+            SoftGlow(color: Palette.sunDisc, opacity: 0.22, size: 320)
+            JournalWritingCard { line, progress in
+                activeLine = line
+                pencilProgress = progress
+            }
+                .rotationEffect(.degrees(-4))
+
+            Image(systemName: "pencil")
+                .font(.system(size: 64, weight: .regular))
+                .foregroundStyle(Palette.amber)
+                .shadow(color: Palette.ink.opacity(0.14), radius: 3, x: 2, y: 4)
+                .rotationEffect(.degrees(-12))
+                .offset(x: -82 + 165 * pencilProgress, y: -55 + CGFloat(activeLine) * 24)
+                .accessibilityHidden(true)
+        }
+        .frame(maxWidth: .infinity)
+    }
+}
+
+private struct JournalWritingCard: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var writtenCharacters = [0, 0, 0]
+    @State private var inkOpacity = 1.0
+    var onWritingProgress: (Int, CGFloat) -> Void
+
+    private static let writingLines = [
+        "There’s a lot on my mind",
+        "this morning, so I’ll start",
+        "with just one thing."
+    ]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 15) {
+            HStack {
+                Text(loc: "A moment for me")
+                    .font(Fonts.ui(11.5, .heavy))
+                    .foregroundStyle(Palette.inkSoft)
+                Spacer(minLength: 8)
+                SunMark(size: 24)
+            }
+            VStack(alignment: .leading, spacing: 6) {
+                ForEach(Self.writingLines.indices, id: \.self) { index in
+                    writingLine(index)
+                }
+            }
+            .opacity(inkOpacity)
             .accessibilityHidden(true)
 
             HStack(spacing: 6) {
@@ -364,66 +729,184 @@ private struct OnbPlanView: View {
                 Text(loc: "A few honest lines are enough.")
                     .foregroundStyle(Palette.inkSoft)
             }
-            .font(Fonts.ui(11, .semibold))
+            .font(Fonts.ui(10.5, .semibold))
             .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(22)
-        .frame(maxWidth: 260, alignment: .leading)
+        .padding(18)
+        .frame(maxWidth: 232, alignment: .leading)
         .background(Palette.cream, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous)
-            .strokeBorder(Palette.ink, lineWidth: 2))
-        .tactile(5, cornerRadius: 20)
+            .stroke(Palette.ink, lineWidth: 2))
+        .tactile(4, cornerRadius: 20)
         .shadow(color: Palette.ink.opacity(0.09), radius: 18, x: 0, y: 12)
+        .accessibilityHidden(true)
+        .task { await writeLines() }
     }
 
-    private func step(symbol: String, title: String) -> some View {
-        VStack(spacing: 10) {
-            Image(systemName: symbol)
-                .font(.system(size: 21, weight: .semibold))
+    @ViewBuilder
+    private func writingLine(_ index: Int) -> some View {
+        let translated = L10n.localized(Self.writingLines[index])
+        let count = reduceMotion ? translated.count : min(writtenCharacters[index], translated.count)
+        ZStack(alignment: .leading) {
+            Capsule()
+                .fill(Palette.ink.opacity(0.14))
+                .frame(height: 2)
+                .offset(y: 8)
+            Text(verbatim: String(translated.prefix(count)))
+                .font(Fonts.ui(13, .semibold))
                 .foregroundStyle(Palette.ink)
-                .frame(width: 50, height: 50)
-                .background(Palette.iconTile, in: Circle())
-                .overlay(Circle().strokeBorder(Palette.outlineSoft, lineWidth: 1.5))
-                .accessibilityHidden(true)
-            Text(loc: title)
-                .font(Fonts.ui(12, .heavy))
-                .foregroundStyle(Palette.ink)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
+                .lineLimit(1)
+                .minimumScaleFactor(0.78)
         }
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: .infinity, minHeight: 25, alignment: .leading)
     }
 
-    private var connector: some View {
-        Image(systemName: "arrow.forward")
-            .font(.system(size: 12, weight: .semibold))
-            .foregroundStyle(Palette.inkSofter)
-            .padding(.top, 19)
-            .accessibilityHidden(true)
+    private func writeLines() async {
+        guard !reduceMotion else {
+            for (index, key) in Self.writingLines.enumerated() {
+                writtenCharacters[index] = L10n.localized(key).count
+            }
+            onWritingProgress(Self.writingLines.count - 1, 1)
+            return
+        }
+        // Loops for as long as the screen is up; a fresh visit starts again from a blank page.
+        do {
+            while true {
+                for (line, key) in Self.writingLines.enumerated() {
+                    let length = L10n.localized(key).count
+                    for character in 1...length {
+                        try Task.checkCancellation()
+                        writtenCharacters[line] = character
+                        onWritingProgress(line, CGFloat(character) / CGFloat(length))
+                        try await Task.sleep(for: .milliseconds(52))
+                    }
+                    try await Task.sleep(for: .milliseconds(140))
+                }
+                try await Task.sleep(for: .seconds(1.6))
+                // Lift the ink and glide the pencil home before writing the page again.
+                withAnimation(.easeOut(duration: 0.35)) { inkOpacity = 0 }
+                withAnimation(Motion.gentle) { onWritingProgress(0, 0) }
+                try await Task.sleep(for: .milliseconds(450))
+                writtenCharacters = [0, 0, 0]
+                inkOpacity = 1
+                try await Task.sleep(for: .milliseconds(300))
+            }
+        } catch {
+            return
+        }
     }
 }
 
-// MARK: - Choose the affirmation topics shown in the reading feed.
-private struct OnbAffirmView: View {
-    @Binding var picks: [String]
+private struct OnbAffirmationPreview: View {
+    let text: String
+    let topic: String
+
+    private var topicIndex: Int {
+        Affirmations.library.firstIndex(where: { $0.title == topic }) ?? 0
+    }
+    private var widgetTheme: PageTheme {
+        let themes = PageTheme.allCases
+        return themes[topicIndex % themes.count]
+    }
+    private var widgetFont: FontChoice {
+        let fonts = FontChoice.allCases
+        return fonts[topicIndex % fonts.count]
+    }
 
     var body: some View {
-        VStack(spacing: 20) {
-            VStack(spacing: 10) {
-                OnbHeader(eyebrow: "Affirmations for you",
-                          title: "Choose the themes\nyou need right now.")
-            }
-            .frame(maxWidth: .infinity)
+        ZStack {
+            PageThemeBackground(theme: widgetTheme)
 
-            AffirmationTopicPicker(selection: $picks)
-                .frame(maxWidth: .infinity, alignment: .leading)
+            VStack(spacing: 5) {
+                Image(systemName: "quote.opening")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(Palette.ink)
+                    .accessibilityHidden(true)
+                Affirmations.text(text)
+                    .font(Font(widgetFont.uiFont(size: DesignScale.s(16))).weight(.semibold))
+                    .foregroundStyle(Palette.ink)
+                    .lineSpacing(1)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.78)
+                    .frame(maxWidth: 250, maxHeight: .infinity)
+            }
+            .padding(.horizontal, 18)
+            .padding(.vertical, 12)
         }
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: 300)
+        .frame(height: 118)
+        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .strokeBorder(Palette.ink.opacity(0.10), lineWidth: 1)
+        }
+        .shadow(color: Palette.ink.opacity(0.10), radius: 13, x: 0, y: 6)
+        .accessibilityElement(children: .combine)
     }
 }
 
-// MARK: - Notification cards — a floating-card illustration of today's and yesterday's daily
-// affirmation, drawn from the lines just picked.
+private struct AppBlockLoop: View {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var lockedCount = 0
+    private let brands: [Brand] = [.instagram, .tiktok, .snapchat]
+
+    var body: some View {
+        VStack(spacing: 8) {
+            HStack(spacing: 16) {
+                ForEach(Array(brands.enumerated()), id: \.offset) { index, brand in
+                    ZStack(alignment: .topTrailing) {
+                        BrandIcon(brand: brand, size: 42)
+                            .grayscale(index < lockedCount ? 1 : 0)
+                            .opacity(index < lockedCount ? 0.48 : 1)
+                        if index < lockedCount {
+                            Image(systemName: "lock.fill")
+                                .font(.system(size: 8, weight: .bold))
+                                .foregroundStyle(.white)
+                                .frame(width: 16, height: 16)
+                                .background(Palette.ink, in: Circle())
+                                .overlay(Circle().strokeBorder(Palette.paper, lineWidth: 1.5))
+                                .offset(x: 4, y: -4)
+                        }
+                    }
+                    .animation(Motion.pop, value: lockedCount)
+                }
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 12)
+            .background(Palette.cream.opacity(0.88), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .strokeBorder(Palette.outlineSoft, lineWidth: 1.2))
+            Text(loc: "Write first, scroll later.")
+                .font(Fonts.ui(11.5, .bold))
+                .foregroundStyle(Palette.inkSoft)
+                .multilineTextAlignment(.center)
+                .lineLimit(1)
+                .minimumScaleFactor(0.8)
+        }
+        .accessibilityHidden(true)
+        .task { await animateLocks() }
+    }
+
+    private func animateLocks() async {
+        guard !reduceMotion else { lockedCount = brands.count; return }
+        while !Task.isCancelled {
+            lockedCount = 0
+            do {
+                try await Task.sleep(for: .milliseconds(450))
+                for count in 1...brands.count {
+                    withAnimation(Motion.pop) { lockedCount = count }
+                    try await Task.sleep(for: .milliseconds(330))
+                }
+                try await Task.sleep(for: .seconds(1.2))
+            } catch {
+                return
+            }
+        }
+    }
+}
+
+// MARK: - Notification preview
 
 private struct NotifCard: View {
     let text: String
@@ -437,7 +920,7 @@ private struct NotifCard: View {
                 .overlay(RoundedRectangle(cornerRadius: DesignScale.s(10), style: .continuous).strokeBorder(Palette.ink.opacity(0.12), lineWidth: 1))
             VStack(alignment: .leading, spacing: DesignScale.s(3)) {
                 HStack {
-                    Text(loc: "Today's affirmation").font(Fonts.ui(14, .heavy)).foregroundStyle(Palette.ink)
+                    Text("Honestly").font(Fonts.ui(14, .heavy)).foregroundStyle(Palette.ink)
                     Spacer()
                     Text(loc: time).font(Fonts.ui(12, .semibold)).foregroundStyle(Palette.inkSofter)
                 }
@@ -455,41 +938,46 @@ private struct NotifCard: View {
     }
 }
 
-private struct NotifStack: View {
-    let first: String
-    let second: String
-    @State private var showFirst = false
-    @State private var showSecond = false
+private struct OnbReminderView: View {
+    let affirmations: [String]
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var visibleCount = 0
 
     var body: some View {
-        VStack(spacing: 14) {
-            if showFirst {
-                NotifCard(text: first)
-                    .transition(.asymmetric(insertion: .move(edge: .top).combined(with: .opacity),
-                                            removal: .opacity))
-            }
-            if showSecond {
-                NotifCard(text: second, time: "yesterday")
-                    .transition(.asymmetric(insertion: .move(edge: .top).combined(with: .opacity),
-                                            removal: .opacity))
+        VStack(spacing: 24) {
+            OnbHeader(eyebrow: "A gentle reminder", title: "A kind thought, when you need it.")
+            VStack(spacing: 12) {
+                ForEach(Array(affirmations.enumerated()), id: \.offset) { index, affirmation in
+                    if visibleCount > index {
+                        NotifCard(text: affirmation, time: index == 0 ? "now" : "yesterday")
+                            .transition(.asymmetric(
+                                insertion: .move(edge: .top).combined(with: .opacity),
+                                removal: .opacity))
+                    }
+                }
             }
         }
-        .task { await run() }
+        .task { await revealNotifications() }
     }
 
-    private func run() async {
+    private func revealNotifications() async {
         guard !reduceMotion else {
-            showFirst = true; showSecond = true
+            visibleCount = affirmations.count
             Haptics.notificationSound()
             return
         }
-        try? await Task.sleep(for: .seconds(0.3))
-        withAnimation(Motion.snappy) { showFirst = true }
-        Haptics.notificationSound()
-        try? await Task.sleep(for: .seconds(1.0))
-        withAnimation(Motion.snappy) { showSecond = true }
-        Haptics.notificationSound()
+        do {
+            try await Task.sleep(for: .milliseconds(300))
+            for index in affirmations.indices {
+                withAnimation(Motion.snappy) { visibleCount = index + 1 }
+                Haptics.notificationSound()
+                if index < affirmations.count - 1 {
+                    try await Task.sleep(for: .milliseconds(700))
+                }
+            }
+        } catch {
+            return
+        }
     }
 }
 
@@ -498,17 +986,27 @@ private struct NotifStack: View {
 private struct OnbSocialProofView: View {
     private var sp: SocialProof { AppContent.socialProof }
     @Environment(\.locale) private var locale
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var hasAppeared = false
 
     var body: some View {
         VStack(spacing: 16) {
             OnbHeader(eyebrow: "From the App Store", title: "A small part of\nsomeone’s morning.")
             HStack(spacing: 5) {
-                ForEach(0..<5, id: \.self) { _ in
+                ForEach(0..<5, id: \.self) { index in
                     InkGlyph(kind: .star, size: 28, fill: Color(hex: "F6C33F"), lineWidth: 1.4)
+                        .opacity(hasAppeared ? 1 : 0)
+                        .scaleEffect(hasAppeared ? 1 : 0.9)
+                        .animation(reduceMotion ? nil : Motion.snappy.delay(Double(index) * 0.07),
+                                   value: hasAppeared)
                 }
             }
             if sp.hasStats {
                 Text(sp.rating).font(Fonts.display(40, .heavy)).foregroundStyle(Palette.ink)
+                    .opacity(hasAppeared ? 1 : 0)
+                    .offset(y: hasAppeared || reduceMotion ? 0 : 7)
+                    .animation(reduceMotion ? nil : .easeOut(duration: 0.22).delay(0.28),
+                               value: hasAppeared)
             }
 
             VStack(spacing: 12) {
@@ -526,85 +1024,23 @@ private struct OnbSocialProofView: View {
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .softCard(padding: 16)
+                    .opacity(hasAppeared ? 1 : 0)
+                    .offset(y: hasAppeared || reduceMotion ? 0 : 8)
+                    .animation(reduceMotion ? nil : .easeOut(duration: 0.22).delay(0.42 + Double(sp.quotes.firstIndex(where: { $0.id == q.id }) ?? 0) * 0.12),
+                               value: hasAppeared)
                 }
             }
         }
         // Glow anchored near the top (behind the stars/heading), so it stays put as the cards grow.
         .background(alignment: .top) { SoftGlow(color: Palette.sunDisc, opacity: 0.16, size: 300).offset(y: 40) }
-    }
-
-}
-
-// MARK: - Illustrations (one per slide kind) — retained from the original deck
-
-private struct OnbIllustration: View {
-    let kind: OnbKind
-
-    var body: some View {
-        switch kind {
-        case .brand:  brand
-        case .noise:  noise
-        }
-    }
-
-    private var brand: some View {
-        VStack(spacing: 0) {
-            ZStack {
-                SoftGlow(color: Palette.sunDisc, opacity: 0.22, size: 280)
-                SunMark(size: 118).spin(period: 26)
-                InkGlyph(kind: .sparkle, size: 24, fill: Color(hex: "F6C33F"))
-                    .offset(x: -74, y: -60).floaty(period: 4)
-                InkGlyph(kind: .heart, size: 20, fill: Color(hex: "F19DA6"))
-                    .offset(x: 76, y: -44).floaty(period: 5, delay: 0.4)
-            }
-            .floaty(period: 6)
-            .padding(.bottom, 22)
-            Text("Honestly").font(Fonts.display(52, .heavy)).foregroundStyle(Palette.ink)
-            Text("The first few minutes of your day, finally yours.")
-                .font(Fonts.ui(16, .semibold)).foregroundStyle(Palette.inkSoft)
-                .multilineTextAlignment(.center).lineSpacing(3)
-                .frame(maxWidth: 280).padding(.top, 18)
-        }
-    }
-
-    private static let notifDelays: [Double] = [0.1, 0.28, 0.46, 0.64]
-
-    private var noise: some View {
-        ZStack {
-            notifChip(.instagram, "2 new likes on your photo", tilt: -4)
-                .offset(x: DesignScale.s(-62), y: DesignScale.s(-92)).floaty(amplitude: 5, period: 3.4).popIn(delay: Self.notifDelays[0])
-            notifChip(.tiktok, "24 new videos for you", tilt: 5)
-                .offset(x: DesignScale.s(60), y: DesignScale.s(-32)).floaty(amplitude: 5, period: 3.8, delay: 0.2).popIn(delay: Self.notifDelays[1])
-            notifChip(.snapchat, "New snap from a friend", tilt: -5)
-                .offset(x: DesignScale.s(-60), y: DesignScale.s(32)).floaty(amplitude: 5, period: 3.2, delay: 0.4).popIn(delay: Self.notifDelays[2])
-            notifChip(.whatsapp, "3 new messages", tilt: 4)
-                .offset(x: DesignScale.s(62), y: DesignScale.s(92)).floaty(amplitude: 5, period: 3.6, delay: 0.1).popIn(delay: Self.notifDelays[3])
-        }
-        .frame(width: DesignScale.s(250), height: DesignScale.s(260))
-        .task { await fireNotifHaptics() }
-    }
-    private func fireNotifHaptics() async {
-        var elapsed = 0.0
-        for delay in Self.notifDelays {
-            try? await Task.sleep(for: .seconds(delay - elapsed))
-            Haptics.tap()
-            elapsed = delay
-        }
-    }
-    private func notifChip(_ brand: Brand, _ teaser: String, tilt: Double) -> some View {
-        HStack(spacing: DesignScale.s(9)) {
-            BrandIcon(brand: brand, size: DesignScale.s(34))
-            VStack(alignment: .leading, spacing: DesignScale.s(1)) {
-                Text(brand.displayName).font(Fonts.ui(12.5, .heavy)).foregroundStyle(Palette.ink)
-                Text(loc: teaser).font(Fonts.ui(11, .semibold)).foregroundStyle(Palette.inkSoft)
-                    .lineLimit(1)
+        .task {
+            if reduceMotion {
+                hasAppeared = true
+            } else {
+                try? await Task.sleep(for: .milliseconds(120))
+                withAnimation(Motion.snappy) { hasAppeared = true }
             }
         }
-        .padding(EdgeInsets(top: DesignScale.s(9), leading: DesignScale.s(9), bottom: DesignScale.s(9), trailing: DesignScale.s(14)))
-        .frame(width: DesignScale.s(192), alignment: .leading)
-        .background(.white, in: RoundedRectangle(cornerRadius: DesignScale.s(16), style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: DesignScale.s(16), style: .continuous).strokeBorder(Palette.ink, lineWidth: 2))
-        .shadow(color: Color(hex: "78501E").opacity(0.14), radius: DesignScale.s(12), y: DesignScale.s(7))
-        .rotationEffect(.degrees(tilt))
     }
+
 }

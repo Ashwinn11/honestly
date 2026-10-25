@@ -5,16 +5,6 @@ enum AppContent {
     // MARK: Journal
     static let emptyJournalFallback = "Left the page quiet today — and that counts too."
 
-    // MARK: - Onboarding funnel
-
-    static let onbProblemTitle  = "Before the world,\na moment for you."
-
-    // MARK: App-locking
-    static let lockTitle = "Write first.\nScroll later."
-
-    // MARK: Notification nudge
-    static let notifTitle = "Choose whether Honestly\ncan notify you."
-
     // MARK: Social proof
     static let socialProof = SocialProof(
         rating: "5.0 / 5",
@@ -39,8 +29,6 @@ struct SocialProof {
         var id: String { author + text }
     }
 }
-
-enum OnbKind { case brand, noise }
 
 // MARK: - Journal Prompts
 
