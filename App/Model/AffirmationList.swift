@@ -160,6 +160,6 @@ final class AffirmationList {
 
     /// Today's line from the shared topic selection, used on Home and throughout delivery.
     func today(premium: Bool) -> String {
-        Affirmations.dailyLine(premium: premium)
+        Affirmations.dailyLine(focusTitles: selectedTopics, premium: premium)
     }
 }

@@ -156,16 +156,16 @@ struct AffirmationDeliverySettingsScreen: View {
         .capWidth(Metrics.maxContentWidth)
         .background(PaperBackground())
         .toolbar(.hidden, for: .navigationBar)
-        .sheet(isPresented: $showingWidgetTheme, onDismiss: persistWidgetStyleAndReload) {
+        .sheet(isPresented: $showingWidgetTheme, onDismiss: reloadWidgetStyle) {
             ThemePickerSheet(selection: widgetThemeSelection, title: "Page theme", confirmSelection: true)
         }
-        .sheet(isPresented: $showingBackgroundColor, onDismiss: persistWidgetStyleAndReload) {
+        .sheet(isPresented: $showingBackgroundColor, onDismiss: reloadWidgetStyle) {
             WidgetColorPickerSheet(title: "Background color", hex: backgroundColorBinding)
         }
-        .sheet(isPresented: $showingTextColor, onDismiss: persistWidgetStyleAndReload) {
+        .sheet(isPresented: $showingTextColor, onDismiss: reloadWidgetStyle) {
             WidgetColorPickerSheet(title: "Text color", hex: $widgetTextHex)
         }
-        .sheet(isPresented: $showingWidgetFont, onDismiss: persistWidgetStyleAndReload) {
+        .sheet(isPresented: $showingWidgetFont, onDismiss: reloadWidgetStyle) {
             WidgetFontPickerSheet(selection: $widgetFontName)
         }
         .onAppear {
@@ -240,11 +240,9 @@ struct AffirmationDeliverySettingsScreen: View {
         .buttonStyle(.plain)
     }
 
-    private func persistWidgetStyleAndReload() {
-        SharedState.affirmationWidgetTheme = widgetThemeID
-        SharedState.affirmationWidgetBackgroundColor = widgetBackgroundHex.isEmpty ? nil : widgetBackgroundHex
-        SharedState.affirmationWidgetTextColor = widgetTextHex
-        SharedState.affirmationWidgetFont = widgetFontName
+    private func reloadWidgetStyle() {
+        // Each setting is persisted by its AppStorage binding as it changes. Writing all four
+        // values here can write stale values captured by the parent view when a sheet closes.
         SharedState.defaults.synchronize()
         WidgetCenter.shared.reloadAllTimelines()
     }

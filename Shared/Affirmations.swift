@@ -52,7 +52,14 @@ enum Affirmations {
     /// Single quote source for Home, both widget families, and scheduled notifications.
     /// `occurrence` varies only the quote when a user has multiple reminders in one day.
     static func dailyLine(on date: Date = .now, occurrence: Int = 0, premium: Bool) -> String {
-        let list = topicRotation(focusTitles: selectedTopics, premium: premium)
+        dailyLine(on: date, occurrence: occurrence, focusTitles: selectedTopics, premium: premium)
+    }
+
+    /// Variant for observable app state. Home reads its selected topics through `AffirmationList`
+    /// so SwiftUI invalidates the quote immediately when the user changes topics.
+    static func dailyLine(on date: Date = .now, occurrence: Int = 0,
+                          focusTitles: [String], premium: Bool) -> String {
+        let list = topicRotation(focusTitles: focusTitles, premium: premium)
         guard !list.isEmpty else { return "" }
         let day = Calendar.current.ordinality(of: .day, in: .era, for: date) ?? 0
         return list[(day + occurrence) % list.count]
