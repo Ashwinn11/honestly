@@ -38,7 +38,7 @@ struct OnboardingView: View {
             }
         }
         .animation(Motion.gentle, value: index)
-        .onAppear { picks = affirmations.chosen }
+        .onAppear { picks = affirmations.selectedTopics }
     }
 
     private var slide: AnyTransition {
@@ -75,12 +75,11 @@ struct OnboardingView: View {
             }
 
         case .affirm:
-            chrome(primary: .init(title: picks.isEmpty ? (affirmations.availableLibrary.isEmpty ? "Continue" : "Pick at least one") : "These are mine",
-                                  enabled: !picks.isEmpty || affirmations.availableLibrary.isEmpty) {
-                affirmations.set(picks)
+            chrome(primary: .init(title: "Continue") {
+                affirmations.setSelectedTopics(picks)
                 advance()
             }) {
-                OnbAffirmView(picks: $picks, isPremium: premium.isPremium)
+                OnbAffirmView(picks: $picks)
             }
 
         case .social:
@@ -93,7 +92,7 @@ struct OnboardingView: View {
                    secondary: .init(title: "Maybe later") { advance() }) {
                 VStack(spacing: 26) {
                     OnbHeader(eyebrow: "Stay connected", title: AppContent.notifTitle)
-                    let lines = Affirmations.rotation(from: picks, premium: premium.isPremium)
+                    let lines = Affirmations.feedRotation(focusTitles: picks, premium: premium.isPremium)
                     NotifStack(first: lines.first ?? "", second: lines.count > 1 ? lines[1] : lines.first ?? "")
                 }
             }
@@ -167,7 +166,7 @@ struct OnboardingView: View {
                 .background(b.enabled ? AnyShapeStyle(Palette.amber) : AnyShapeStyle(Palette.ink.opacity(0.06)),
                             in: RoundedRectangle(cornerRadius: DesignScale.s(17), style: .continuous))
                 .overlay(RoundedRectangle(cornerRadius: DesignScale.s(17), style: .continuous)
-                    .stroke(Palette.ink, lineWidth: b.enabled ? 2 : 0))
+                    .strokeBorder(Palette.ink, lineWidth: b.enabled ? 2 : 0))
                 .tactile(b.enabled ? 4 : 0, cornerRadius: DesignScale.s(17))
         }
         .buttonStyle(PressableStyle())
@@ -224,7 +223,7 @@ struct OnboardingView: View {
             .foregroundStyle(.white)
             .frame(width: 20, height: 20)
             .background(Palette.ink, in: Circle())
-            .overlay(Circle().stroke(Palette.paper, lineWidth: 2))
+            .overlay(Circle().strokeBorder(Palette.paper, lineWidth: 2))
             .offset(x: 6, y: -6)
     }
 
@@ -372,7 +371,7 @@ private struct OnbPlanView: View {
         .frame(maxWidth: 260, alignment: .leading)
         .background(Palette.cream, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous)
-            .stroke(Palette.ink, lineWidth: 2))
+            .strokeBorder(Palette.ink, lineWidth: 2))
         .tactile(5, cornerRadius: 20)
         .shadow(color: Palette.ink.opacity(0.09), radius: 18, x: 0, y: 12)
     }
@@ -384,7 +383,7 @@ private struct OnbPlanView: View {
                 .foregroundStyle(Palette.ink)
                 .frame(width: 50, height: 50)
                 .background(Palette.iconTile, in: Circle())
-                .overlay(Circle().stroke(Palette.outlineSoft, lineWidth: 1.5))
+                .overlay(Circle().strokeBorder(Palette.outlineSoft, lineWidth: 1.5))
                 .accessibilityHidden(true)
             Text(loc: title)
                 .font(Fonts.ui(12, .heavy))
@@ -404,21 +403,19 @@ private struct OnbPlanView: View {
     }
 }
 
-// MARK: - Pick your affirmations — the rotation Home, the widget and the daily notification draw
-// from. Free picks stop at `Affirmations.freeLimit`; no upsell here, the paywall is a few beats on.
+// MARK: - Choose the affirmation topics shown in the reading feed.
 private struct OnbAffirmView: View {
     @Binding var picks: [String]
-    let isPremium: Bool
 
     var body: some View {
         VStack(spacing: 20) {
             VStack(spacing: 10) {
-                OnbHeader(eyebrow: "Your affirmations, in your order",
-                          title: "Pick words you need.\nSee one each day.")
+                OnbHeader(eyebrow: "Affirmations for you",
+                          title: "Choose the themes\nyou need right now.")
             }
             .frame(maxWidth: .infinity)
 
-            AffirmationPicker(selection: $picks, isPremium: isPremium)
+            AffirmationTopicPicker(selection: $picks)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         .frame(maxWidth: .infinity)
@@ -437,7 +434,7 @@ private struct NotifCard: View {
             Image("app-mark").resizable().scaledToFill()
                 .frame(width: DesignScale.s(42), height: DesignScale.s(42))
                 .clipShape(RoundedRectangle(cornerRadius: DesignScale.s(10), style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: DesignScale.s(10), style: .continuous).stroke(Palette.ink.opacity(0.12), lineWidth: 1))
+                .overlay(RoundedRectangle(cornerRadius: DesignScale.s(10), style: .continuous).strokeBorder(Palette.ink.opacity(0.12), lineWidth: 1))
             VStack(alignment: .leading, spacing: DesignScale.s(3)) {
                 HStack {
                     Text(loc: "Today's affirmation").font(Fonts.ui(14, .heavy)).foregroundStyle(Palette.ink)
@@ -453,7 +450,7 @@ private struct NotifCard: View {
         .padding(EdgeInsets(top: DesignScale.s(15), leading: DesignScale.s(15), bottom: DesignScale.s(15), trailing: DesignScale.s(16)))
         .frame(maxWidth: DesignScale.s(330))
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: DesignScale.s(22), style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: DesignScale.s(22), style: .continuous).stroke(Palette.ink, lineWidth: 2))
+        .overlay(RoundedRectangle(cornerRadius: DesignScale.s(22), style: .continuous).strokeBorder(Palette.ink, lineWidth: 2))
         .shadow(color: Color(hex: "78501E").opacity(0.14), radius: DesignScale.s(16), y: DesignScale.s(9))
     }
 }
@@ -606,7 +603,7 @@ private struct OnbIllustration: View {
         .padding(EdgeInsets(top: DesignScale.s(9), leading: DesignScale.s(9), bottom: DesignScale.s(9), trailing: DesignScale.s(14)))
         .frame(width: DesignScale.s(192), alignment: .leading)
         .background(.white, in: RoundedRectangle(cornerRadius: DesignScale.s(16), style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: DesignScale.s(16), style: .continuous).stroke(Palette.ink, lineWidth: 2))
+        .overlay(RoundedRectangle(cornerRadius: DesignScale.s(16), style: .continuous).strokeBorder(Palette.ink, lineWidth: 2))
         .shadow(color: Color(hex: "78501E").opacity(0.14), radius: DesignScale.s(12), y: DesignScale.s(7))
         .rotationEffect(.degrees(tilt))
     }

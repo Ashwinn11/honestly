@@ -11,10 +11,6 @@ struct ProfileView: View {
     @Environment(\.openURL) private var openURL
     @Environment(\.requestReview) private var requestReview
 
-    @AppStorage("affirmationNudgeOn", store: SharedState.defaults) private var affirmNudgeOn = false
-    @AppStorage(SharedState.Key.affirmationMinutes, store: SharedState.defaults)
-    private var notifyMinutes = AffirmationNudge.defaultMinutes
-    @State private var notifDenied = false
     @State private var showPicker = false
     @State private var confirmDelete = false
     @State private var showICloud = false
@@ -65,30 +61,6 @@ struct ProfileView: View {
         }
         .overlay { if cloudBusy { ProgressView().controlSize(.large).tint(Palette.amber)
             .frame(maxWidth: .infinity, maxHeight: .infinity).background(.black.opacity(0.06)) } }
-        .onChange(of: affirmNudgeOn) { _, on in
-            if on {
-                Task {
-                    // iOS never re-prompts after a denial — activate just returns false. Don't
-                    // leave the toggle lying about a nudge that can never deliver: flip it back
-                    // and point them at Settings, the only place a denial can be undone.
-                    if await AffirmationNudge.activate() == false {
-                        affirmNudgeOn = false
-                        notifDenied = true
-                    }
-                }
-            } else {
-                AffirmationNudge.cancel()
-            }
-        }
-        .onChange(of: notifyMinutes) { _, _ in AffirmationNudge.schedule() }
-        .alert("Notifications are switched off", isPresented: $notifDenied) {
-            Button("Open Settings") {
-                if let url = URL(string: UIApplication.openNotificationSettingsURLString) { openURL(url) }
-            }
-            Button("Not now", role: .cancel) { }
-        } message: {
-            Text("Your affirmations can't reach you yet — allow notifications for Honestly in Settings and they'll find their way back.")
-        }
     }
 
     // MARK: Subscription — top of screen, above everything else
@@ -129,7 +101,7 @@ struct ProfileView: View {
             }
         }
         .background(Palette.cream, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).stroke(Palette.outlineSoft, lineWidth: 1.5))
+        .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).strokeBorder(Palette.outlineSoft, lineWidth: 1.5))
         .shadow(color: Color(hex: "78501E").opacity(0.08), radius: 13, y: 10)
     }
 
@@ -158,7 +130,7 @@ struct ProfileView: View {
         .padding(20)
         .background(Palette.amber, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
         .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).stroke(Palette.ink, lineWidth: 2))
+        .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).strokeBorder(Palette.ink, lineWidth: 2))
         .tactile(6, cornerRadius: 22)
     }
     private func stat(_ value: String, _ label: String) -> some View {
@@ -169,34 +141,6 @@ struct ProfileView: View {
     }
 
     // MARK: Settings
-    private var rotationCount: Int {
-        Affirmations.rotation(from: affirmations.chosen, premium: premium.isPremium).count
-    }
-
-    private var affirmNudgeBinding: Binding<Bool> {
-        Binding(
-            get: { premium.isPremium && affirmNudgeOn },
-            set: { newValue in
-                guard premium.isPremium else { flow.showPaywall(); return }
-                affirmNudgeOn = newValue
-            }
-        )
-    }
-
-    /// The time picker edits a `Date`; storage is minutes after midnight, so only hour/minute survive.
-    private var notifyTime: Binding<Date> {
-        Binding(
-            get: {
-                Calendar.current.date(bySettingHour: notifyMinutes / 60, minute: notifyMinutes % 60,
-                                      second: 0, of: Date()) ?? Date()
-            },
-            set: { date in
-                let c = Calendar.current.dateComponents([.hour, .minute], from: date)
-                notifyMinutes = (c.hour ?? 9) * 60 + (c.minute ?? 0)
-            }
-        )
-    }
-
     private var appsRowTitle: String { screenTime.authorized ? "Apps on hold" : "Approve Screen Time" }
     private var appsRowSubtitle: String {
         screenTime.authorized ? "Managed by Screen Time" : "Grant access to start blocking distracting apps"
@@ -209,8 +153,8 @@ struct ProfileView: View {
             } label: {
                 settingRow {
                     VStack(alignment: .leading, spacing: 1) {
-                        Text("Your affirmations").font(Fonts.ui(15, .bold)).foregroundStyle(Palette.ink)
-                        Text("One a day, from the \(rotationCount) you picked")
+                        Text(loc: "Manage affirmations").font(Fonts.ui(15, .bold)).foregroundStyle(Palette.ink)
+                        Text(loc: "Choose topics and add your own")
                             .font(Fonts.ui(12, .medium)).foregroundStyle(Palette.inkSofter)
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -218,21 +162,14 @@ struct ProfileView: View {
             }
             .buttonStyle(RowPressStyle())
             divider
-            settingRow {
-                rowText("Affirmation reminders", "One a day, at the time you choose")
-            } trailing: {
-                AmberToggle(isOn: affirmNudgeBinding)
-            }
-            if premium.isPremium && affirmNudgeOn {
-                divider
+            NavigationLink {
+                AffirmationDeliverySettingsScreen()
+            } label: {
                 settingRow {
-                    rowText("Reminder time")
-                } trailing: {
-                    DatePicker("", selection: notifyTime, displayedComponents: .hourAndMinute)
-                        .labelsHidden()
-                        .tint(Palette.amber)
-                }
+                    rowText("Affirmation delivery", "Reminder timing and widget access")
+                } trailing: { chevron }
             }
+            .buttonStyle(RowPressStyle())
             divider
             settingRow {
                 rowText("Morning window", "Apps stay asleep until your page is done")
@@ -264,7 +201,7 @@ struct ProfileView: View {
             LanguagePickerRow()
         }
         .background(Palette.cream, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).stroke(Palette.outlineSoft, lineWidth: 1.5))
+        .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).strokeBorder(Palette.outlineSoft, lineWidth: 1.5))
         .shadow(color: Color(hex: "78501E").opacity(0.08), radius: 13, y: 10)
     }
 
@@ -327,7 +264,7 @@ struct ProfileView: View {
             }
         }
         .background(Palette.cream, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).stroke(Palette.outlineSoft, lineWidth: 1.5))
+        .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).strokeBorder(Palette.outlineSoft, lineWidth: 1.5))
         .shadow(color: Color(hex: "78501E").opacity(0.08), radius: 13, y: 10)
     }
 
@@ -354,7 +291,7 @@ struct ProfileView: View {
             legalRow("Privacy Policy", .privacy)
         }
         .background(Palette.cream, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).stroke(Palette.outlineSoft, lineWidth: 1.5))
+        .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).strokeBorder(Palette.outlineSoft, lineWidth: 1.5))
         .shadow(color: Color(hex: "78501E").opacity(0.08), radius: 13, y: 10)
     }
     private func legalRow(_ title: String, _ doc: LegalDoc) -> some View {
@@ -380,7 +317,7 @@ struct ProfileView: View {
         }
         .buttonStyle(RowPressStyle())
         .background(Palette.cream, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).stroke(Palette.outlineSoft, lineWidth: 1.5))
+        .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).strokeBorder(Palette.outlineSoft, lineWidth: 1.5))
         .shadow(color: Color(hex: "78501E").opacity(0.08), radius: 13, y: 10)
     }
 

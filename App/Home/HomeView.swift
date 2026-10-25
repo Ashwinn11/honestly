@@ -101,7 +101,7 @@ struct HomeView: View {
         .padding(20)
         .background(Palette.heroGradient, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
         .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).stroke(Palette.ink, lineWidth: 2))
+        .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).strokeBorder(Palette.ink, lineWidth: 2))
         .tactile(6, cornerRadius: 24)
         .shadow(color: Palette.heroDeep.opacity(0.42), radius: 22, y: 14)
         .staggeredAppear(index: 0)
@@ -110,46 +110,52 @@ struct HomeView: View {
     private func doneCard(_ entry: JournalEntry) -> some View {
         ZStack(alignment: .topTrailing) {
             Circle().fill(.white.opacity(0.25)).frame(width: 120, height: 120).offset(x: 30, y: -34)
-            HStack(spacing: 15) {
-                MoodFace(mood: entry.moodRaw, size: 44)
-                    .frame(width: 60, height: 60)
-                    .background(.white, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(Palette.ink, lineWidth: 2))
-                VStack(alignment: .leading, spacing: 3) {
-                    Eyebrow(text: "Today · done", color: Palette.ink.opacity(0.85), size: 11)
-                    Text(loc: screenTime.blockingPresentation.isScheduledNow
-                         ? "Your apps are awake" : "You made time for yourself.")
-                        .font(Fonts.display(23, .bold)).foregroundStyle(Palette.ink)
-                    Group {
-                        if premium.isPremium {
-                            NavigationLink(value: entry.dayKey) { readTodayLabel }
-                        } else {
-                            Button { flow.showPaywall() } label: { readTodayLabel }
-                        }
+            MoodFace(mood: entry.moodRaw, size: 44)
+                .frame(width: 60, height: 60)
+                .background(.white, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Palette.ink, lineWidth: 2))
+                .padding(.top, 4)
+                .padding(.trailing, 4)
+
+            VStack(alignment: .leading, spacing: 0) {
+                Eyebrow(text: "Today · done", color: Palette.ink.opacity(0.85), size: 11)
+                Text(loc: screenTime.blockingPresentation.isScheduledNow
+                     ? "Your apps are awake" : "You made time for yourself.")
+                    .font(Fonts.display(23, .bold)).foregroundStyle(Palette.ink)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.trailing, 60)
+                    .padding(.top, 6)
+                Group {
+                    if premium.isPremium {
+                        NavigationLink(value: entry.dayKey) { readTodayLabel }
+                    } else {
+                        Button { flow.showPaywall() } label: { readTodayLabel }
                     }
-                    .padding(.top, 4)
                 }
-                Spacer(minLength: 0)
+                .buttonStyle(TactileButtonStyle(fill: AnyShapeStyle(Palette.onAmber),
+                                                cornerRadius: DesignScale.s(16), ledge: 4, bordered: true))
+                .padding(.top, 18)
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(20)
         .background(Palette.mood(1), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
         .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).stroke(Palette.ink, lineWidth: 2))
+        .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).strokeBorder(Palette.ink, lineWidth: 2))
         .shadow(color: Color(hex: "3C5A28").opacity(0.4), radius: 20, y: 12)
         .staggeredAppear(index: 0)
     }
 
     private var readTodayLabel: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: 9) {
             Text("Read today's page")
-                .font(Fonts.ui(13.5, .heavy)).foregroundStyle(Palette.amberDeep)
+                .font(Fonts.ui(16, .heavy)).foregroundStyle(Palette.amberDeep)
             Image(systemName: "arrow.forward")
-                .font(.system(size: 11, weight: .bold)).foregroundStyle(Palette.amberDeep)
+                .font(.system(size: 14, weight: .bold)).foregroundStyle(Palette.amberDeep)
         }
-        .overlay(alignment: .bottom) {
-            Rectangle().fill(Palette.amberDeep.opacity(0.4)).frame(height: 2).offset(y: 2)
-        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, DesignScale.s(15))
     }
 
     // MARK: Streak card
@@ -187,7 +193,7 @@ struct HomeView: View {
             GeometryReader { g in
                 ZStack(alignment: .leading) {
                     Capsule().fill(Color(hex: "F2EADB"))
-                        .overlay(Capsule().stroke(Palette.ink.opacity(0.14), lineWidth: 1.5))
+                        .overlay(Capsule().strokeBorder(Palette.ink.opacity(0.14), lineWidth: 1.5))
                     Capsule()
                         .fill(LinearGradient(colors: [Color(hex: "FFB067"), Palette.amber],
                                              startPoint: .leading, endPoint: .trailing))
@@ -209,21 +215,13 @@ struct HomeView: View {
     // the same one the widget and the daily notification carry. Shown from midnight, written or not.
     private var affirmationSection: some View {
         VStack(alignment: .leading, spacing: 0) {
-            HStack(alignment: .firstTextBaseline) {
-                Text("Today's affirmation").font(Fonts.display(21, .bold)).foregroundStyle(Palette.ink)
-                    .fixedSize()
-                Spacer(minLength: 8)
-                NavigationLink {
-                    AffirmationsScreen().toolbar(.hidden, for: .navigationBar)
-                } label: {
-                    Text(loc: "Explore").font(Fonts.ui(13.5, .heavy)).foregroundStyle(Palette.amberDeep)
-                }
-                .simultaneousGesture(TapGesture().onEnded { Haptics.tap() })
-            }
+            Text("Today's affirmation").font(Fonts.display(21, .bold)).foregroundStyle(Palette.ink)
+                .fixedSize()
             .padding(.bottom, 13)
 
             NavigationLink {
-                AffirmationReaderScreen().toolbar(.hidden, for: .navigationBar)
+                AffirmationReaderScreen(startingLine: affirmations.today(premium: premium.isPremium))
+                    .toolbar(.hidden, for: .navigationBar)
             } label: {
                 HStack(spacing: 12) {
                     SunMark(size: 22, rays: false)
@@ -237,7 +235,7 @@ struct HomeView: View {
                 }
                 .padding(EdgeInsets(top: 14, leading: 14, bottom: 14, trailing: 14))
                 .background(Palette.cream, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).stroke(Palette.outlineSoft, lineWidth: 1.5))
+                .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Palette.outlineSoft, lineWidth: 1.5))
             }
             .buttonStyle(PressableStyle(scale: 0.99))
             .accessibilityHint(Text(loc: "Read and browse affirmations"))

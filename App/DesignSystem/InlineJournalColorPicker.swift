@@ -28,7 +28,7 @@ struct InlineJournalColorPicker: View {
                     LinearGradient(colors: [.clear, .black], startPoint: .top, endPoint: .bottom)
                     Circle().fill(Color(hue: hue, saturation: saturation, brightness: brightness))
                         .frame(width: 18, height: 18)
-                        .overlay(Circle().stroke(.white, lineWidth: 2))
+                        .overlay(Circle().strokeBorder(.white, lineWidth: 2))
                         .shadow(color: .black.opacity(0.5), radius: 2)
                         .position(x: 10 + saturation * max(0, geometry.size.width - 20),
                                   y: 10 + (1 - brightness) * max(0, geometry.size.height - 20))

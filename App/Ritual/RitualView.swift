@@ -36,15 +36,11 @@ struct RitualView: View {
     }
 
     private var journalText: String { richText.plainText }
-    private var wordCount: Int {
-        journalText.split(whereSeparator: { $0.isWhitespace || $0.isNewline }).count
-    }
-
     var body: some View {
         @Bindable var flow = flow
         Group {
             if step == 1 {
-                CelebrationView(mood: mood ?? 0, streak: store.streak, words: wordCount,
+                CelebrationView(streak: store.streak,
                                 affirmation: affirmations.today(premium: premium.isPremium),
                                 onStart: onClose)
             } else {
@@ -72,6 +68,7 @@ struct RitualView: View {
                     // The toolbar itself runs edge-to-edge (no horizontal margin) so its scrollable
                     // row gets full width; the CTA button keeps the page's usual side margin.
                     VStack(spacing: 0) {
+                        if journalFocused || showFormattingSheet {
                             EditorToolbar(
                                 text: $richText,
                                 selectedRange: $selectedRange,
@@ -83,17 +80,17 @@ struct RitualView: View {
                                 onTheme: { showThemeSheet = true },
                                 onDismissKeyboard: { journalFocused = false },
                                 onFormattingOpened: { showFormattingSheet = true; journalFocused = false },
-                                onFormattingClosed: { showFormattingSheet = false; journalFocused = true }
+                                onFormattingClosed: {
+                                    showFormattingSheet = false
+                                    DispatchQueue.main.async { journalFocused = true }
+                                }
                             )
-                            .frame(height: journalFocused ? nil : 0)
-                            .clipped()
-                            .opacity(journalFocused ? 1 : 0)
-                            .allowsHitTesting(journalFocused)
-                            .accessibilityHidden(!journalFocused)
-                        if !journalFocused {
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                        } else {
                             footer.padding(.horizontal, 22)
                         }
                     }
+                    .animation(Motion.snappy, value: journalFocused)
                     .padding(.top, 8)
                     .padding(.bottom, 14)
                 }
@@ -321,9 +318,7 @@ private struct MoodPickerSheet: View {
 // MARK: - Celebration (step 1)
 
 private struct CelebrationView: View {
-    let mood: Int
     let streak: Int
-    let words: Int
     let affirmation: String
     var onStart: () -> Void
 
@@ -333,64 +328,51 @@ private struct CelebrationView: View {
     var body: some View {
         ZStack {
             Palette.celebrationGradient.ignoresSafeArea()
-            ConfettiBurst()
-            celebrationDecor
 
             VStack(spacing: 0) {
-                ZStack {
-                    RingPulse()
-                    SunMark(size: 116, disc: false).spin(period: 18)   // black rays only
-                    MoodFace(mood: mood, size: 72, expressive: true)
-                        .shadow(color: .black.opacity(0.18), radius: 12, y: 6)
-                        .popIn(delay: 0.05)
-                }
-                .frame(height: 170)
+                VStack(spacing: 0) {
+                    SunMark(size: 116).spin(period: 18).popIn(delay: 0.05)
+                        .frame(height: 170)
 
-                Text(loc: screenTime.blockingPresentation.isScheduledNow
-                     ? "Your apps are awake" : "You made time for yourself.")
-                    .font(Fonts.display(34, .heavy)).foregroundStyle(.white)
-                    .multilineTextAlignment(.center)
-                    .shadow(color: Color(hex: "78280A").opacity(0.3), radius: 14, y: 2)
-                    .padding(.top, 12)
-                Text("You showed up before the world did. That's the whole thing.")
-                    .font(Fonts.ui(15.5, .semibold)).foregroundStyle(.white.opacity(0.94))
-                    .multilineTextAlignment(.center).lineSpacing(2)
-                    .frame(maxWidth: 290).padding(.top, 10)
-
-                HStack(spacing: 13) {
-                    Text("\(streak)").font(Fonts.display(38, .heavy)).foregroundStyle(Palette.ink)
-                    VStack(alignment: .leading, spacing: 0) {
-                        Text("day streak").font(Fonts.ui(14, .heavy)).foregroundStyle(Palette.ink)
-                        Text("+1 this morning").font(Fonts.ui(12, .bold)).foregroundStyle(Palette.amberDeep)
+                    Text(loc: screenTime.blockingPresentation.isScheduledNow
+                         ? "Your apps are awake" : "You made time for yourself.")
+                        .font(Fonts.display(34, .heavy)).foregroundStyle(.white)
+                        .multilineTextAlignment(.center)
+                        .shadow(color: Color(hex: "78280A").opacity(0.3), radius: 14, y: 2)
+                        .padding(.top, 12)
+                    HStack(spacing: 13) {
+                        Text("\(streak)").font(Fonts.display(38, .heavy)).foregroundStyle(Palette.ink)
+                        VStack(alignment: .leading, spacing: 0) {
+                            Text("day streak").font(Fonts.ui(14, .heavy)).foregroundStyle(Palette.ink)
+                            Text("+1 this morning").font(Fonts.ui(12, .bold)).foregroundStyle(Palette.amberDeep)
+                        }
                     }
-                }
-                .padding(.horizontal, 20).padding(.vertical, 12)
-                .background(Palette.onAmber, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(Palette.ink, lineWidth: 2))
-                .tactile(6, cornerRadius: 16)
-                .padding(.top, 22)
-                .popIn(delay: 0.35)
+                    .padding(.horizontal, 20).padding(.vertical, 12)
+                    .background(Palette.onAmber, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Palette.ink, lineWidth: 2))
+                    .tactile(6, cornerRadius: 16)
+                    .padding(.top, 22)
+                    .popIn(delay: 0.35)
 
-                Text("Mood: \(Text(loc: Mood(rawValue: mood)?.label ?? "Sad"))  ·  \(words) words")
-                    .font(Fonts.ui(12.5, .bold)).foregroundStyle(.white.opacity(0.9))
-                    .padding(.top, 18)
-
-                VStack(spacing: 6) {
-                    Eyebrow(text: "Today's affirmation", color: .white.opacity(0.85), tracking: 1.2, size: 11)
-                    Affirmations.text(affirmation)
-                        .font(Fonts.display(19, .semibold)).foregroundStyle(.white)
-                        .multilineTextAlignment(.center).lineSpacing(2)
-                        .fixedSize(horizontal: false, vertical: true)
+                    VStack(spacing: 6) {
+                        Eyebrow(text: "Today's affirmation", color: .white.opacity(0.85), tracking: 1.2, size: 11)
+                        Affirmations.text(affirmation)
+                            .font(Fonts.display(19, .semibold)).foregroundStyle(.white)
+                            .multilineTextAlignment(.center).lineSpacing(2)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                    .frame(maxWidth: 300)
+                    .padding(.top, 22)
+                    .popIn(delay: 0.5)
                 }
-                .frame(maxWidth: 300)
-                .padding(.top, 22)
-                .popIn(delay: 0.5)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
 
                 CreamButton(title: "Start my day") { onStart() }
                     .frame(maxWidth: 300)
-                    .padding(.top, 22)
             }
             .padding(.horizontal, 28)
+            .padding(.bottom, 30)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
             .capWidth(Metrics.maxContentWidth)   // centered column; gradient stays full-bleed
         }
         .task {
@@ -399,36 +381,4 @@ private struct CelebrationView: View {
         }
     }
 
-    // Static floating decor, layered under the content (ConfettiBurst handles the motion).
-    private var celebrationDecor: some View {
-        ZStack {
-            InkGlyph(kind: .sparkle, size: 26, fill: Color(hex: "F6C33F"))
-                .rotationEffect(.degrees(-12)).offset(x: -118, y: -228).floaty(period: 4)
-            InkGlyph(kind: .heart, size: 22, fill: Color(hex: "F19DA6"))
-                .offset(x: 112, y: -248).floaty(period: 5, delay: 0.3)
-            InkGlyph(kind: .sparkle, size: 18, fill: Color(hex: "8FB6E0"))
-                .offset(x: -104, y: 118).floaty(period: 4.5, delay: 0.2)
-            Circle().fill(.white.opacity(0.85)).frame(width: 7, height: 7).offset(x: -72, y: -176)
-            Circle().fill(Color(hex: "FFF3D6")).frame(width: 6, height: 6).offset(x: -118, y: 158)
-            Circle().fill(.white.opacity(0.8)).frame(width: 6, height: 6).offset(x: 92, y: -138)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .allowsHitTesting(false)
-    }
-}
-
-private struct RingPulse: View {
-    @State private var animate = false
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    var body: some View {
-        Circle()
-            .fill(.white.opacity(0.18))
-            .frame(width: 150, height: 150)
-            .scaleEffect(animate ? 1.9 : 0.7)
-            .opacity(animate ? 0 : 0.5)
-            .onAppear {
-                guard !reduceMotion else { return }
-                withAnimation(.easeOut(duration: 1.9).repeatForever(autoreverses: false)) { animate = true }
-            }
-    }
 }

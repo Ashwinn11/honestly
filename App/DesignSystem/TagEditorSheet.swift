@@ -34,7 +34,7 @@ struct TagEditorSheet: View {
             }
             .padding(12)
             .background(Palette.cream, in: RoundedRectangle(cornerRadius: 14))
-            .overlay(RoundedRectangle(cornerRadius: 14).stroke(Palette.outlineSoft, lineWidth: 1.5))
+            .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Palette.outlineSoft, lineWidth: 1.5))
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {

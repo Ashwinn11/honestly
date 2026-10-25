@@ -36,7 +36,7 @@ struct LanguagePickerPill: View {
             .foregroundStyle(Palette.ink)
             .padding(.horizontal, 15).padding(.vertical, 9)
             .background(Palette.cream, in: Capsule())
-            .overlay(Capsule().stroke(Palette.ink, lineWidth: 2))
+            .overlay(Capsule().strokeBorder(Palette.ink, lineWidth: 2))
         }
     }
 }

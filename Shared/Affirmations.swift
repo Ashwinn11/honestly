@@ -1,20 +1,12 @@
 import SwiftUI
 
-/// The affirmation rotation: a built-in library the user picks from (free: up to `freeLimit`;
-/// Premium: unlimited, plus lines of their own), shown one per day — the same line on Home, the
-/// widget and the daily notification, cycling back to the first once the list runs out.
-///
-/// Library lines are stored as their English text, which is also their String Catalog key, so a
-/// stored pick re-translates whenever the in-app language changes. Anything the user typed
-/// themselves is stored and shown exactly as written — never looked up, never translated.
+/// Built-in and user-written affirmation content, selected by topic for each delivery surface.
 enum Affirmations {
     struct Focus: Identifiable {
         let title: String
         let lines: [String]
         var id: String { title }
     }
-
-    static let freeLimit = 5
 
     static let library: [Focus] = [
         .init(title: "Self-worth", lines: [
@@ -64,54 +56,42 @@ enum Affirmations {
     private static let libraryLines = Set(library.flatMap(\.lines))
     static func isLibrary(_ line: String) -> Bool { libraryLines.contains(line) }
 
-    /// What rotates until the user has picked their own — installs from before the picker existed,
-    /// or right after "Delete all data". One line from each of the first five focus areas.
-    static let defaults: [String] = library.prefix(freeLimit).map { $0.lines[0] }
+    // MARK: Topic based delivery
 
-    static var availableDefaults: [String] {
+    /// An empty topic selection means all available affirmation topics.
+    static func topicRotation(focusTitles: [String], premium: Bool) -> [String] {
         let deleted = Set(SharedState.defaults.stringArray(forKey: SharedState.Key.deletedAffirmations) ?? [])
-        let preferred = defaults.filter { !deleted.contains($0) }
-        return preferred.isEmpty ? Array(library.flatMap(\.lines).filter { !deleted.contains($0) }.prefix(freeLimit)) : preferred
+        let includeOwn = premium && (focusTitles.isEmpty || focusTitles.contains("Your own"))
+        let chosenFocuses = focusTitles.isEmpty ? library.map(\.title) : focusTitles.filter { $0 != "Your own" }
+        let selected = library.filter { chosenFocuses.contains($0.title) }.flatMap(\.lines).filter { !deleted.contains($0) }
+        let custom = includeOwn ? SharedState.defaults.stringArray(forKey: SharedState.Key.customAffirmations) ?? [] : []
+        let available = selected + custom
+        return available
     }
 
-    // MARK: Storage — the app group, so the widget and notification scheduler read the same list
-
-    static var chosen: [String] {
-        get { SharedState.defaults.stringArray(forKey: SharedState.Key.affirmationList) ?? [] }
-        set { SharedState.defaults.set(newValue, forKey: SharedState.Key.affirmationList) }
+    static func feedRotation(focusTitles: [String], premium: Bool) -> [String] {
+        topicRotation(focusTitles: focusTitles, premium: premium)
     }
 
-    // MARK: Rotation
-
-    /// What actually rotates: the picks (or the defaults), capped at `freeLimit` without Premium.
-    static func rotation(from picks: [String], premium: Bool) -> [String] {
-        let deleted = Set(SharedState.defaults.stringArray(forKey: SharedState.Key.deletedAffirmations) ?? [])
-        let available = picks.filter { !deleted.contains($0) }
-        let list = available.isEmpty ? availableDefaults : available
-        return premium ? list : Array(list.prefix(freeLimit))
+    static func deliveryLine(on date: Date, occurrence: Int = 0, focusTitles: [String], premium: Bool) -> String {
+        let list = topicRotation(focusTitles: focusTitles, premium: premium)
+        guard !list.isEmpty else { return "" }
+        let day = Calendar.current.ordinality(of: .day, in: .era, for: date) ?? 0
+        return list[(day + occurrence) % list.count]
     }
 
-    /// One line per calendar day, walking `rotation` in order. Derived purely from the date, so
-    /// the app, the widget and the notification scheduler always land on the same line without
-    /// sharing any state beyond the list itself.
-    static func line(on date: Date, from picks: [String], premium: Bool) -> String {
-        let list = rotation(from: picks, premium: premium)
+    static func feedLine(on date: Date, focusTitles: [String], premium: Bool) -> String {
+        let list = feedRotation(focusTitles: focusTitles, premium: premium)
         guard !list.isEmpty else { return "" }
         let day = Calendar.current.ordinality(of: .day, in: .era, for: date) ?? 0
         return list[day % list.count]
-    }
-
-    /// The same, reading the stored list and the Premium mirror — for the extensions, which have
-    /// neither `AffirmationList` nor `PremiumManager`.
-    static func line(on date: Date = Date()) -> String {
-        line(on: date, from: chosen, premium: SharedState.premiumActive)
     }
 
     // MARK: Display
 
     /// Library lines go through the String Catalog; the user's own words are shown verbatim.
     static func text(_ line: String) -> Text {
-        if line.isEmpty { return Text(loc: "Choose your affirmations") }
+        if line.isEmpty { return Text(loc: "No affirmations available") }
         return isLibrary(line) ? Text(loc: line) : Text(verbatim: line)
     }
 

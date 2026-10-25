@@ -65,6 +65,7 @@ struct HonestlyApp: App {
     var body: some Scene {
         WindowGroup {
             RootView()
+                .background(KeyboardDismissalInstaller())
                 .environment(store)
                 .environment(premium)
                 .environment(screenTime)
@@ -120,7 +121,7 @@ struct HonestlyApp: App {
                     store.reload()
                     screenTime.refreshAuthStatus()
                     Shielding.reconcile()
-                    // Tops the daily affirmations back up to a full month ahead.
+                    // Rebuilds the next two weeks of affirmation notifications.
                     AffirmationNudge.schedule()
                 }
         }

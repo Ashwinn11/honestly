@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct LibraryHeader: View {
     let title: String
@@ -13,6 +14,59 @@ struct LibraryHeader: View {
     }
 }
 
+/// Installs one non-blocking tap recognizer on each app window. A tap anywhere except a text
+/// input ends editing, while the recognizer allows the touched button or view to keep handling it.
+struct KeyboardDismissalInstaller: UIViewRepresentable {
+    func makeUIView(context: Context) -> UIView {
+        let view = KeyboardDismissalInstallerView()
+        view.isUserInteractionEnabled = false
+        view.backgroundColor = .clear
+        return view
+    }
+
+    func updateUIView(_ uiView: UIView, context: Context) {}
+}
+
+private final class KeyboardDismissalInstallerView: UIView {
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        guard let window,
+              window.gestureRecognizers?.contains(where: { $0.name == "honestly.keyboardDismissTap" }) != true
+        else { return }
+
+        let tap = UITapGestureRecognizer(target: KeyboardDismissalTapHandler.shared,
+                                         action: #selector(KeyboardDismissalTapHandler.dismissKeyboard))
+        tap.name = "honestly.keyboardDismissTap"
+        tap.cancelsTouchesInView = false
+        tap.delegate = KeyboardDismissalTapHandler.shared
+        window.addGestureRecognizer(tap)
+    }
+}
+
+@MainActor
+private final class KeyboardDismissalTapHandler: NSObject, UIGestureRecognizerDelegate {
+    static let shared = KeyboardDismissalTapHandler()
+
+    @objc func dismissKeyboard() {
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder),
+                                        to: nil, from: nil, for: nil)
+    }
+
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldReceive touch: UITouch) -> Bool {
+        var touchedView = touch.view
+        while let view = touchedView {
+            if view is UITextField || view is UITextView { return false }
+            touchedView = view.superview
+        }
+        return true
+    }
+
+    func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
+                           shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {
+        true
+    }
+}
+
 struct LibrarySectionTitle: View {
     let title: String
     var body: some View {
@@ -24,13 +78,17 @@ struct LibraryWriteRow: View {
     let placeholder: String
     let addLabel: String
     @Binding var draft: String
+    var resetToken: Int = 0
     let onAdd: () -> Void
+    @FocusState private var focused: Bool
 
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
             TextField(LocalizedStringKey(placeholder), text: $draft, axis: .vertical)
                 .font(Fonts.ui(15, .semibold)).foregroundStyle(Palette.ink)
                 .lineLimit(2...5)
+                .focused($focused)
+                .id(resetToken)
             IconTileButton(icon: "plus", size: 38, iconSize: 14, action: onAdd)
                 .accessibilityLabel(Text(loc: addLabel))
                 .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
@@ -38,6 +96,7 @@ struct LibraryWriteRow: View {
         .padding(12)
         .background(Palette.cream, in: RoundedRectangle(cornerRadius: 14))
         .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Palette.outlineSoft, lineWidth: 1.5))
+        .onChange(of: resetToken) { _, _ in focused = true }
     }
 }
 

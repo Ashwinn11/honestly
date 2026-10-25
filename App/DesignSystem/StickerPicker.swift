@@ -107,7 +107,7 @@ struct StickerPicker: View {
                         .padding(.horizontal, 13)
                         .padding(.vertical, 8)
                         .background(active ? Palette.amber : Palette.paper, in: Capsule())
-                        .overlay(Capsule().stroke(active ? Palette.ink : Palette.outlineSoft,
+                        .overlay(Capsule().strokeBorder(active ? Palette.ink : Palette.outlineSoft,
                                                   lineWidth: active ? 1.8 : 1.2))
                         .overlay(alignment: .topTrailing) {
                             if index > 0 && !premium.isPremium { lockBadge.scaleEffect(0.8).offset(x: 4, y: -4) }
@@ -131,7 +131,7 @@ struct StickerPicker: View {
             .foregroundStyle(.white)
             .frame(width: 16, height: 16)
             .background(Palette.amber, in: Circle())
-            .overlay(Circle().stroke(.white, lineWidth: 1))
+            .overlay(Circle().strokeBorder(.white, lineWidth: 1))
     }
 }
 

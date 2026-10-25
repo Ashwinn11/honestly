@@ -372,7 +372,7 @@ struct ThemePickerSheet: View {
                     }
                     .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                     .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .stroke(selected ? Palette.amber : Palette.outlineSoft, lineWidth: selected ? 2.5 : 1.5))
+                        .strokeBorder(selected ? Palette.amber : Palette.outlineSoft, lineWidth: selected ? 2.5 : 1.5))
                     .overlay(alignment: .topTrailing) {
                         if selected {
                             Image(systemName: "checkmark.circle.fill")
@@ -397,6 +397,6 @@ struct ThemePickerSheet: View {
             .foregroundStyle(.white)
             .frame(width: 17, height: 17)
             .background(Palette.amber, in: Circle())
-            .overlay(Circle().stroke(.white, lineWidth: 1))
+            .overlay(Circle().strokeBorder(.white, lineWidth: 1))
     }
 }

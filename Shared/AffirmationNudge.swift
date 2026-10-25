@@ -1,26 +1,23 @@
 import Foundation
 import UserNotifications
 
-/// One notification a day at the user's chosen time (default 9:00), carrying that day's line from
-/// `Affirmations` — the same one Home and the widget show. The rotation is a pure function of the
-/// date, so the next `horizonDays` are laid out up front and re-laid from scratch whenever
-/// anything feeding them changes. Separately, a single "come write today" reminder goes out at
-/// 8pm on days the page is still unwritten.
+/// Topic based affirmation notifications use their own schedule. Separately, a single "come
+/// write today" reminder goes out at 8pm on days the page is still unwritten.
 enum AffirmationNudge {
     private static let reminderID = "honestly.affirmation.reminder"
     private static let dailyIDPrefix = "honestly.affirmation.daily."
     /// The old scheme queued one echo per line written that morning. Still cleared on every
     /// reschedule, so updating mid-day never leaves those firing alongside the new daily one.
     private static let legacyEchoIDs = (0..<5).map { "honestly.affirmation.echo.\($0)" }
-    /// iOS keeps at most 64 pending requests per app. A month ahead stays well under that, and
-    /// it's re-laid on every foreground, so it only runs dry after a month without opening the app.
-    private static let horizonDays = 30
+    /// Leave room for the separate journal reminder within iOS's pending-request limit.
+    private static let horizonDays = 14
+    private static let maximumDailyTimes = 3
     private static let enabledKey = "affirmationNudgeOn"
     private static let reminderLastDayKey = "affirmationReminderLastSentDay"
 
     static let defaultMinutes = 9 * 60
 
-    private static var dailyIDs: [String] { (0..<horizonDays).map { dailyIDPrefix + "\($0)" } }
+    private static var dailyIDs: [String] { (0..<(horizonDays * maximumDailyTimes)).map { dailyIDPrefix + "\($0)" } }
     private static var allIDs: [String] { [reminderID] + dailyIDs + legacyEchoIDs }
 
     /// Nudges are a premium feature: OFF until a premium user flips the profile toggle (which
@@ -31,10 +28,22 @@ enum AffirmationNudge {
         SharedState.premiumActive && SharedState.defaults.bool(forKey: enabledKey)
     }
 
-    /// Minutes after midnight the daily affirmation lands — written by Profile's time picker.
+    /// Legacy single-time preference, used once when migrating older installs.
     static var minutes: Int {
         SharedState.defaults.object(forKey: SharedState.Key.affirmationMinutes) as? Int ?? defaultMinutes
     }
+
+    static var times: [Int] {
+        let stored = SharedState.defaults.array(forKey: SharedState.Key.affirmationReminderTimes) as? [Int]
+        let raw = stored?.isEmpty == false ? stored! : [minutes]
+        return Array(Set(raw.filter { (0..<1440).contains($0) })).sorted().prefix(maximumDailyTimes).map { $0 }
+    }
+    static var weekdays: [Int] {
+        let stored = SharedState.defaults.array(forKey: SharedState.Key.affirmationReminderWeekdays) as? [Int]
+        let raw = stored?.isEmpty == false ? stored! : Array(1...7)
+        return raw.filter { (1...7).contains($0) }
+    }
+    static var selectedTopics: [String] { SharedState.defaults.stringArray(forKey: SharedState.Key.affirmationTopics) ?? [] }
 
     /// Used when reminders are enabled in Profile. Requests permission, then lays out the schedule.
     /// Onboarding requests permission separately without enabling reminders.
@@ -56,9 +65,9 @@ enum AffirmationNudge {
             .requestAuthorization(options: [.alert, .sound])) ?? false
     }
 
-    /// Re-lays the next `horizonDays` of daily affirmations from scratch. Idempotent — call it
-    /// whenever anything feeding it changes: launch/foreground, the rotation, the time, the
-    /// language, Premium, the toggle. Leaves the 8pm reminder alone; that has its own lifecycle.
+    /// Re-lays the next `horizonDays` of topic based affirmations. Call when schedule, topics,
+    /// language, Premium state, or the reminder toggle changes. Leaves the 8pm journal reminder
+    /// alone; it has its own lifecycle.
     static func schedule() {
         let center = UNUserNotificationCenter.current()
         center.removePendingNotificationRequests(withIdentifiers: dailyIDs + legacyEchoIDs)
@@ -68,19 +77,25 @@ enum AffirmationNudge {
         let now = Date()
         let today = cal.startOfDay(for: now)
         let title = Affirmations.localized("Today's affirmation")
+        let activeDays = Set(weekdays)
+        var requestIndex = 0
         for offset in 0..<horizonDays {
             guard let day = cal.date(byAdding: .day, value: offset, to: today),
-                  let fire = cal.date(bySettingHour: minutes / 60, minute: minutes % 60, second: 0, of: day),
-                  fire > now else { continue }
-            let content = UNMutableNotificationContent()
-            content.title = title
-            let line = Affirmations.line(on: day)
-            guard !line.isEmpty else { continue }
-            content.body = Affirmations.display(line)
-            content.sound = .default
-            let when = cal.dateComponents([.year, .month, .day, .hour, .minute], from: fire)
-            let trigger = UNCalendarNotificationTrigger(dateMatching: when, repeats: false)
-            center.add(UNNotificationRequest(identifier: dailyIDPrefix + "\(offset)", content: content, trigger: trigger))
+                  activeDays.contains(cal.component(.weekday, from: day)) else { continue }
+            for (timeIndex, time) in times.enumerated() {
+                guard let fire = cal.date(bySettingHour: time / 60, minute: time % 60, second: 0, of: day), fire > now else { continue }
+                let content = UNMutableNotificationContent()
+                content.title = title
+                let line = Affirmations.deliveryLine(on: day, occurrence: timeIndex,
+                                                     focusTitles: selectedTopics, premium: SharedState.premiumActive)
+                guard !line.isEmpty else { continue }
+                content.body = Affirmations.display(line)
+                content.sound = .default
+                let when = cal.dateComponents([.year, .month, .day, .hour, .minute], from: fire)
+                let trigger = UNCalendarNotificationTrigger(dateMatching: when, repeats: false)
+                center.add(UNNotificationRequest(identifier: dailyIDPrefix + "\(requestIndex)", content: content, trigger: trigger))
+                requestIndex += 1
+            }
         }
     }
 
@@ -116,6 +131,12 @@ enum AffirmationNudge {
 
     static func cancel() {
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: allIDs)
+    }
+
+    static func reset() {
+        cancel()
+        SharedState.defaults.removeObject(forKey: enabledKey)
+        SharedState.defaults.removeObject(forKey: reminderLastDayKey)
     }
 
     /// Without a delegate, iOS silently drops local notifications while the app is in the

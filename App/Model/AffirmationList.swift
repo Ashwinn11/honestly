@@ -2,29 +2,53 @@ import Foundation
 import Observation
 import WidgetKit
 
-/// The app-side face of the user's affirmation picks: observable, so Home and Profile redraw the
-/// moment the list changes, and the single write path that fans a change out to everything else
-/// that shows it — the widget's timeline and the queued daily notifications. The list itself
-/// lives in the app group (`Affirmations.chosen`) so the widget can read it too.
+/// Shared affirmation content and preferences for the feed, favorites, reminders, and widgets.
 @MainActor
 @Observable
 final class AffirmationList {
-    private(set) var chosen: [String]
     private(set) var savedCustom: [String]
     private(set) var deletedBuiltIns: [String]
+    private(set) var favorites: [String]
+    private(set) var readingHistory: [String]
+    private(set) var selectedTopics: [String]
     private let storage: AffirmationCollectionStorage
 
     init() {
         let storage = AffirmationCollectionStorage(
             defaults: SharedState.defaults,
-            selectionKey: SharedState.Key.affirmationList,
             customKey: SharedState.Key.customAffirmations,
-            library: Affirmations.library.flatMap(\.lines), fallback: Affirmations.defaults,
+            library: Affirmations.library.flatMap(\.lines),
             deletedKey: SharedState.Key.deletedAffirmations)
         self.storage = storage
-        chosen = storage.selection
         savedCustom = storage.custom
         deletedBuiltIns = storage.deleted
+        favorites = SharedState.defaults.stringArray(forKey: SharedState.Key.affirmationFavorites) ?? []
+        readingHistory = SharedState.defaults.stringArray(forKey: SharedState.Key.affirmationHistory) ?? []
+        let defaults = SharedState.defaults
+        let topicsKey = SharedState.Key.affirmationTopics
+        let needsTopicMigration = defaults.object(forKey: topicsKey) == nil
+        if let sharedSelection = defaults.stringArray(forKey: topicsKey) {
+            selectedTopics = sharedSelection
+        } else if let oldFeedSelection = defaults.stringArray(forKey: SharedState.Key.affirmationFeedFocuses) {
+            selectedTopics = oldFeedSelection
+        } else {
+            // Migrate old separate reminder/widget choices into the one shared topic selection.
+            let legacy = (defaults.stringArray(forKey: SharedState.Key.affirmationReminderFocuses) ?? [])
+                + (defaults.stringArray(forKey: SharedState.Key.affirmationWidgetFocuses) ?? [])
+            selectedTopics = legacy.reduce(into: []) { result, title in
+                if !result.contains(title) { result.append(title) }
+            }
+        }
+        defaults.set(selectedTopics, forKey: topicsKey)
+        defaults.removeObject(forKey: SharedState.Key.affirmationFeedFocuses)
+        defaults.removeObject(forKey: SharedState.Key.affirmationReminderFocuses)
+        defaults.removeObject(forKey: SharedState.Key.affirmationWidgetFocuses)
+        selectedTopics = normalizedFocuses(selectedTopics)
+        defaults.set(selectedTopics, forKey: topicsKey)
+        if needsTopicMigration {
+            WidgetCenter.shared.reloadAllTimelines()
+            AffirmationNudge.schedule()
+        }
     }
 
     var availableLibrary: [Affirmations.Focus] {
@@ -34,13 +58,11 @@ final class AffirmationList {
         }
     }
 
-    var initialSelection: [String] { chosen.isEmpty ? Affirmations.availableDefaults : chosen }
-
-    func set(_ list: [String]) {
-        guard list != chosen else { return }
-        storage.setSelection(list)
-        chosen = storage.selection
-        savedCustom = storage.custom
+    func setSelectedTopics(_ topics: [String]) {
+        let cleaned = normalizedFocuses(topics)
+        guard selectedTopics != cleaned else { return }
+        selectedTopics = cleaned
+        SharedState.defaults.set(cleaned, forKey: SharedState.Key.affirmationTopics)
         refreshDelivery()
     }
 
@@ -48,24 +70,60 @@ final class AffirmationList {
     func saveCustom(_ line: String) -> Bool {
         let added = storage.saveCustom(line)
         savedCustom = storage.custom
+        if added { refreshDelivery() }
         return added
     }
 
     func delete(_ line: String) {
         storage.delete(line)
-        chosen = storage.selection
         savedCustom = storage.custom
         deletedBuiltIns = storage.deleted
+        favorites.removeAll { $0 == line }
+        readingHistory.removeAll { $0 == line }
+        SharedState.defaults.set(favorites, forKey: SharedState.Key.affirmationFavorites)
+        SharedState.defaults.set(readingHistory, forKey: SharedState.Key.affirmationHistory)
+        if savedCustom.isEmpty {
+            selectedTopics.removeAll { $0 == "Your own" }
+            SharedState.defaults.set(selectedTopics, forKey: SharedState.Key.affirmationTopics)
+        }
+        selectedTopics = normalizedFocuses(selectedTopics)
+        SharedState.defaults.set(selectedTopics, forKey: SharedState.Key.affirmationTopics)
         refreshDelivery()
+    }
+
+    func toggleFavorite(_ line: String) {
+        if favorites.contains(line) { favorites.removeAll { $0 == line } }
+        else { favorites.insert(line, at: 0) }
+        SharedState.defaults.set(favorites, forKey: SharedState.Key.affirmationFavorites)
+    }
+
+    func recordRead(_ line: String) {
+        guard !line.isEmpty else { return }
+        readingHistory.removeAll { $0 == line }
+        readingHistory.insert(line, at: 0)
+        if readingHistory.count > 100 { readingHistory.removeLast(readingHistory.count - 100) }
+        SharedState.defaults.set(readingHistory, forKey: SharedState.Key.affirmationHistory)
     }
 
     func clear() {
         storage.clear()
-        chosen = []
         savedCustom = []
         deletedBuiltIns = []
+        favorites = []
+        readingHistory = []
+        selectedTopics = []
+        SharedState.defaults.set([], forKey: SharedState.Key.affirmationFavorites)
+        SharedState.defaults.set([], forKey: SharedState.Key.affirmationHistory)
+        SharedState.defaults.removeObject(forKey: SharedState.Key.affirmationTopics)
+        SharedState.defaults.removeObject(forKey: SharedState.Key.affirmationFeedFocuses)
+        SharedState.defaults.removeObject(forKey: SharedState.Key.affirmationReminderFocuses)
+        SharedState.defaults.removeObject(forKey: SharedState.Key.affirmationWidgetFocuses)
+        SharedState.defaults.removeObject(forKey: SharedState.Key.affirmationReminderTimes)
+        SharedState.defaults.removeObject(forKey: SharedState.Key.affirmationReminderWeekdays)
+        SharedState.defaults.removeObject(forKey: SharedState.Key.affirmationMinutes)
+        SharedState.defaults.set(false, forKey: "affirmationNudgeOn")
         WidgetCenter.shared.reloadAllTimelines()
-        AffirmationNudge.cancel()
+        AffirmationNudge.reset()
     }
 
     private func refreshDelivery() {
@@ -73,9 +131,14 @@ final class AffirmationList {
         AffirmationNudge.schedule()
     }
 
-    /// Today's line from these picks — the same one the widget and today's notification carry.
+    private func normalizedFocuses(_ values: [String]) -> [String] {
+        let valid = Set(availableLibrary.map(\.title) + (savedCustom.isEmpty ? [] : ["Your own"]))
+        var seen = Set<String>()
+        return values.filter { valid.contains($0) && seen.insert($0).inserted }
+    }
+
+    /// Today's line from the shared topic selection, used on Home and throughout delivery.
     func today(premium: Bool) -> String {
-        let deleted = Set(deletedBuiltIns)
-        return Affirmations.line(on: Date(), from: chosen.filter { !deleted.contains($0) }, premium: premium)
+        Affirmations.feedLine(on: .now, focusTitles: selectedTopics, premium: premium)
     }
 }

@@ -15,7 +15,7 @@ struct SplashView: View {
                 .resizable().scaledToFit()
                 .frame(width: DesignScale.s(128), height: DesignScale.s(128))
                 .clipShape(RoundedRectangle(cornerRadius: DesignScale.s(29), style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: DesignScale.s(29), style: .continuous).stroke(Palette.ink.opacity(0.06), lineWidth: 1))
+                .overlay(RoundedRectangle(cornerRadius: DesignScale.s(29), style: .continuous).strokeBorder(Palette.ink.opacity(0.06), lineWidth: 1))
                 .shadow(color: .black.opacity(0.14), radius: DesignScale.s(22), y: DesignScale.s(12))
                 .scaleEffect(appear ? 1 : 0.82)
                 .opacity(appear ? 1 : 0)

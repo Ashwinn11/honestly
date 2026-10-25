@@ -201,7 +201,7 @@ final class JournalStore {
         SharedState.streak = 0
         SharedState.todayMoodKey = nil
         SharedState.onboardingComplete = false
-        SharedState.weeklyGoal = 5
+        SharedState.weeklyGoal = 7
         AffirmationNudge.cancel()
         Shielding.clear()
     }

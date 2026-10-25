@@ -70,7 +70,7 @@ struct HistoryView: View {
         }
         .padding(EdgeInsets(top: 11, leading: 14, bottom: 11, trailing: 14))
         .background(Palette.cream, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(Palette.outlineSoft, lineWidth: 1.5))
+        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Palette.outlineSoft, lineWidth: 1.5))
     }
 
     private var titleBlock: some View {
@@ -109,7 +109,7 @@ struct HistoryView: View {
                     .foregroundStyle(filter == nil ? Palette.paper : Palette.ink)
                     .padding(.horizontal, 16).padding(.vertical, 10)
                     .background(filter == nil ? Palette.ink : Palette.cream, in: Capsule())
-                    .overlay(Capsule().stroke(Palette.ink, lineWidth: 2))
+                    .overlay(Capsule().strokeBorder(Palette.ink, lineWidth: 2))
             }
             .buttonStyle(PressableStyle())
 
@@ -120,7 +120,7 @@ struct HistoryView: View {
                         .background(filter == i ? Palette.moodSoft(i) : Palette.cream,
                                     in: RoundedRectangle(cornerRadius: 12, style: .continuous))
                         .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .stroke(filter == i ? Palette.mood(i) : Palette.ink.opacity(0.22),
+                            .strokeBorder(filter == i ? Palette.mood(i) : Palette.ink.opacity(0.22),
                                     lineWidth: filter == i ? 2.5 : 2))
                         .frame(maxWidth: .infinity)          // spread evenly across the width
                 }

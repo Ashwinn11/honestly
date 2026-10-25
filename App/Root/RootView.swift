@@ -13,7 +13,7 @@ struct RootView: View {
                 if ScreenshotPreview.screen == "write" {
                     RitualView(onClose: {})
                 } else if ScreenshotPreview.screen == "affirmations" {
-                    NavigationStack { AffirmationsScreen() }
+                    NavigationStack { AffirmationReaderScreen() }
                 } else if ScreenshotPreview.screen == "affirmation-reader" {
                     NavigationStack { AffirmationReaderScreen() }
                 } else if !onboarded && !ScreenshotPreview.enabled {

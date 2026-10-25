@@ -7,7 +7,7 @@ struct BigWinsEntry: TimelineEntry {
     let affirmation: String?
 }
 
-/// Reads the rotation from the app group (`Affirmations.chosen` + the `premiumActive` mirror)
+/// Reads the widget's own topic selection from the app group
 /// rather than anything in the app process. The line is a pure function of the day, so a week of
 /// midnights is laid out in one timeline; the app calls `WidgetCenter.reloadAllTimelines()`
 /// whenever the list or Premium changes, so edits show up immediately rather than next week.
@@ -15,7 +15,7 @@ struct BigWinsProvider: TimelineProvider {
     private static let daysAhead = 7
 
     func placeholder(in context: Context) -> BigWinsEntry {
-        BigWinsEntry(date: .now, affirmation: Affirmations.availableDefaults.first ?? "")
+        BigWinsEntry(date: .now, affirmation: Affirmations.library.first?.lines.first ?? "")
     }
 
     func getSnapshot(in context: Context, completion: @escaping (BigWinsEntry) -> Void) {
@@ -39,12 +39,17 @@ struct BigWinsProvider: TimelineProvider {
         let today = cal.startOfDay(for: .now)
         return (0..<Self.daysAhead).compactMap { offset in
             cal.date(byAdding: .day, value: offset, to: today)
-                .map { BigWinsEntry(date: $0, affirmation: Affirmations.line(on: $0)) }
+                .map { BigWinsEntry(date: $0, affirmation: widgetLine(on: $0)) }
         }
     }
 
     private func currentEntry() -> BigWinsEntry {
         guard SharedState.premiumActive else { return BigWinsEntry(date: .now, affirmation: nil) }
-        return BigWinsEntry(date: .now, affirmation: Affirmations.line(on: .now))
+        return BigWinsEntry(date: .now, affirmation: widgetLine(on: .now))
+    }
+
+    private func widgetLine(on date: Date) -> String {
+        Affirmations.deliveryLine(on: date, focusTitles: AffirmationNudge.selectedTopics,
+                                  premium: SharedState.premiumActive)
     }
 }

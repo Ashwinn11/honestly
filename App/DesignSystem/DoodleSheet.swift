@@ -31,7 +31,7 @@ struct DoodleSheet: View {
                 .background(Palette.paper)
                 .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
                 .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .stroke(Palette.outlineSoft, lineWidth: 1.5))
+                    .strokeBorder(Palette.outlineSoft, lineWidth: 1.5))
                 .padding(.horizontal, 16)
             toolRow
         }
@@ -76,7 +76,7 @@ struct DoodleSheet: View {
                         Circle()
                             .fill(color)
                             .frame(width: 26, height: 26)
-                            .overlay(Circle().stroke(Palette.ink.opacity(colorIndex == index ? 0.9 : 0.15),
+                            .overlay(Circle().strokeBorder(Palette.ink.opacity(colorIndex == index ? 0.9 : 0.15),
                                                      lineWidth: colorIndex == index ? 2 : 1))
                             .scaleEffect(colorIndex == index ? 1.12 : 1)
                     }

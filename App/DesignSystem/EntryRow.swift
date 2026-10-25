@@ -28,13 +28,13 @@ struct EntryRow<Trailing: View>: View {
                     .aspectRatio(contentMode: .fill)
                     .frame(width: 46, height: 46)
                     .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(Palette.outlineSoft, lineWidth: 1))
+                    .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Palette.outlineSoft, lineWidth: 1))
             }
             trailing()
         }
         .padding(13)
         .background(Palette.cream, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).stroke(Palette.outlineSoft, lineWidth: 1.5))
+        .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).strokeBorder(Palette.outlineSoft, lineWidth: 1.5))
         .shadow(color: Color(hex: "78501E").opacity(0.07), radius: 11, y: 8)
     }
 }

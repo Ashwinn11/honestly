@@ -22,7 +22,7 @@ struct JournalPageSurface<Content: View>: View {
                 }
             }
             .clipShape(shape)
-            .overlay(bordered ? AnyView(shape.stroke(Palette.ink, lineWidth: 2)) : AnyView(EmptyView()))
+            .overlay(bordered ? AnyView(shape.strokeBorder(Palette.ink, lineWidth: 2)) : AnyView(EmptyView()))
             .overlay(alignment: .leading) {
                 if showsBinderHoles {
                     JournalBinderHoles()
@@ -41,7 +41,7 @@ private struct JournalBinderHoles: View {
                 Circle()
                     .fill(Palette.paper)
                     .frame(width: 10, height: 10)
-                    .overlay(Circle().stroke(Palette.ink.opacity(0.18), lineWidth: 1))
+                    .overlay(Circle().strokeBorder(Palette.ink.opacity(0.18), lineWidth: 1))
                     .shadow(color: Palette.ink.opacity(0.06), radius: 2, y: 1)
             }
         }

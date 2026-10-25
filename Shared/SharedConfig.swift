@@ -43,10 +43,17 @@ enum SharedState {
         static let streak             = "ritual.streak"
         static let weeklyGoal         = "onboarding.weeklyGoal"     // mornings/week the user committed to
         static let premiumActive      = "premium.active"             // mirrors PremiumManager.isPremium for the background extension
-        static let affirmationList    = "affirmations.list"          // [String] — the picked rotation, in order (see `Affirmations`)
         static let customAffirmations = "affirmations.custom"        // Saved independently of the selected rotation.
         static let deletedAffirmations = "affirmations.deleted"
-        static let affirmationMinutes = "affirmations.notifyMinutes" // Int — minutes after midnight the daily notification lands
+        static let affirmationFavorites = "affirmations.favorites"
+        static let affirmationHistory = "affirmations.history"
+        static let affirmationTopics = "affirmations.topics"
+        static let affirmationFeedFocuses = "affirmations.feedFocuses" // Legacy shared-topic key.
+        static let affirmationReminderTimes = "affirmations.reminderTimes"
+        static let affirmationReminderWeekdays = "affirmations.reminderWeekdays"
+        static let affirmationReminderFocuses = "affirmations.reminderFocuses"
+        static let affirmationWidgetFocuses = "affirmations.widgetFocuses"
+        static let affirmationMinutes = "affirmations.notifyMinutes" // Legacy single-time reminder value, retained for migration.
     }
 
     // MARK: Day key helpers
@@ -109,7 +116,11 @@ enum SharedState {
     // MARK: Onboarding — weekly goal (drives the streak-goal progress ring on Home)
 
     static var weeklyGoal: Int {
-        get { let v = defaults.integer(forKey: Key.weeklyGoal); return v == 0 ? 5 : v }
+        // 5 was the previous baked-in goal; no UI allows choosing a custom value, so migrate it.
+        get {
+            let value = defaults.integer(forKey: Key.weeklyGoal)
+            return value == 0 || value == 5 ? 7 : value
+        }
         set { defaults.set(newValue, forKey: Key.weeklyGoal) }
     }
 

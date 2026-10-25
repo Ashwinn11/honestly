@@ -70,7 +70,7 @@ struct PaywallView: View {
     private var benefitsCard: some View {
         VStack(alignment: .leading, spacing: 12) {
             benefitRow(Text(loc: "Daily prompts for every mood"))
-            benefitRow(Text(loc: "Unlimited affirmations & widgets"))
+            benefitRow(Text(loc: "Write your own affirmations & use widgets"))
             benefitRow(Text(loc: "Block apps until you write"))
             benefitRow(Text(loc: "Full history & iCloud backup"))
         }
@@ -111,7 +111,7 @@ struct PaywallView: View {
         } label: {
             HStack(spacing: 13) {
                 ZStack {
-                    Circle().stroke(isSel ? Palette.amber : Palette.hairline, lineWidth: 2)
+                    Circle().strokeBorder(isSel ? Palette.amber : Palette.hairline, lineWidth: 2)
                         .frame(width: 22, height: 22)
                     if isSel { Circle().fill(Palette.amber).frame(width: 12, height: 12) }
                 }
@@ -135,7 +135,7 @@ struct PaywallView: View {
             .background(isSel ? Color(hex: "FFF6E7") : Palette.cream,
                         in: RoundedRectangle(cornerRadius: 16, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(isSel ? Palette.amber : Palette.ink.opacity(0.18), lineWidth: isSel ? 2 : 1.5))
+                .strokeBorder(isSel ? Palette.amber : Palette.ink.opacity(0.18), lineWidth: isSel ? 2 : 1.5))
         }
         .buttonStyle(PressableStyle(scale: 0.98))
     }

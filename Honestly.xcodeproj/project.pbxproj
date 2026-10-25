@@ -24,7 +24,6 @@
 		13AA53955CB6A140480AD8BE /* BigWinsWidgetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0016A10DEE93AECEB182329 /* BigWinsWidgetView.swift */; };
 		160863A41760633861D366D4 /* ScreenScaffold.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85B17D14C6A082AD8E7BAAFF /* ScreenScaffold.swift */; };
 		1863CB188C9D51DD9CFC51E6 /* RevenueCat in Frameworks */ = {isa = PBXBuildFile; productRef = 32D994E1D70F4C2EF68437D5 /* RevenueCat */; };
-		188BA972579CFB90E927880A /* AffirmationReadingContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0EA2F17015C79EADF0B38679 /* AffirmationReadingContent.swift */; };
 		1A41B8F49E6869AC7FA439D5 /* EntryEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 006B4227698649F078C1C547 /* EntryEditorView.swift */; };
 		1A8B18EB4B7FBE17BD4FA9A3 /* L10n.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DF2325EADE999011118E9E6 /* L10n.swift */; };
 		233FF7AA22C5227842F2B5B1 /* EntryDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8717A2F348F65C9D2B651F8B /* EntryDetailView.swift */; };
@@ -80,6 +79,7 @@
 		7D066E788AB4AAEBBF6C0324 /* Typography.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D87E8ECDBB0934F4926E6EF /* Typography.swift */; };
 		7EEF0623801496F5A1D2A3FB /* AppLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = 505A07C250F2C843086FD26F /* AppLink.swift */; };
 		8111FC15802AFE36640805C7 /* LanguagePicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31869936325771497A7A8A22 /* LanguagePicker.swift */; };
+		820655AB34A984BFE726C86E /* AffirmationDeliverySettingsScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = F5F33E278570B3BA45DA011F /* AffirmationDeliverySettingsScreen.swift */; };
 		836D381DB5BFB2E28B5D29D9 /* PremiumManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82A742134D7171635C201115 /* PremiumManager.swift */; };
 		865BD352D9F96CC944E254FB /* AffirmationCollectionStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAD88E172FCF3B6443CC6965 /* AffirmationCollectionStorage.swift */; };
 		8B2E7D9A603A7A5819A08D47 /* Affirmations.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2983AE0612D45117E8D6434 /* Affirmations.swift */; };
@@ -204,7 +204,6 @@
 		0C67B55D50159B662AEB0776 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		0DF2325EADE999011118E9E6 /* L10n.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = L10n.swift; sourceTree = "<group>"; };
 		0E115360782378E64517CE0E /* Honestly.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Honestly.entitlements; sourceTree = "<group>"; };
-		0EA2F17015C79EADF0B38679 /* AffirmationReadingContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AffirmationReadingContent.swift; sourceTree = "<group>"; };
 		0EB289BB4C4548F897B60F5A /* SplashView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplashView.swift; sourceTree = "<group>"; };
 		12430EE868CD116B6C96638D /* EditorToolbar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorToolbar.swift; sourceTree = "<group>"; };
 		1F55C46F9039AF1301E0C834 /* RitualView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RitualView.swift; sourceTree = "<group>"; };
@@ -293,6 +292,7 @@
 		F0016A10DEE93AECEB182329 /* BigWinsWidgetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BigWinsWidgetView.swift; sourceTree = "<group>"; };
 		F2819934AC103D0617EBA0D3 /* ShieldActionExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShieldActionExtension.swift; sourceTree = "<group>"; };
 		F4518251457DA51531C7E8AC /* StickerPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StickerPicker.swift; sourceTree = "<group>"; };
+		F5F33E278570B3BA45DA011F /* AffirmationDeliverySettingsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AffirmationDeliverySettingsScreen.swift; sourceTree = "<group>"; };
 		F9BADAF4E4A201A178B6353F /* PageTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PageTheme.swift; sourceTree = "<group>"; };
 		F9F6EE1F587ACD879C6B1DEC /* RTFDCodec.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RTFDCodec.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -577,9 +577,9 @@
 			isa = PBXGroup;
 			children = (
 				AAD88E172FCF3B6443CC6965 /* AffirmationCollectionStorage.swift */,
+				F5F33E278570B3BA45DA011F /* AffirmationDeliverySettingsScreen.swift */,
 				6FAE144A6EABD1F4BB310421 /* AffirmationPicker.swift */,
 				E178BDB117FD622ED27703BE /* AffirmationReaderScreen.swift */,
-				0EA2F17015C79EADF0B38679 /* AffirmationReadingContent.swift */,
 			);
 			path = Affirmations;
 			sourceTree = "<group>";
@@ -889,11 +889,11 @@
 			buildActionMask = 2147483647;
 			files = (
 				865BD352D9F96CC944E254FB /* AffirmationCollectionStorage.swift in Sources */,
+				820655AB34A984BFE726C86E /* AffirmationDeliverySettingsScreen.swift in Sources */,
 				F1957CA794FF7DE95B5BD5C3 /* AffirmationList.swift in Sources */,
 				2980C6C65554E055E5D85E27 /* AffirmationNudge.swift in Sources */,
 				B49539F820074EBAD0A9F741 /* AffirmationPicker.swift in Sources */,
 				C067CF098F9142886CBEFA97 /* AffirmationReaderScreen.swift in Sources */,
-				188BA972579CFB90E927880A /* AffirmationReadingContent.swift in Sources */,
 				0E0727E0AB038BB57924EA72 /* Affirmations.swift in Sources */,
 				CAC370344F36BC807876EAE7 /* AppFlow.swift in Sources */,
 				3D99D890926830D151B42ECA /* AppLink.swift in Sources */,

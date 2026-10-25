@@ -75,6 +75,7 @@ struct EntryEditorView: View {
         .background(PageThemeBackground(theme: theme))
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: 0) {
+                if journalFocused || showFormattingSheet {
                     EditorToolbar(
                         text: $richText,
                         selectedRange: $selectedRange,
@@ -86,15 +87,19 @@ struct EntryEditorView: View {
                         onTheme: { showThemeSheet = true },
                         onDismissKeyboard: { journalFocused = false },
                         onFormattingOpened: { showFormattingSheet = true; journalFocused = false },
-                                onFormattingClosed: { showFormattingSheet = false; journalFocused = true }
+                        onFormattingClosed: {
+                            showFormattingSheet = false
+                            // Wait for the sheet state to propagate so the UITextView is allowed
+                            // to become first responder again before restoring SwiftUI focus.
+                            DispatchQueue.main.async { journalFocused = true }
+                        }
                     )
-                    .frame(height: journalFocused ? nil : 0)
-                    .clipped()
-                    .opacity(journalFocused ? 1 : 0)
-                    .allowsHitTesting(journalFocused)
-                    .accessibilityHidden(!journalFocused)
-                if !journalFocused { Spacer().frame(height: 10) }
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                } else {
+                    Spacer().frame(height: 10)
+                }
             }
+            .animation(Motion.snappy, value: journalFocused)
             .padding(.top, 8)
             .padding(.bottom, 14)
         }

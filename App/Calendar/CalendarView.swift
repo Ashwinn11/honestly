@@ -94,7 +94,7 @@ struct CalendarView: View {
                             // A written morning shows just its mood face — no numeral.
                             MoodFace(mood: entry.moodRaw, size: s * 0.74)
                         } else if isToday {
-                            Circle().stroke(Palette.amber, lineWidth: 2)
+                            Circle().strokeBorder(Palette.amber, lineWidth: 2)
                                 .frame(width: s * 0.72, height: s * 0.72)
                             Text("\(day)").font(Fonts.ui(min(s * 0.26, 14), .heavy))
                                 .foregroundStyle(Palette.amberDeep)
@@ -142,7 +142,7 @@ struct CalendarView: View {
                 .frame(height: 16)
                 .background(visible >= 2 ? Palette.ink : Color.clear)   // ink only shows in the 1.5px gaps
                 .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(Palette.ink, lineWidth: 2))
+                .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).strokeBorder(Palette.ink, lineWidth: 2))
             }
             .frame(height: 16)
             HStack {
