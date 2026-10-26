@@ -100,10 +100,18 @@ struct EntryDetailView: View {
                 .capWidth(Metrics.maxContentWidth)
 
             ZStack {
+                // The pages sit like the writing page: in from the edges by the book's gutter,
+                // the pages beneath peeking out on the right.
                 PageCurlReader(entries: entries,
                                contents: book.map { (year: $0.year, month: $0.month) },
                                selectedKey: $selectedKey,
                                curlJumps: curlJumps)
+                    .background(alignment: .trailing) {
+                        BookPageStack()
+                            .frame(width: 10)
+                            .offset(x: 5)
+                    }
+                    .padding(.horizontal, Metrics.bookGutter)
                 if showGrid {
                     pagesGrid.transition(.opacity)
                 }
@@ -366,8 +374,9 @@ private struct JournalReaderPage: View {
 
 
                 }
-                .padding(EdgeInsets(top: 22, leading: Metrics.pageHorizontalInset,
-                                    bottom: 24, trailing: Metrics.pageHorizontalInset))
+                // Inset by the gutter less, so the text column matches the writing page's exactly.
+                .padding(EdgeInsets(top: 22, leading: Metrics.pageHorizontalInset - Metrics.bookGutter,
+                                    bottom: 24, trailing: Metrics.pageHorizontalInset - Metrics.bookGutter))
             }
             .capWidth(Metrics.maxContentWidth)
         }
