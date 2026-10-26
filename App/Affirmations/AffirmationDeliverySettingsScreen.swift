@@ -148,11 +148,11 @@ struct AffirmationDeliverySettingsScreen: View {
                         }
                     }
                 }
-                .padding(.bottom, 28)
             }
             .scrollIndicators(.hidden)
         }
-        .padding(20)
+        .padding(.horizontal, 20)
+        .padding(.top, 20)
         .capWidth(Metrics.maxContentWidth)
         .background(PaperBackground())
         .toolbar(.hidden, for: .navigationBar)
@@ -345,11 +345,11 @@ private struct WidgetColorPickerSheet: View {
                         }
                     }
                 }
-                .padding(.bottom, 18)
             }
             .scrollIndicators(.hidden)
         }
-        .padding(20)
+        .padding(.horizontal, 20)
+        .padding(.top, 20)
         .background(PaperBackground())
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)

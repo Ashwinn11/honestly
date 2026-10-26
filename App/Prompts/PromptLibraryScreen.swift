@@ -22,11 +22,12 @@ struct PromptLibraryScreen: View {
                         ForEach(prompts.builtIn, id: \.self) { row($0, builtIn: true) }
                     }
                 }
-                .padding(.vertical, 4)
+                .padding(.top, 4)
             }
             .scrollDismissesKeyboard(.interactively)
         }
-        .padding(20)
+        .padding(.horizontal, 20)
+        .padding(.top, 20)
         .capWidth(Metrics.maxContentWidth)
         .background(PaperBackground())
         .confirmationDialog("Delete prompt?", isPresented: Binding(

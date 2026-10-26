@@ -3,7 +3,7 @@ import SwiftUI
 struct ScreenScaffold<Content: View>: View {
     var topPadding: CGFloat = 60
     var hPadding: CGFloat = 20
-    var bottomPadding: CGFloat = 20
+    var bottomPadding: CGFloat = 0
     @ViewBuilder var content: () -> Content
 
     var body: some View {
