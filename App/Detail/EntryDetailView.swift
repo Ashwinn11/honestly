@@ -2,6 +2,9 @@ import SwiftUI
 
 struct EntryDetailView: View {
     let dayKey: String
+    /// Set when opened as a month book: the reader then turns only that month's pages, oldest
+    /// first, like a real book. Nil keeps the all-pages reader, newest first.
+    var book: MonthBookRoute? = nil
     @Environment(JournalStore.self) private var store
     @Environment(PremiumManager.self) private var premium
     @Environment(AppFlow.self) private var flow
@@ -9,12 +12,24 @@ struct EntryDetailView: View {
     @State private var selectedKey: String
     @State private var showEditor = false
 
-    init(dayKey: String) {
+    init(dayKey: String, book: MonthBookRoute? = nil) {
         self.dayKey = dayKey
+        self.book = book
         _selectedKey = State(initialValue: dayKey)
     }
 
-    private var entries: [JournalEntry] { store.entries }
+    private var entries: [JournalEntry] {
+        guard let book else { return store.entries }
+        return store.entries(inYear: book.year, month: book.month).reversed()
+    }
+
+    /// Free accounts can read the current month's book; every other page is Premium.
+    private var canRead: Bool {
+        if premium.isPremium { return true }
+        guard let book else { return false }
+        let now = Calendar.current.dateComponents([.year, .month], from: Date())
+        return now.year == book.year && now.month == book.month
+    }
 
     // The reader header (back/edit buttons) used to sit over a fixed `PaperBackground()` while
     // the page below it already switched to the entry's theme — a visible seam right where the
@@ -31,7 +46,7 @@ struct EntryDetailView: View {
     var body: some View {
         ZStack(alignment: .top) {
             background
-            if !premium.isPremium {
+            if !canRead {
                 PremiumUnlockCard(title: "Unlock your full history",
                                   subtitle: "Every morning you've written, always here to revisit.",
                                   action: { flow.showPaywall() })
@@ -80,7 +95,8 @@ struct EntryDetailView: View {
             Spacer(minLength: 0)
             if store.entry(for: selectedKey) != nil {
                 IconTileButton(icon: "pencil", size: 38, iconSize: 15) {
-                    showEditor = true
+                    // Reading this month is free; editing a page stays Premium.
+                    if premium.isPremium { showEditor = true } else { flow.showPaywall() }
                 }
             }
         }

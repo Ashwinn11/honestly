@@ -1,12 +1,12 @@
 import SwiftUI
 import Observation
 
-enum AppTab: Hashable { case home, calendar, history, profile }
+enum AppTab: Hashable { case home, library, profile }
 
 @MainActor
 @Observable
 final class AppFlow {
-    var selectedTab: AppTab = ScreenshotPreview.screen == "calendar" ? .calendar : ScreenshotPreview.screen == "history" ? .history : .home
+    var selectedTab: AppTab = ScreenshotPreview.screen == "library" ? .library : .home
     var ritualPresented = false
     var paywallPresented = false
     var widgetAffirmationsPresented = false

@@ -126,13 +126,9 @@ struct HomeView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.trailing, 60)
                     .padding(.top, 6)
-                Group {
-                    if premium.isPremium {
-                        NavigationLink(value: entry.dayKey) { readTodayLabel }
-                    } else {
-                        Button { flow.showPaywall() } label: { readTodayLabel }
-                    }
-                }
+                // Today's page opens inside this month's book — free to read, like the rest of
+                // the current month.
+                NavigationLink(value: MonthBookRoute(entry: entry)) { readTodayLabel }
                 .buttonStyle(TactileButtonStyle(fill: AnyShapeStyle(Palette.onAmber),
                                                 cornerRadius: DesignScale.s(16), ledge: 4, bordered: true))
                 .padding(.top, 18)

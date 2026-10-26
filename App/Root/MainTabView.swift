@@ -6,10 +6,9 @@ struct MainTabView: View {
     var body: some View {
         @Bindable var flow = flow
         TabView(selection: $flow.selectedTab) {
-            tab(HomeView(),     "Home",     "house",    .home)
-            tab(CalendarView(), "Calendar", "calendar", .calendar)
-            tab(HistoryView(),  "History",  "clock",    .history)
-            tab(ProfileView(),  "You",      "person",   .profile)
+            tab(HomeView(),    "Home",    "house",          .home)
+            tab(LibraryView(), "Library", "books.vertical", .library)
+            tab(ProfileView(), "You",     "person",         .profile)
         }
         .tint(Palette.ink)
     }
@@ -20,6 +19,10 @@ struct MainTabView: View {
             screen
                 .navigationDestination(for: String.self) { key in
                     EntryDetailView(dayKey: key)
+                        .toolbar(.hidden, for: .navigationBar)
+                }
+                .navigationDestination(for: MonthBookRoute.self) { route in
+                    EntryDetailView(dayKey: route.startKey, book: route)
                         .toolbar(.hidden, for: .navigationBar)
                 }
                 .toolbar(.hidden, for: .navigationBar)
