@@ -143,12 +143,12 @@ struct AffirmationsScreen: View {
                     .padding(.top, 10)
                     AffirmationTopicPicker(selection: $selectedTopics)
                 }
-                .padding(.bottom, 24)
             }
             .scrollDismissesKeyboard(.interactively)
             .scrollIndicators(.hidden)
         }
-        .padding(20)
+        .padding(.horizontal, 20)
+        .padding(.top, 20)
         .capWidth(Metrics.maxContentWidth)
         .background(PaperBackground())
         .toolbar(.hidden, for: .tabBar)
