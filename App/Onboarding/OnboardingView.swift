@@ -230,7 +230,7 @@ struct OnboardingView: View {
 
     private func requestNotifications() {
         Task {
-            await AffirmationNudge.requestPermission()
+            _ = await AffirmationNudge.requestPermission()
             advance()
         }
     }

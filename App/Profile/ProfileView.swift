@@ -1,5 +1,6 @@
 import SwiftUI
 import FamilyControls
+import StoreKit
 
 struct ProfileView: View {
     @Environment(JournalStore.self) private var store

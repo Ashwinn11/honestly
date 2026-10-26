@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import StoreKit
 
 struct RitualView: View {
     var onClose: () -> Void

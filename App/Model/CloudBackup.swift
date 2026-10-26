@@ -60,7 +60,7 @@ enum CloudBackup {
             record["richContentBundle"] = CKAsset(fileURL: url)
         }
 
-        try await db.save(record)
+        _ = try await db.save(record)
     }
 
     /// The latest backup's bare payload plus any rich content, keyed by entry id. `nil` if no

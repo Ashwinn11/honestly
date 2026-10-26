@@ -1,89 +1,113 @@
 {
-  "sourceLanguage": "en",
-  "strings": {
-    "NSPhotoLibraryUsageDescription": {
-      "comment": "Photo library permission explanation; matches App/Info.plist.",
-      "localizations": {
-        "en": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Honestly uses your photo library so you can add a photo to your journal page."
+  "sourceLanguage" : "en",
+  "strings" : {
+    "CFBundleDisplayName" : {
+      "comment" : "Bundle display name",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Honestly"
+          }
+        }
+      }
+    },
+    "CFBundleName" : {
+      "comment" : "Bundle name",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Honestly"
+          }
+        }
+      }
+    },
+    "NSPhotoLibraryUsageDescription" : {
+      "comment" : "Photo library permission explanation; matches App/Info.plist.",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "يستخدم Honestly مكتبة صورك لتتمكن من إضافة صورة إلى صفحة يومياتك."
           }
         },
-        "ar": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "يستخدم Honestly مكتبة صورك لتتمكن من إضافة صورة إلى صفحة يومياتك."
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Honestly verwendet deine Fotomediathek, damit du deiner Journalseite ein Foto hinzufügen kannst."
           }
         },
-        "de": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Honestly verwendet deine Fotomediathek, damit du deiner Journalseite ein Foto hinzufügen kannst."
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Honestly uses your photo library so you can add a photo to your journal page."
           }
         },
-        "es": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Honestly accede a tu fototeca para que puedas añadir una foto a tu diario."
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Honestly accede a tu fototeca para que puedas añadir una foto a tu diario."
           }
         },
-        "fr": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Honestly utilise votre photothèque pour vous permettre d’ajouter une photo à votre journal."
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Honestly utilise votre photothèque pour vous permettre d’ajouter une photo à votre journal."
           }
         },
-        "it": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Honestly usa la libreria fotografica per permetterti di aggiungere una foto al diario."
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Honestly usa la libreria fotografica per permetterti di aggiungere una foto al diario."
           }
         },
-        "ja": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Honestlyは、日記に写真を追加できるようにフォトライブラリを使用します。"
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Honestlyは、日記に写真を追加できるようにフォトライブラリを使用します。"
           }
         },
-        "ko": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Honestly는 일기 페이지에 사진을 추가할 수 있도록 사진 보관함을 사용합니다."
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Honestly는 일기 페이지에 사진을 추가할 수 있도록 사진 보관함을 사용합니다."
           }
         },
-        "nl": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Honestly gebruikt je fotobibliotheek zodat je een foto aan je dagboekpagina kunt toevoegen."
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Honestly gebruikt je fotobibliotheek zodat je een foto aan je dagboekpagina kunt toevoegen."
           }
         },
-        "pt": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "O Honestly utiliza a tua fototeca para poderes adicionar uma fotografia ao diário."
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "O Honestly utiliza a tua fototeca para poderes adicionar uma fotografia ao diário."
           }
         },
-        "ru": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Honestly использует вашу медиатеку, чтобы вы могли добавить фото на страницу дневника."
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Honestly использует вашу медиатеку, чтобы вы могли добавить фото на страницу дневника."
           }
         },
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Honestly 使用你的照片图库，以便你将照片添加到日记中。"
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Honestly 使用你的照片图库，以便你将照片添加到日记中。"
           }
         },
-        "zh-Hant": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "Honestly 使用你的照片圖庫，讓你能將照片加入日記。"
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Honestly 使用你的照片圖庫，讓你能將照片加入日記。"
           }
         }
       }
     }
   },
-  "version": "1.0"
+  "version" : "1.0"
 }
