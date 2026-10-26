@@ -17,10 +17,14 @@ struct BigWinsLockScreenWidgetView: View {
                     .lineLimit(3)
                     .minimumScaleFactor(0.78)
             } else {
-                Text(loc: "Unlock this widget with Premium")
-                    .font(Fonts.ui(10.5, .medium))
-                    .foregroundStyle(.white)
-                    .lineLimit(3)
+                HStack(spacing: 8) {
+                    SunMark(size: 24)
+                        .accessibilityHidden(true)
+                    Text(loc: entry.needsSetup ? "Open Honestly to get started" : "Unlock this widget with Premium")
+                        .font(Fonts.ui(10.5, .medium))
+                        .foregroundStyle(.white)
+                        .lineLimit(3)
+                }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)

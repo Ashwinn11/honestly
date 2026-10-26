@@ -1,53 +1,97 @@
 import SwiftUI
 
-/// Topic choices are shared by onboarding and Manage affirmations. An empty selection means all
-/// topics.
+/// Topic choices are shared by onboarding and Manage affirmations, two to a row. An empty selection
+/// means all topics. Onboarding passes `collapsedCount` to show only the first few behind
+/// "Show more"; Manage affirmations shows them all.
 struct AffirmationTopicPicker: View {
     @Environment(AffirmationList.self) private var list
     @Environment(PremiumManager.self) private var premium
     @Binding var selection: [String]
     var onSelection: (() -> Void)? = nil
+    var collapsedCount: Int? = nil
+    @State private var expanded = false
+
     private var topics: [String] {
         list.availableLibrary.map(\.title) + (premium.isPremium && !list.savedCustom.isEmpty ? ["Your own"] : [])
     }
 
+    private var canCollapse: Bool {
+        guard let collapsedCount else { return false }
+        return topics.count > collapsedCount
+    }
+
+    /// Collapsed lists still open up when a chosen topic sits past the cut, so a pick never hides.
+    private var showsAll: Bool {
+        guard canCollapse, let collapsedCount, !expanded else { return true }
+        return selection.contains { !topics.prefix(collapsedCount).contains($0) }
+    }
+
+    private var visibleTopics: [String] {
+        showsAll ? topics : Array(topics.prefix(collapsedCount ?? topics.count))
+    }
+
+    private let columns = [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)]
+
     var body: some View {
-        VStack(spacing: 0) {
-            topicRow("All topics", selected: selection.isEmpty) {
+        VStack(spacing: 10) {
+            topicCell("All topics", selected: selection.isEmpty) {
                 onSelection?()
                 selection = []
             }
-            Rectangle().fill(Palette.ink.opacity(0.06)).frame(height: 1)
-            ForEach(Array(topics.enumerated()), id: \.element) { index, topic in
-                topicRow(topic, selected: selection.contains(topic)) {
-                    onSelection?()
-                    if selection.isEmpty { selection = [topic] }
-                    else if selection.contains(topic) { selection.removeAll { $0 == topic } }
-                    else { selection.append(topic) }
+            LazyVGrid(columns: columns, spacing: 10) {
+                ForEach(visibleTopics, id: \.self) { topic in
+                    topicCell(topic, selected: selection.contains(topic)) {
+                        onSelection?()
+                        if selection.isEmpty { selection = [topic] }
+                        else if selection.contains(topic) { selection.removeAll { $0 == topic } }
+                        else { selection.append(topic) }
+                    }
                 }
-                if index < topics.count - 1 {
-                    Rectangle().fill(Palette.ink.opacity(0.06)).frame(height: 1)
+            }
+            if canCollapse && (expanded || !showsAll) {
+                Button {
+                    Haptics.select()
+                    withAnimation(Motion.gentle) { expanded.toggle() }
+                } label: {
+                    HStack(spacing: 6) {
+                        Text(loc: expanded ? "Show less" : "Show more")
+                        Image(systemName: expanded ? "chevron.up" : "chevron.down")
+                            .font(.system(size: 11, weight: .bold))
+                    }
+                    .font(Fonts.ui(14, .bold))
+                    .foregroundStyle(Palette.amberDeep)
+                    .frame(maxWidth: .infinity, minHeight: 44)
+                    .contentShape(Rectangle())
                 }
+                .buttonStyle(.plain)
             }
         }
     }
 
-    private func topicRow(_ title: String, selected: Bool, action: @escaping () -> Void) -> some View {
+    private func topicCell(_ title: String, selected: Bool, action: @escaping () -> Void) -> some View {
         let displayTitle = Affirmations.topicDisplayTitle(title)
         return Button(action: action) {
-            HStack(spacing: 10) {
-                Text(loc: displayTitle).font(Fonts.ui(14, .semibold)).foregroundStyle(Palette.ink)
-                Spacer()
-                if selected {
-                    Image(systemName: "checkmark.circle.fill").foregroundStyle(Palette.amberDeep)
-                } else {
-                    Circle().strokeBorder(Palette.outlineSoft, lineWidth: 1.4).frame(width: 19, height: 19)
-                }
+            HStack(spacing: 8) {
+                Text(loc: displayTitle)
+                    .font(Fonts.ui(14, .semibold))
+                    .foregroundStyle(Palette.ink)
+                    .multilineTextAlignment(.leading)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.85)
+                Spacer(minLength: 4)
+                Image(systemName: selected ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundStyle(selected ? Palette.ink : Palette.outlineSoft)
             }
-            .frame(minHeight: 44)
-            .contentShape(Rectangle())
+            .padding(.horizontal, 12)
+            .frame(maxWidth: .infinity, minHeight: 48)
+            .background(selected ? Palette.amber : Palette.cream,
+                        in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(selected ? Palette.ink : Palette.outlineSoft, lineWidth: selected ? 1.8 : 1.2))
+            .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(PressableStyle(scale: 0.98))
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
 }
@@ -97,7 +141,7 @@ struct AffirmationsScreen: View {
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     .padding(.top, 10)
-                    topicCard { AffirmationTopicPicker(selection: $selectedTopics) }
+                    AffirmationTopicPicker(selection: $selectedTopics)
                 }
                 .padding(.bottom, 24)
             }
@@ -121,13 +165,6 @@ struct AffirmationsScreen: View {
         } message: { _ in
             Text(loc: "This removes the affirmation from your library, widgets and reminders.")
         }
-    }
-
-    private func topicCard<Content: View>(@ViewBuilder content: () -> Content) -> some View {
-        content()
-            .padding(.horizontal, 16)
-            .background(Palette.cream, in: RoundedRectangle(cornerRadius: 18))
-            .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(Palette.outlineSoft, lineWidth: 1.3))
     }
 
     private func managedRow(_ line: String) -> some View {

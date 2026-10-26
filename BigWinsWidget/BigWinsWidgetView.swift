@@ -37,6 +37,14 @@ struct BigWinsWidgetView: View {
         }
     }
 
+    private var emptySunSize: CGFloat {
+        switch family {
+        case .systemSmall: return 34
+        case .systemLarge: return 60
+        default: return 46
+        }
+    }
+
     var body: some View {
         Group {
             if let line = entry.affirmation {
@@ -57,12 +65,16 @@ struct BigWinsWidgetView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .padding(family == .systemSmall ? 10 : 18)
             } else {
-                Text(loc: "Unlock this widget with Premium")
-                    .font(Fonts.ui(family == .systemSmall ? 13 : 16, .semibold))
-                    .foregroundStyle(Palette.inkSofter)
-                    .multilineTextAlignment(.center)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .padding(16)
+                VStack(spacing: family == .systemSmall ? 8 : 12) {
+                    SunMark(size: emptySunSize)
+                        .accessibilityHidden(true)
+                    Text(loc: entry.needsSetup ? "Open Honestly to get started" : "Unlock this widget with Premium")
+                        .font(Fonts.ui(family == .systemSmall ? 13 : 16, .semibold))
+                        .foregroundStyle(Palette.inkSoft)
+                        .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding(16)
             }
         }
         .containerBackground(for: .widget) {

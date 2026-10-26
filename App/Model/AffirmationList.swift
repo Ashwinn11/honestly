@@ -12,6 +12,7 @@ final class AffirmationList {
     private(set) var readingHistory: [String]
     private(set) var selectedTopics: [String]
     private let storage: AffirmationCollectionStorage
+    @ObservationIgnored private var widgetReload: Task<Void, Never>?
 
     init() {
         let storage = AffirmationCollectionStorage(
@@ -47,7 +48,7 @@ final class AffirmationList {
         selectedTopics = normalizedFocuses(selectedTopics)
         Affirmations.selectedTopics = selectedTopics
         if needsTopicMigration {
-            WidgetCenter.shared.reloadAllTimelines()
+            reloadWidgets()
             AffirmationNudge.schedule()
         }
     }
@@ -122,14 +123,32 @@ final class AffirmationList {
         SharedState.defaults.removeObject(forKey: SharedState.Key.affirmationReminderTimes)
         SharedState.defaults.removeObject(forKey: SharedState.Key.affirmationReminderWeekdays)
         SharedState.defaults.removeObject(forKey: SharedState.Key.affirmationMinutes)
+        SharedState.defaults.removeObject(forKey: SharedState.Key.affirmationWidgetTheme)
+        SharedState.defaults.removeObject(forKey: SharedState.Key.affirmationWidgetBackgroundColor)
+        SharedState.defaults.removeObject(forKey: SharedState.Key.affirmationWidgetTextColor)
+        SharedState.defaults.removeObject(forKey: SharedState.Key.affirmationWidgetFont)
         SharedState.defaults.set(false, forKey: "affirmationNudgeOn")
-        WidgetCenter.shared.reloadAllTimelines()
+        reloadWidgets()
         AffirmationNudge.reset()
     }
 
     private func refreshDelivery() {
-        WidgetCenter.shared.reloadAllTimelines()
+        reloadWidgets()
         AffirmationNudge.schedule()
+    }
+
+    /// The widget runs in its own process and reads the topics from the shared defaults, which
+    /// reach other processes asynchronously. Reloading straight after the write let it rebuild
+    /// from the old topics while Home (reading this object) already showed the new line. So:
+    /// wait for a burst of topic taps to settle, flush the defaults, then reload once.
+    private func reloadWidgets() {
+        widgetReload?.cancel()
+        widgetReload = Task {
+            try? await Task.sleep(for: .milliseconds(400))
+            guard !Task.isCancelled else { return }
+            SharedState.defaults.synchronize()
+            WidgetCenter.shared.reloadAllTimelines()
+        }
     }
 
     private func normalizedFocuses(_ values: [String]) -> [String] {
@@ -138,17 +157,16 @@ final class AffirmationList {
         return values.filter { valid.contains($0) && seen.insert($0).inserted }
     }
 
-    /// Carry existing topic choices forward while splitting dataset categories that used to share
-    /// a single app topic.
+    /// Carry topic choices made under earlier libraries forward onto the current topic names.
     private func migrateTopicNames(_ values: [String]) -> [String] {
         var migrated: [String] = []
         for value in values {
             let replacements: [String]
             switch value {
-            case "Self-worth": replacements = ["Self-esteem"]
-            case "Hard days": replacements = ["Safety"]
-            case "Intention": replacements = ["Focus"]
-            case "Confidence": replacements = ["Confidence", "Success"]
+            case "Self-esteem": replacements = ["Self-worth"]
+            case "Safety": replacements = ["Worry & fear"]
+            case "Hard days": replacements = ["Hard times"]
+            case "Intention", "Focus": replacements = ["Growth"]
             default: replacements = [value]
             }
             for replacement in replacements where !migrated.contains(replacement) {

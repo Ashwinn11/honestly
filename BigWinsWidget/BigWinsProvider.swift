@@ -1,10 +1,13 @@
 import WidgetKit
 
-/// `nil` affirmation means locked — the widget is a Premium feature, so free installs see an
-/// upgrade nudge in its place.
+/// `nil` affirmation means no quote: either onboarding isn't finished (`needsSetup`) or the
+/// widget is locked — it's a Premium feature, so free installs see an upgrade nudge in its place.
 struct BigWinsEntry: TimelineEntry {
     let date: Date
     let affirmation: String?
+    /// A fresh install, or after "Delete all data": invite the user in rather than show a quote
+    /// from topics they haven't picked, or a Premium lock before they've even opened the app.
+    var needsSetup = false
     let themeID: String
     let backgroundHex: String?
     let textHex: String
@@ -28,6 +31,11 @@ struct BigWinsProvider: TimelineProvider {
     }
 
     func getTimeline(in context: Context, completion: @escaping (Timeline<BigWinsEntry>) -> Void) {
+        guard SharedState.onboardingComplete else {
+            // Finishing onboarding reloads every timeline.
+            completion(Timeline(entries: [setupEntry()], policy: .never))
+            return
+        }
         guard SharedState.premiumActive else {
             // Nothing to roll over; the Premium ratchet reloads every timeline when it flips.
             completion(Timeline(entries: [makeEntry(date: .now, affirmation: nil)], policy: .never))
@@ -47,15 +55,21 @@ struct BigWinsProvider: TimelineProvider {
     }
 
     private func currentEntry() -> BigWinsEntry {
+        guard SharedState.onboardingComplete else { return setupEntry() }
         guard SharedState.premiumActive else {
             return makeEntry(date: .now, affirmation: nil)
         }
         return makeEntry(date: .now, affirmation: widgetLine(on: .now))
     }
 
-    private func makeEntry(date: Date, affirmation: String?) -> BigWinsEntry {
+    private func setupEntry() -> BigWinsEntry {
+        makeEntry(date: .now, affirmation: nil, needsSetup: true)
+    }
+
+    private func makeEntry(date: Date, affirmation: String?, needsSetup: Bool = false) -> BigWinsEntry {
         BigWinsEntry(date: date,
                      affirmation: affirmation,
+                     needsSetup: needsSetup,
                      themeID: SharedState.affirmationWidgetTheme,
                      backgroundHex: SharedState.affirmationWidgetBackgroundColor,
                      textHex: SharedState.affirmationWidgetTextColor,

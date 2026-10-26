@@ -1,4 +1,5 @@
 import SwiftUI
+import WidgetKit
 
 struct OnboardingView: View {
     var onFinish: () -> Void
@@ -236,6 +237,9 @@ struct OnboardingView: View {
 
     private func finish() {
         SharedState.onboardingComplete = true
+        // The widget says "Open Honestly to get started" until now; flush so it sees the change.
+        SharedState.defaults.synchronize()
+        WidgetCenter.shared.reloadAllTimelines()
         Haptics.success()
         onFinish()
     }
@@ -396,7 +400,7 @@ private struct OnbAffirmationQuestionView: View {
         VStack(spacing: 0) {
             OnbHeader(eyebrow: "Your affirmations", title: "What would you like affirmations to support?")
                 .padding(.bottom, 18)
-            AffirmationTopicPicker(selection: $picks, onSelection: { Haptics.select() })
+            AffirmationTopicPicker(selection: $picks, onSelection: { Haptics.select() }, collapsedCount: 6)
                 .padding(.bottom, 5)
             OnbAffirmationPreview(text: sample, topic: picks.last ?? "")
         }
@@ -804,13 +808,18 @@ private struct OnbAffirmationPreview: View {
     private var topicIndex: Int {
         Affirmations.library.firstIndex(where: { $0.title == topic }) ?? 0
     }
+    // Onboarding skips the plain basics (Classic, Grid, Dotted) and the app's UI font, and opens
+    // on Ink & Gold in Didot for "All topics" and the first topic.
+    private static let themes: [PageTheme] =
+        [.inkGold] + PageTheme.allCases.filter { ![.paper, .grid, .dots, .inkGold].contains($0) }
+    private static let fonts: [FontChoice] =
+        [.didot] + FontChoice.allCases.filter { ![.manrope, .didot].contains($0) }
+
     private var widgetTheme: PageTheme {
-        let themes = PageTheme.allCases
-        return themes[topicIndex % themes.count]
+        Self.themes[topicIndex % Self.themes.count]
     }
     private var widgetFont: FontChoice {
-        let fonts = FontChoice.allCases
-        return fonts[topicIndex % fonts.count]
+        Self.fonts[topicIndex % Self.fonts.count]
     }
 
     var body: some View {

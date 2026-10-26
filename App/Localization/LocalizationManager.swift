@@ -58,6 +58,8 @@ final class LocalizationManager {
         // The widget forces this same value via `.environment(\.locale, ...)`, but only re-reads
         // it whenever it next renders — without this it'd keep showing the old language until
         // some unrelated refresh (next midnight, or writing today's page) happened to trigger one.
+        // Flush first so the widget process reads the new language, not the old one.
+        SharedState.defaults.synchronize()
         WidgetCenter.shared.reloadAllTimelines()
         // Queued notifications carry their text from when they were scheduled — re-lay them in
         // the new language.

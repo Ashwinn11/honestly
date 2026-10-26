@@ -25,6 +25,7 @@ struct PremiumUnlockCard: View {
                 Text(loc: "Unlock Premium").font(Fonts.ui(13.5, .heavy)).foregroundStyle(.white)
                     .padding(.horizontal, 18).padding(.vertical, 10)
                     .background(Palette.amber, in: Capsule())
+                    .overlay(Capsule().strokeBorder(Palette.ink, lineWidth: 2))
             }
             .padding(24)
             .frame(maxWidth: .infinity)

@@ -105,7 +105,9 @@ struct HonestlyApp: App {
                     // Apply purchases and revocations to the app and its extensions.
                     screenTime.isPremiumActive = isPremium
                     Shielding.reconcile()
-                    // The widget unlocks and the rotation grows past the free cap.
+                    // The widget unlocks and the rotation grows past the free cap. Flush first so
+                    // the widget process sees the new `premiumActive`, not the old one.
+                    SharedState.defaults.synchronize()
                     WidgetCenter.shared.reloadAllTimelines()
                     AffirmationNudge.schedule()
                 }

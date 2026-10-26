@@ -95,6 +95,7 @@ struct ProfileView: View {
                         Text(loc: "Upgrade").font(Fonts.ui(13, .heavy)).foregroundStyle(.white)
                             .padding(.horizontal, 14).padding(.vertical, 7)
                             .background(Palette.amber, in: Capsule())
+                            .overlay(Capsule().strokeBorder(Palette.ink, lineWidth: 2))
                     }
                 }
                 .buttonStyle(RowPressStyle())
