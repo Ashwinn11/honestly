@@ -59,25 +59,22 @@ struct RitualView: View {
                 let look = covers.look(for: monthBook)
                 VStack(spacing: 0) {
                     topBar.capWidth(Metrics.maxContentWidth)
-                    // One page of this month's book, fixed in place: its spine on the left, the
-                    // pages beneath peeking out on the right. The date heads the page; the editor
-                    // grows to its actual content height (see `RichTextEditor`) inside the page's
-                    // own `ScrollView`, the only scrolling region.
+                    // One continuous page, top to bottom like before — only its sides say "book":
+                    // the spine's shade on the left, the pages beneath peeking out on the right.
+                    // The date heads the page; the editor grows to its actual content height (see
+                    // `RichTextEditor`) inside the page's own `ScrollView`, the only scrolling region.
                     GeometryReader { geo in
-                        bookPage(height: geo.size.height - 12)
+                        bookPage(height: geo.size.height)
                             .overlay {
                                 if showOpening {
                                     BookOpeningOverlay(look: look, pagesBefore: earlierPages.count) {
                                         withAnimation(.easeOut(duration: 0.2)) { showOpening = false }
                                     }
-                                    .clipShape(UnevenRoundedRectangle(topLeadingRadius: 4, bottomLeadingRadius: 4,
-                                                                      bottomTrailingRadius: 12, topTrailingRadius: 12,
-                                                                      style: .continuous))
+                                    .clipped()
                                     .transition(.opacity)
                                 }
                             }
                             .padding(.horizontal, Metrics.bookGutter)
-                            .padding(.bottom, 12)
                             .capWidth(Metrics.maxContentWidth)
                     }
                 }
@@ -231,8 +228,6 @@ struct RitualView: View {
 
     // MARK: The book page — today's page, set inside the month's book
     private func bookPage(height: CGFloat) -> some View {
-        let shape = UnevenRoundedRectangle(topLeadingRadius: 4, bottomLeadingRadius: 4,
-                                           bottomTrailingRadius: 12, topTrailingRadius: 12, style: .continuous)
         // Inset by the gutter less, so the text column stays exactly as wide as the reader's.
         let inset = Metrics.pageHorizontalInset - Metrics.bookGutter
         return VStack(alignment: .leading, spacing: 0) {
@@ -253,14 +248,12 @@ struct RitualView: View {
         .frame(height: max(height, 0), alignment: .top)
         .background(PageThemeBackground(theme: theme))
         .overlay(alignment: .leading) { BookGutterShade() }
-        .clipShape(shape)
+        .clipped()
         .background(alignment: .trailing) {
             BookPageStack()
                 .frame(width: 10)
-                .padding(.vertical, 6)
                 .offset(x: 5)
         }
-        .shadow(color: .black.opacity(0.22), radius: 10, y: 6)
         // Swipe from the spine to turn back to this month's earlier pages.
         .simultaneousGesture(
             DragGesture(minimumDistance: 24).onEnded { value in
