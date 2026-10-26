@@ -17,7 +17,6 @@ struct HomeView: View {
                 header
                 todayCard.padding(.top, 4)
                 bookCard.padding(.top, 16)
-                streakCard.padding(.top, 16)
                 affirmationSection.padding(.top, 24)
             }
         }
@@ -192,59 +191,6 @@ struct HomeView: View {
                 .staggeredAppear(index: 1)
         }
     }
-
-    // MARK: Streak card
-    private var streakCard: some View {
-        VStack(spacing: 17) {
-            HStack(spacing: 13) {
-                IconTile(size: 52, fill: Palette.iconTile, radius: 16) { SunMark(size: 28) }
-                HStack(alignment: .center, spacing: 10) {
-                    Text("\(monthCount)").font(Fonts.display(30, .heavy)).foregroundStyle(Palette.ink)
-                    Text("Mornings in \(HDate.monthShort(Date()))")
-                        .font(Fonts.ui(13, .semibold)).foregroundStyle(Palette.inkSoft)
-                        .lineLimit(1).minimumScaleFactor(0.8)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                Spacer(minLength: 0)
-            }
-            weeklyGoalRow
-        }
-        .softCard(padding: 18)
-        .staggeredAppear(index: 1)
-    }
-
-    private var monthCount: Int {
-        let c = Calendar.current.dateComponents([.year, .month], from: Date())
-        return store.monthCount(year: c.year ?? 0, month: c.month ?? 0)
-    }
-
-    private var morningsThisWeek: Int { store.weekStrip.filter { $0.entry != nil }.count }
-    private var weeklyGoalRow: some View {
-        let goal = max(SharedState.weeklyGoal, 1)
-        let done = morningsThisWeek
-        let frac = min(CGFloat(done) / CGFloat(goal), 1)
-        return HStack(spacing: 11) {
-            Eyebrow(text: "This week", tracking: 1, size: 10.5)
-            GeometryReader { g in
-                ZStack(alignment: .leading) {
-                    Capsule().fill(Color(hex: "F2EADB"))
-                        .overlay(Capsule().strokeBorder(Palette.ink.opacity(0.14), lineWidth: 1.5))
-                    Capsule()
-                        .fill(LinearGradient(colors: [Color(hex: "FFB067"), Palette.amber],
-                                             startPoint: .leading, endPoint: .trailing))
-                        .frame(width: max(6, g.size.width * frac))
-                }
-            }
-            .frame(height: 8)
-            // Literal `Text`, not `Text(loc:)`: the compiler only extracts (and localizes) keys
-            // from direct literals — a `String` ternary would look up "2/5" instead of "%lld/%lld".
-            (done >= goal ? Text("Goal met") : Text("\(done)/\(goal)"))
-                .font(Fonts.ui(12, .heavy))
-                .foregroundStyle(done >= goal ? Palette.success : Palette.inkSoft)
-        }
-        .padding(.top, 2)
-    }
-
 
     // MARK: Today's affirmation — one line a day from the picked rotation (see `Affirmations`),
     // the same one the widget and the daily notification carry. Shown from midnight, written or not.
