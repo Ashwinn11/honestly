@@ -20,10 +20,12 @@ struct MainTabView: View {
                 .navigationDestination(for: String.self) { key in
                     EntryDetailView(dayKey: key)
                         .toolbar(.hidden, for: .navigationBar)
+                        .toolbar(.hidden, for: .tabBar)       // a page has its own back button
                 }
                 .navigationDestination(for: MonthBookRoute.self) { route in
                     EntryDetailView(dayKey: route.startKey, book: route)
                         .toolbar(.hidden, for: .navigationBar)
+                        .toolbar(.hidden, for: .tabBar)       // a book has its own back button
                 }
                 .toolbar(.hidden, for: .navigationBar)
                 .navigationDestination(isPresented: Binding(
