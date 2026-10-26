@@ -13,6 +13,9 @@ struct EntryDetailView: View {
     @State private var selectedKey: String
     @State private var showEditor = false
     @State private var showGrid: Bool
+    /// False for one jump: a page picked from the grid appears in place instead of curling over
+    /// whatever page happened to sit under the grid.
+    @State private var curlJumps = true
     @State private var showOpening: Bool
 
     init(dayKey: String, book: MonthBookRoute? = nil) {
@@ -80,7 +83,10 @@ struct EntryDetailView: View {
         .onChange(of: premium.isPremium) { _, active in
             if !active { showEditor = false }
         }
-        .onChange(of: selectedKey) { _, _ in Haptics.select() }
+        .onChange(of: selectedKey) { _, _ in
+            Haptics.select()
+            curlJumps = true
+        }
         .fullScreenCover(isPresented: $showEditor) {
             if premium.isPremium, let entry = store.entry(for: selectedKey) {
                 EntryEditorView(entry: entry)
@@ -96,7 +102,8 @@ struct EntryDetailView: View {
             ZStack {
                 PageCurlReader(entries: entries,
                                contents: book.map { (year: $0.year, month: $0.month) },
-                               selectedKey: $selectedKey)
+                               selectedKey: $selectedKey,
+                               curlJumps: curlJumps)
                 if showGrid {
                     pagesGrid.transition(.opacity)
                 }
@@ -155,8 +162,9 @@ struct EntryDetailView: View {
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 3), spacing: 14) {
                 ForEach(entries, id: \.dayKey) { entry in
                     Button {
-                        withAnimation(Motion.snappy) { showGrid = false }
+                        curlJumps = false
                         selectedKey = entry.dayKey
+                        withAnimation(Motion.snappy) { showGrid = false }
                     } label: {
                         MiniPage(entry: entry)
                     }
@@ -200,6 +208,8 @@ private struct PageCurlReader: UIViewControllerRepresentable {
     /// The book's month when reading a month book — adds its Contents page in front.
     var contents: (year: Int, month: Int)? = nil
     @Binding var selectedKey: String
+    /// Whether a jump made from outside the reader curls; false lands on the page in place.
+    var curlJumps = true
 
     var keys: [String] { (contents != nil ? [MonthBookRoute.contentsKey] : []) + entries.map(\.dayKey) }
 
@@ -236,7 +246,7 @@ private struct PageCurlReader: UIViewControllerRepresentable {
         let from = keys.firstIndex { $0 == visible } ?? 0
         let to = keys.firstIndex { $0 == selectedKey } ?? 0
         // A jump from Contents, the page grid or the header curls like turning straight to a page.
-        let animated = !UIAccessibility.isReduceMotionEnabled
+        let animated = curlJumps && !UIAccessibility.isReduceMotionEnabled
         if animated { context.coordinator.isTurning = true }
         pvc.setViewControllers([page], direction: to >= from ? .forward : .reverse, animated: animated) { _ in
             context.coordinator.isTurning = false
