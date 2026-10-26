@@ -53,7 +53,7 @@
 		51C5B6F36C0547625270F6A0 /* Backup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D8C8B54E984DE62A67164B8 /* Backup.swift */; };
 		53E8B4CD700613393577B7DC /* LocalizationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77CDFB3F703870DC1CE73921 /* LocalizationManager.swift */; };
 		56477181DB2C4DD9B499232F /* TagInput.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D8582DBEAC506ED9F8A8267 /* TagInput.swift */; };
-		568FB0609EEB89B8F3D3AA3B /* EntryRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 648F0CEFF87B8130349F71E9 /* EntryRow.swift */; };
+		568FB0609EEB89B8F3D3AA3B /* MiniPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 648F0CEFF87B8130349F71E9 /* MiniPage.swift */; };
 		56AC14AD0195A02943530001 /* Color+Hex.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82D4B1B0AFB7A70426A5B632 /* Color+Hex.swift */; };
 		5DDFBA31292A92A52C7C7E4E /* Color+Hex.swift in Sources */ = {isa = PBXBuildFile; fileRef = 82D4B1B0AFB7A70426A5B632 /* Color+Hex.swift */; };
 		5F7727C4C31F455568823EAF /* AffirmationNudge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 27C935667FAFA3A76917E9A9 /* AffirmationNudge.swift */; };
@@ -240,7 +240,7 @@
 		5E3F5F633C63FE29DF255196 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		63026289A9B435B7E6E96F77 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		63563974992526601280DCAD /* ReviewPrompt.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReviewPrompt.swift; sourceTree = "<group>"; };
-		648F0CEFF87B8130349F71E9 /* EntryRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EntryRow.swift; sourceTree = "<group>"; };
+		648F0CEFF87B8130349F71E9 /* MiniPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MiniPage.swift; sourceTree = "<group>"; };
 		6D8582DBEAC506ED9F8A8267 /* TagInput.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagInput.swift; sourceTree = "<group>"; };
 		6FAE144A6EABD1F4BB310421 /* AffirmationPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AffirmationPicker.swift; sourceTree = "<group>"; };
 		709968D401543989FC525E5F /* ShieldConfigurationExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShieldConfigurationExtension.swift; sourceTree = "<group>"; };
@@ -452,7 +452,7 @@
 				8B2811C6179A764E8940886C /* Decor.swift */,
 				D7A5BF1E7FA8CE43569BD7D2 /* DoodleSheet.swift */,
 				12430EE868CD116B6C96638D /* EditorToolbar.swift */,
-				648F0CEFF87B8130349F71E9 /* EntryRow.swift */,
+				648F0CEFF87B8130349F71E9 /* MiniPage.swift */,
 				844234A8087C915D91DACCCE /* InlineJournalColorPicker.swift */,
 				EE92F7342ACAEFB55639E3EF /* LibraryComponents.swift */,
 				537AFEF703575D2C77812527 /* MoodFace.swift */,
@@ -915,7 +915,7 @@
 				3D8DF0D2E204A5D15C4D8B17 /* EditorToolbar.swift in Sources */,
 				233FF7AA22C5227842F2B5B1 /* EntryDetailView.swift in Sources */,
 				1A41B8F49E6869AC7FA439D5 /* EntryEditorView.swift in Sources */,
-				568FB0609EEB89B8F3D3AA3B /* EntryRow.swift in Sources */,
+				568FB0609EEB89B8F3D3AA3B /* MiniPage.swift in Sources */,
 				9E98E2A45FC45BD9600D4C5D /* Haptics.swift in Sources */,
 				202D7B64B98338633FFF1DF2 /* BookCovers.swift in Sources */,
 				D6CC23C409C0D15AB4381D66 /* BookPage.swift in Sources */,

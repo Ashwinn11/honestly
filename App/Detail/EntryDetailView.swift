@@ -360,34 +360,3 @@ private struct JournalReaderPage: View {
 
 }
 
-/// One page in a book's "all pages" grid — its paper, date, mood and opening lines.
-private struct MiniPage: View {
-    let entry: JournalEntry
-
-    init(entry: JournalEntry) { self.entry = entry }
-
-    var body: some View {
-        let shape = UnevenRoundedRectangle(topLeadingRadius: 3, bottomLeadingRadius: 3,
-                                           bottomTrailingRadius: 9, topTrailingRadius: 9, style: .continuous)
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 4) {
-                Text(verbatim: HDate.monthDay(entry.date))
-                    .font(Fonts.ui(11, .heavy)).foregroundStyle(Palette.ink)
-                    .lineLimit(1).minimumScaleFactor(0.8)
-                Spacer(minLength: 0)
-                MoodFace(mood: entry.moodRaw, size: 14)
-            }
-            Text(entry.journal)
-                .font(Fonts.ui(9.5, .semibold)).foregroundStyle(Palette.inkBody)
-                .lineSpacing(2)
-                .multilineTextAlignment(.leading)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        }
-        .padding(9)
-        .aspectRatio(3 / 4.4, contentMode: .fit)
-        .background(PageThemeBackground(theme: PageTheme.from(entry.themeID)))
-        .clipShape(shape)
-        .overlay(shape.strokeBorder(Palette.ink, lineWidth: 1.5))
-        .accessibilityElement(children: .combine)
-    }
-}

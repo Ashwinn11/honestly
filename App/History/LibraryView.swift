@@ -252,22 +252,25 @@ struct LibraryView: View {
         n == 1 ? Text("1 page") : Text("\(n) pages")
     }
 
-    // MARK: Search results — a plain list; each page opens inside its month's book
+    // MARK: Search results — the same page cards as a book's grid, by month; each opens in its book
     private var results: some View {
-        ForEach(Array(groups.enumerated()), id: \.element.label) { _, group in
+        let term = query.trimmingCharacters(in: .whitespaces)
+        let highlight = term.hasPrefix("#") ? String(term.dropFirst()) : term
+        return ForEach(Array(groups.enumerated()), id: \.element.label) { _, group in
             Text(group.label).font(Fonts.display(18, .bold)).foregroundStyle(Color(hex: "A0917C"))
-                .padding(.top, 18).padding(.bottom, 9)
-            ForEach(group.items, id: \.dayKey) { e in
-                NavigationLink(value: MonthBookRoute(entry: e)) {
-                    EntryRow(entry: e) { EmptyView() }
+                .padding(.top, 18).padding(.bottom, 10)
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 3), spacing: 14) {
+                ForEach(group.items, id: \.dayKey) { e in
+                    NavigationLink(value: MonthBookRoute(entry: e)) {
+                        MiniPage(entry: e, highlight: highlight)
+                    }
+                    .buttonStyle(PressableStyle())
+                    .contextMenu {
+                        Button(role: .destructive) {
+                            withAnimation(Motion.snappy) { store.delete(e) }
+                        } label: { Label("Delete page", systemImage: "trash") }
+                    }
                 }
-                .buttonStyle(PressableStyle(scale: 0.98))
-                .contextMenu {
-                    Button(role: .destructive) {
-                        withAnimation(Motion.snappy) { store.delete(e) }
-                    } label: { Label("Delete page", systemImage: "trash") }
-                }
-                .padding(.bottom, 10)
             }
         }
     }
