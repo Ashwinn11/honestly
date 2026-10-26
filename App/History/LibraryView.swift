@@ -3,6 +3,9 @@ import SwiftUI
 /// Which month book to open, and the page to open it at. Pushed on the tab's NavigationStack;
 /// `MainTabView` turns it into a month-scoped `EntryDetailView`.
 struct MonthBookRoute: Hashable {
+    /// The page key of a book's Contents page — sits in front of the month's first page.
+    static let contentsKey = "book-contents"
+
     let year: Int
     let month: Int
     let startKey: String
@@ -48,8 +51,10 @@ struct MonthBook: Identifiable {
         entries.reversed().lazy.compactMap { $0.thumbnail.flatMap(UIImage.init(data:)) }.first
     }
 
-    /// Opens on the first page; nil while the month has no pages yet.
-    var route: MonthBookRoute? { entries.first.map { MonthBookRoute(entry: $0) } }
+    /// Opens on the Contents page; nil while the month has no pages yet.
+    var route: MonthBookRoute? {
+        entries.isEmpty ? nil : MonthBookRoute(year: year, month: month, startKey: MonthBookRoute.contentsKey)
+    }
 }
 
 struct LibraryView: View {
@@ -58,6 +63,7 @@ struct LibraryView: View {
     @Environment(AppFlow.self) private var flow
     @State private var filter: Int? = nil          // nil = All
     @State private var query = ""
+    @State private var coverBook: MonthBook?
 
     private var isSearching: Bool {
         filter != nil || !query.trimmingCharacters(in: .whitespaces).isEmpty
@@ -124,6 +130,9 @@ struct LibraryView: View {
                     shelf(all)
                 }
             }
+        }
+        .sheet(item: $coverBook) { book in
+            CoverEditorSheet(book: book)
         }
     }
 
@@ -216,6 +225,7 @@ struct LibraryView: View {
         if canOpen(book), let route = book.route {
             NavigationLink(value: route) { cover }
                 .buttonStyle(PressableStyle(scale: 0.97))
+                .contextMenu { coverMenu(book) }
         } else {
             Button {
                 if book.entries.isEmpty {
@@ -225,6 +235,16 @@ struct LibraryView: View {
                 }
             } label: { cover }
             .buttonStyle(PressableStyle(scale: 0.97))
+            .contextMenu { coverMenu(book) }
+        }
+    }
+
+    /// Long-press a book to change its cover — Premium for earlier months, like reading them.
+    private func coverMenu(_ book: MonthBook) -> some View {
+        Button {
+            if canOpen(book) { coverBook = book } else { flow.showPaywall() }
+        } label: {
+            Label { Text("Customize cover") } icon: { Image(systemName: "paintpalette") }
         }
     }
 
@@ -342,14 +362,24 @@ struct MonthBookCover: View {
     let book: MonthBook
     var width: CGFloat = 92
     var locked = false
+    /// Shown instead of the saved cover — the cover editor's live preview.
+    var lookOverride: CoverLook? = nil
+    @Environment(CoverStore.self) private var covers
+
+    init(book: MonthBook, width: CGFloat = 92, locked: Bool = false, lookOverride: CoverLook? = nil) {
+        self.book = book
+        self.width = width
+        self.locked = locked
+        self.lookOverride = lookOverride
+    }
 
     var body: some View {
         let w = DesignScale.s(width)
         let h = w * 1.42
         let edge = w * (0.03 + 0.003 * CGFloat(min(book.entries.count, 31)))   // 3% → ~12% of the width
-        let photo = book.coverPhoto
-        let style = book.theme.cover
-        let ink = photo == nil ? style.ink : Color.white
+        let look = lookOverride ?? covers.look(for: book)
+        let photo = look.photo
+        let ink = look.ink
         let coverShape = UnevenRoundedRectangle(topLeadingRadius: w * 0.03, bottomLeadingRadius: w * 0.03,
                                                 bottomTrailingRadius: w * 0.09, topTrailingRadius: w * 0.09,
                                                 style: .continuous)
@@ -365,8 +395,8 @@ struct MonthBookCover: View {
                         .frame(width: w, height: h).clipped()
                     LinearGradient(colors: [.clear, .black.opacity(0.55)], startPoint: .center, endPoint: .bottom)
                 } else {
-                    style.color
-                    CoverDots(color: style.ink.opacity(0.09), spacing: w * 0.11)
+                    look.color
+                    CoverDots(color: look.ink.opacity(0.09), spacing: w * 0.11)
                 }
                 Rectangle().fill(.black.opacity(0.16))                     // the spine's fold
                     .frame(width: w * 0.07)

@@ -3,7 +3,7 @@ import SwiftUI
 struct EntryDetailView: View {
     let dayKey: String
     /// Set when opened as a month book: the reader then turns only that month's pages, oldest
-    /// first, like a real book. Nil keeps the all-pages reader, newest first.
+    /// first, behind a Contents page — like a real book. Nil keeps the all-pages reader, newest first.
     var book: MonthBookRoute? = nil
     @Environment(JournalStore.self) private var store
     @Environment(PremiumManager.self) private var premium
@@ -11,6 +11,7 @@ struct EntryDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var selectedKey: String
     @State private var showEditor = false
+    @State private var scrubbing = false
 
     init(dayKey: String, book: MonthBookRoute? = nil) {
         self.dayKey = dayKey
@@ -23,12 +24,21 @@ struct EntryDetailView: View {
         return store.entries(inYear: book.year, month: book.month).reversed()
     }
 
+    /// Every page the reader can turn to, in order: the Contents page first in a book.
+    private var pageKeys: [String] {
+        (book != nil ? [MonthBookRoute.contentsKey] : []) + entries.map(\.dayKey)
+    }
+
     /// Free accounts can read the current month's book; every other page is Premium.
     private var canRead: Bool {
         if premium.isPremium { return true }
         guard let book else { return false }
         let now = Calendar.current.dateComponents([.year, .month], from: Date())
         return now.year == book.year && now.month == book.month
+    }
+
+    private var hasPages: Bool {
+        store.entry(for: dayKey) != nil || (book != nil && dayKey == MonthBookRoute.contentsKey && !entries.isEmpty)
     }
 
     // The reader header (back/edit buttons) used to sit over a fixed `PaperBackground()` while
@@ -51,15 +61,15 @@ struct EntryDetailView: View {
                                   subtitle: "Every morning you've written, always here to revisit.",
                                   action: { flow.showPaywall() })
                     .padding(.top, 80)
-            } else if store.entry(for: dayKey) != nil {
+            } else if hasPages {
                 reader
             } else {
                 missing
             }
         }
         .onAppear {
-            if store.entry(for: selectedKey) == nil {
-                selectedKey = dayKey
+            if !pageKeys.contains(selectedKey) {
+                selectedKey = pageKeys.contains(dayKey) ? dayKey : (pageKeys.first ?? dayKey)
             }
         }
         .onChange(of: premium.isPremium) { _, active in
@@ -78,7 +88,14 @@ struct EntryDetailView: View {
             readerHeader
                 .capWidth(Metrics.maxContentWidth)
 
-            PageCurlReader(entries: entries, selectedKey: $selectedKey)
+            PageCurlReader(entries: entries,
+                           contents: book.map { (year: $0.year, month: $0.month) },
+                           selectedKey: $selectedKey,
+                           scrubbing: scrubbing)
+
+            if book != nil && pageKeys.count > 2 {
+                scrubber.capWidth(Metrics.maxContentWidth)
+            }
         }
         .background(alignment: .topTrailing) {
             SoftGlow(color: Palette.sunDisc, opacity: 0.14, size: 240)
@@ -87,12 +104,18 @@ struct EntryDetailView: View {
         .ignoresSafeArea(.container, edges: .top)
     }
 
-    // Just the close icon — no share button, no "N of M" pill. The date now lives on the page
-    // itself (PageDateRow), same as the writing screen, so this chrome doesn't need to repeat it.
+    // Back, and — in a book — a jump to its Contents page. The date lives on the page itself
+    // (PageDateRow), same as the writing screen, so this chrome doesn't need to repeat it.
     private var readerHeader: some View {
         HStack(spacing: 12) {
             IconTileButton(icon: "chevron.backward", size: 38, iconSize: 15) { dismiss() }
             Spacer(minLength: 0)
+            if book != nil && selectedKey != MonthBookRoute.contentsKey {
+                IconTileButton(icon: "calendar", size: 38, iconSize: 15) {
+                    selectedKey = MonthBookRoute.contentsKey
+                }
+                .accessibilityLabel(Text("Contents"))
+            }
             if store.entry(for: selectedKey) != nil {
                 IconTileButton(icon: "pencil", size: 38, iconSize: 15) {
                     // Reading this month is free; editing a page stays Premium.
@@ -103,6 +126,40 @@ struct EntryDetailView: View {
         .padding(.horizontal, 20)
         .padding(.top, 56)
         .padding(.bottom, 8)
+    }
+
+    // MARK: Scrubber — drag along it and the pages fly past, instead of turning them one by one
+    private var scrubber: some View {
+        let keys = pageKeys
+        let index = Binding<Double>(
+            get: { Double(keys.firstIndex(of: selectedKey) ?? 0) },
+            set: { value in
+                let i = Int(value.rounded())
+                if keys.indices.contains(i), keys[i] != selectedKey { selectedKey = keys[i] }
+            })
+        let current = store.entry(for: selectedKey)
+        return VStack(spacing: 6) {
+            HStack(spacing: 6) {
+                if let current {
+                    MoodFace(mood: current.moodRaw, size: 16)
+                    Text(verbatim: HDate.monthDay(current.date))
+                } else {
+                    Text("Contents")
+                }
+            }
+            .font(Fonts.ui(12, .heavy)).foregroundStyle(Palette.ink)
+            .padding(.horizontal, 10).padding(.vertical, 4)
+            .background(Palette.cream, in: Capsule())
+            .overlay(Capsule().strokeBorder(Palette.ink, lineWidth: 1.5))
+
+            Slider(value: index, in: 0...Double(keys.count - 1), step: 1,
+                   onEditingChanged: { editing in scrubbing = editing })
+            .tint(Palette.amber)
+            .accessibilityLabel(Text("Contents"))
+        }
+        .padding(.horizontal, 24)
+        .padding(.top, 6)
+        .padding(.bottom, 10)
     }
 
     private var missing: some View {
@@ -122,7 +179,13 @@ struct EntryDetailView: View {
 /// Lives in this file because it hosts the private `JournalReaderPage`.
 private struct PageCurlReader: UIViewControllerRepresentable {
     let entries: [JournalEntry]
+    /// The book's month when reading a month book — adds its Contents page in front.
+    var contents: (year: Int, month: Int)? = nil
     @Binding var selectedKey: String
+    /// While the scrubber is held, jumps land instantly instead of curling — so the pages fly past.
+    var scrubbing = false
+
+    var keys: [String] { (contents != nil ? [MonthBookRoute.contentsKey] : []) + entries.map(\.dayKey) }
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
@@ -141,37 +204,39 @@ private struct PageCurlReader: UIViewControllerRepresentable {
 
     func updateUIViewController(_ pvc: UIPageViewController, context: Context) {
         context.coordinator.parent = self
-        
-        // Sync currently visible page background color
+
+        // Keep the visible page's paper in step with its theme after an edit changes it.
         if let host = pvc.viewControllers?.first as? PageHost,
-           let entry = entries.first(where: { $0.dayKey == host.dayKey }) {
-            let theme = PageTheme.from(entry.themeID)
-            host.view.backgroundColor = theme.baseUIColor
+           let entry = entries.first(where: { $0.dayKey == host.key }) {
+            host.view.backgroundColor = PageTheme.from(entry.themeID).baseUIColor
         }
 
         // Never touch the page stack mid-turn, and only reset when selection moved externally —
         // the delegate callback lands here too.
         guard !context.coordinator.isTurning else { return }
-        let visible = (pvc.viewControllers?.first as? PageHost)?.dayKey
+        let visible = (pvc.viewControllers?.first as? PageHost)?.key
         guard visible != selectedKey, let page = context.coordinator.page(for: selectedKey) else { return }
-        
-        let theme = PageTheme.from(entries.first(where: { $0.dayKey == selectedKey })?.themeID)
-        page.view.backgroundColor = theme.baseUIColor
-        
-        let from = entries.firstIndex { $0.dayKey == visible } ?? 0
-        let to = entries.firstIndex { $0.dayKey == selectedKey } ?? 0
-        pvc.setViewControllers([page], direction: to >= from ? .forward : .reverse, animated: false)
+
+        let from = keys.firstIndex { $0 == visible } ?? 0
+        let to = keys.firstIndex { $0 == selectedKey } ?? 0
+        // A jump from Contents or the header curls like turning straight to a page; a scrub lands
+        // instantly so dragging feels like flicking through the edge of the book.
+        let animated = !scrubbing && !UIAccessibility.isReduceMotionEnabled
+        if animated { context.coordinator.isTurning = true }
+        pvc.setViewControllers([page], direction: to >= from ? .forward : .reverse, animated: animated) { _ in
+            context.coordinator.isTurning = false
+        }
     }
 
-    final class PageHost: UIHostingController<JournalReaderPage> {
-        let dayKey: String
-        init(entry: JournalEntry) {
-            dayKey = entry.dayKey
-            super.init(rootView: JournalReaderPage(entry: entry))
+    final class PageHost: UIHostingController<AnyView> {
+        let key: String
+        init(key: String, color: UIColor, content: AnyView) {
+            self.key = key
+            // Pages are hosted outside the SwiftUI tree, so the in-app language is re-applied here.
+            super.init(rootView: AnyView(content.environment(\.locale, Locale(identifier: SharedState.language))))
             // Must be opaque: the curl deforms a snapshot of this view, and a transparent page
             // renders as nothing but a bent edge — no visible paper to peel.
-            let theme = PageTheme.from(entry.themeID)
-            view.backgroundColor = theme.baseUIColor
+            view.backgroundColor = color
         }
         @available(*, unavailable) required dynamic init?(coder: NSCoder) { fatalError() }
     }
@@ -185,7 +250,7 @@ private struct PageCurlReader: UIViewControllerRepresentable {
         // True from turn start until the settle animation lands. A swipe that begins during
         // the settle crashes UIKit's curl ("number of view controllers provided (0)…"),
         // so the data source reports no neighbours until the turn is done.
-        private(set) var isTurning = false
+        var isTurning = false
 
         init(_ parent: PageCurlReader) {
             self.parent = parent
@@ -197,35 +262,44 @@ private struct PageCurlReader: UIViewControllerRepresentable {
         @objc private func handleEntryUpdate(_ notification: Notification) {
             guard let dayKey = notification.object as? String else { return }
             hosts.removeValue(forKey: dayKey)
+            hosts.removeValue(forKey: MonthBookRoute.contentsKey)    // its mood faces may have changed
         }
 
-        private func host(for entry: JournalEntry) -> PageHost {
-            if let cached = hosts[entry.dayKey] { return cached }
-            let fresh = PageHost(entry: entry)
-            hosts[entry.dayKey] = fresh
+        func page(for key: String) -> PageHost? {
+            if let cached = hosts[key] { return cached }
+            let fresh: PageHost
+            if key == MonthBookRoute.contentsKey, let contents = parent.contents {
+                fresh = PageHost(key: key, color: PageTheme.paper.baseUIColor, content: AnyView(
+                    BookContentsPage(year: contents.year, month: contents.month,
+                                     entries: parent.entries,
+                                     onPick: { [weak self] picked in self?.parent.selectedKey = picked })))
+            } else if let entry = parent.entries.first(where: { $0.dayKey == key }) ?? parent.entries.first {
+                if let cached = hosts[entry.dayKey] { return cached }
+                fresh = PageHost(key: entry.dayKey, color: PageTheme.from(entry.themeID).baseUIColor,
+                                 content: AnyView(JournalReaderPage(entry: entry)))
+            } else {
+                return nil
+            }
+            hosts[fresh.key] = fresh
             return fresh
         }
 
-        func page(for dayKey: String) -> PageHost? {
-            (parent.entries.first { $0.dayKey == dayKey } ?? parent.entries.first)
-                .map { host(for: $0) }
-        }
-
         private func index(of vc: UIViewController) -> Int? {
-            guard let key = (vc as? PageHost)?.dayKey else { return nil }
-            return parent.entries.firstIndex { $0.dayKey == key }
+            guard let key = (vc as? PageHost)?.key else { return nil }
+            return parent.keys.firstIndex(of: key)
         }
 
         func pageViewController(_ pvc: UIPageViewController,
                                 viewControllerBefore vc: UIViewController) -> UIViewController? {
             guard !isTurning, let i = index(of: vc), i > 0 else { return nil }
-            return host(for: parent.entries[i - 1])
+            return page(for: parent.keys[i - 1])
         }
 
         func pageViewController(_ pvc: UIPageViewController,
                                 viewControllerAfter vc: UIViewController) -> UIViewController? {
-            guard !isTurning, let i = index(of: vc), i < parent.entries.count - 1 else { return nil }
-            return host(for: parent.entries[i + 1])
+            let keys = parent.keys
+            guard !isTurning, let i = index(of: vc), i < keys.count - 1 else { return nil }
+            return page(for: keys[i + 1])
         }
 
         func pageViewController(_ pvc: UIPageViewController,
@@ -236,7 +310,7 @@ private struct PageCurlReader: UIViewControllerRepresentable {
         func pageViewController(_ pvc: UIPageViewController, didFinishAnimating finished: Bool,
                                 previousViewControllers: [UIViewController], transitionCompleted completed: Bool) {
             isTurning = false
-            guard completed, let key = (pvc.viewControllers?.first as? PageHost)?.dayKey else { return }
+            guard completed, let key = (pvc.viewControllers?.first as? PageHost)?.key else { return }
             parent.selectedKey = key
         }
     }
@@ -274,6 +348,7 @@ private struct JournalReaderPage: View {
         }
         .scrollIndicators(.hidden)
         .background(PageThemeBackground(theme: PageTheme.from(entry.themeID)))
+        .overlay(alignment: .leading) { BookGutterShade() }
     }
 
     // Rich (formatted text + inline images) for entries written after this feature shipped;
@@ -281,7 +356,7 @@ private struct JournalReaderPage: View {
     @ViewBuilder private var journalContent: some View {
         if let data = entry.richContent, let attributed = NSAttributedString.from(rtfdData: data),
            attributed.length > 0 {
-            RichContentView(attributedText: attributed)
+            RichContentView(attributedText: attributed, ruled: true)
         } else {
             Text(entry.journal)
                 .font(Fonts.ui(16.5, .semibold))

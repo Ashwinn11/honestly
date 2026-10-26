@@ -51,7 +51,7 @@ struct EntryEditorView: View {
 
                         RichTextEditor(attributedText: $richText,
                                        selectedRange: $selectedRange, placeholder: "Start writing…",
-                           keyboardAllowed: !editorSheetPresented)
+                           keyboardAllowed: !editorSheetPresented, ruled: true)
                             .focused($journalFocused)
                             // `.frame(minHeight:)` defaults to *center* alignment: when the editor
                             // is empty, `sizeThatFits` reports just the placeholder's one-line

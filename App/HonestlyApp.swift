@@ -11,6 +11,7 @@ struct HonestlyApp: App {
     @State private var l10n = LocalizationManager()
     @State private var affirmations = AffirmationList()
     @State private var prompts = PromptLibrary()
+    @State private var covers = CoverStore()
     @State private var store: JournalStore
     @Environment(\.scenePhase) private var scenePhase
     private let container: ModelContainer
@@ -73,6 +74,7 @@ struct HonestlyApp: App {
                 .environment(l10n)
                 .environment(affirmations)
                 .environment(prompts)
+                .environment(covers)
                 .environment(\.locale, l10n.locale)                   // live String Catalog switch
                 .environment(\.layoutDirection, l10n.layoutDirection)  // RTL for Arabic
                 // `Text(loc:)`/literal `Text` re-resolve automatically on a locale change, but

@@ -9,6 +9,7 @@ struct ProfileView: View {
     @Environment(AppFlow.self) private var flow
     @Environment(PromptLibrary.self) private var prompts
     @Environment(AffirmationList.self) private var affirmations
+    @Environment(CoverStore.self) private var covers
     @Environment(\.openURL) private var openURL
     @Environment(\.requestReview) private var requestReview
 
@@ -54,7 +55,7 @@ struct ProfileView: View {
         .familyActivityPicker(isPresented: $showPicker, selection: $st.selection)
         .alert("Delete all data?", isPresented: $confirmDelete) {
             Button("Delete everything", role: .destructive) {
-                store.deleteAll(); screenTime.wipe(); affirmations.clear(); prompts.clear(); Haptics.rigid()
+                store.deleteAll(); screenTime.wipe(); affirmations.clear(); prompts.clear(); covers.reset(); Haptics.rigid()
             }
             Button("Cancel", role: .cancel) { }
         } message: {

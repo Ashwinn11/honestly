@@ -62,8 +62,10 @@
 		653BC8CDF4AA9C5F5204DE26 /* Palette.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08E1B12E8851E942BD3D9539 /* Palette.swift */; };
 		67DDF327D636834DEB368EAE /* CloudBackup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2231F4643A77903710C39679 /* CloudBackup.swift */; };
 		697BCFCE5C54F26D079B2ACC /* InlineJournalColorPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 844234A8087C915D91DACCCE /* InlineJournalColorPicker.swift */; };
+		202D7B64B98338633FFF1DF2 /* BookCovers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BC04CD671C53C05C24B47DD /* BookCovers.swift */; };
+		D6CC23C409C0D15AB4381D66 /* BookPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 366362B09E10730407670682 /* BookPage.swift */; };
 		69C3FBAEAEB3F185C8064723 /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 467A5480FADE60412A768408 /* LibraryView.swift */; };
-		6B16962BB5B38A531DFDC368 /* CalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54CE3C1C4576F0863F5CC877 /* CalendarView.swift */; };
+		6B16962BB5B38A531DFDC368 /* BookContentsPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54CE3C1C4576F0863F5CC877 /* BookContentsPage.swift */; };
 		6D009AB54CDDF82869DC6EBD /* TextLocalization.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4503890E8EE490EB68F8AE82 /* TextLocalization.swift */; };
 		6D674A8E3EE8C314F7DEEC31 /* BlockingCodec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 061ECF0CF39440C344FB8DE7 /* BlockingCodec.swift */; };
 		707629C47E4B9B1D6986F8EA /* ShieldActionExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 2B50BFB4245FC077633028D0 /* ShieldActionExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -222,6 +224,8 @@
 		42206DAF7F5357DD6A9533F6 /* RuledPaper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RuledPaper.swift; sourceTree = "<group>"; };
 		4503890E8EE490EB68F8AE82 /* TextLocalization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TextLocalization.swift; sourceTree = "<group>"; };
 		4569F044B2723DBED6C4394B /* Manrope.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = Manrope.ttf; sourceTree = "<group>"; };
+		7BC04CD671C53C05C24B47DD /* BookCovers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookCovers.swift; sourceTree = "<group>"; };
+		366362B09E10730407670682 /* BookPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookPage.swift; sourceTree = "<group>"; };
 		467A5480FADE60412A768408 /* LibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryView.swift; sourceTree = "<group>"; };
 		468C6373F86CE0AF2AEB0E30 /* Shielding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shielding.swift; sourceTree = "<group>"; };
 		49CAFAD61DDEC967C658D01B /* AffirmationList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AffirmationList.swift; sourceTree = "<group>"; };
@@ -230,7 +234,7 @@
 		505A07C250F2C843086FD26F /* AppLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLink.swift; sourceTree = "<group>"; };
 		5178328B8EC34E2140DCCCA1 /* Honestly.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Honestly.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		537AFEF703575D2C77812527 /* MoodFace.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoodFace.swift; sourceTree = "<group>"; };
-		54CE3C1C4576F0863F5CC877 /* CalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarView.swift; sourceTree = "<group>"; };
+		54CE3C1C4576F0863F5CC877 /* BookContentsPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookContentsPage.swift; sourceTree = "<group>"; };
 		5DCCC5A53E1B5A453F93DB72 /* ActivityMonitorExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityMonitorExtension.swift; sourceTree = "<group>"; };
 		5E2C5AA39ACE8C45A80BB192 /* PromptLibraryStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptLibraryStorage.swift; sourceTree = "<group>"; };
 		5E3F5F633C63FE29DF255196 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -424,7 +428,7 @@
 		5D93F101DE855DD79FDFBB96 /* Calendar */ = {
 			isa = PBXGroup;
 			children = (
-				54CE3C1C4576F0863F5CC877 /* CalendarView.swift */,
+				54CE3C1C4576F0863F5CC877 /* BookContentsPage.swift */,
 			);
 			path = Calendar;
 			sourceTree = "<group>";
@@ -432,6 +436,7 @@
 		76A221D4A77E7501663E1184 /* History */ = {
 			isa = PBXGroup;
 			children = (
+				7BC04CD671C53C05C24B47DD /* BookCovers.swift */,
 				467A5480FADE60412A768408 /* LibraryView.swift */,
 			);
 			path = History;
@@ -440,6 +445,7 @@
 		80C0B01E6B3F253E3E0424F0 /* DesignSystem */ = {
 			isa = PBXGroup;
 			children = (
+				366362B09E10730407670682 /* BookPage.swift */,
 				2E4ADC8D69FF95378D159525 /* AttachmentOverlay.swift */,
 				8C1D92DDCA8F38C3B3A8C820 /* BrandIcon.swift */,
 				3C6D6CCA5E62BAB3F7568E08 /* Components.swift */,
@@ -898,7 +904,7 @@
 				51C5B6F36C0547625270F6A0 /* Backup.swift in Sources */,
 				FF5BB9EF989C7FC8A18C17FF /* BlockingCodec.swift in Sources */,
 				9A8DB69EDA02B9A15B24B46F /* BrandIcon.swift in Sources */,
-				6B16962BB5B38A531DFDC368 /* CalendarView.swift in Sources */,
+				6B16962BB5B38A531DFDC368 /* BookContentsPage.swift in Sources */,
 				67DDF327D636834DEB368EAE /* CloudBackup.swift in Sources */,
 				9071F6C7B274D8892B85F1C9 /* Color+Hex.swift in Sources */,
 				0ED62D414A1D8F0224515A71 /* Components.swift in Sources */,
@@ -911,6 +917,8 @@
 				1A41B8F49E6869AC7FA439D5 /* EntryEditorView.swift in Sources */,
 				568FB0609EEB89B8F3D3AA3B /* EntryRow.swift in Sources */,
 				9E98E2A45FC45BD9600D4C5D /* Haptics.swift in Sources */,
+				202D7B64B98338633FFF1DF2 /* BookCovers.swift in Sources */,
+				D6CC23C409C0D15AB4381D66 /* BookPage.swift in Sources */,
 				69C3FBAEAEB3F185C8064723 /* LibraryView.swift in Sources */,
 				2A79495612C3D4AEB9AF3897 /* HomeView.swift in Sources */,
 				135AAC3EDCED7165DFAFF9DE /* HonestlyApp.swift in Sources */,

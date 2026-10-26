@@ -9,6 +9,7 @@ struct RitualView: View {
     @Environment(AppFlow.self) private var flow
     @Environment(PromptLibrary.self) private var prompts
     @Environment(AffirmationList.self) private var affirmations
+    @Environment(CoverStore.self) private var covers
 
     // 0: journal, 1: celebration — mood is no longer its own step; it's set via the mood-card
     // sheet, opened by tapping the mood icon on the journal page itself. Affirmations aren't
@@ -31,38 +32,63 @@ struct RitualView: View {
     @State private var showThemeSheet = false
     @State private var showFormattingSheet = false
     @State private var theme: PageTheme = .paper
+    // The month's book opens as the page appears — skipped for Reduce Motion and screenshots.
+    @State private var showOpening = !UIAccessibility.isReduceMotionEnabled && ScreenshotPreview.screen == nil
+    @State private var showBook = false
 
     private var editorSheetPresented: Bool {
-        showFormattingSheet || showTagsSheet || showImagePicker || showDoodleSheet || showStickerSheet || showThemeSheet || showPromptPicker || showMoodSheet || flow.paywallPresented
+        showFormattingSheet || showTagsSheet || showImagePicker || showDoodleSheet || showStickerSheet || showThemeSheet || showPromptPicker || showMoodSheet || showBook || flow.paywallPresented
     }
+
+    /// This month's book — today's page is written into it.
+    private var monthBook: MonthBook { MonthBook.containing(Date(), in: store) }
+
+    /// The month's pages before today's — what "read earlier pages" opens and the opening riffles past.
+    private var earlierPages: [JournalEntry] { monthBook.entries.filter { $0.dayKey != store.todayKey } }
 
     private var journalText: String { richText.plainText }
     var body: some View {
         @Bindable var flow = flow
         Group {
             if step == 1 {
-                CelebrationView(streak: store.streak,
+                CelebrationView(book: monthBook,
+                                streak: store.streak,
                                 affirmation: affirmations.today(premium: premium.isPremium),
                                 onStart: onClose)
             } else {
+                let look = covers.look(for: monthBook)
                 VStack(spacing: 0) {
-                    topBar.capWidth(Metrics.maxContentWidth)
-                    // One continuous page for the whole ritual — no per-step cards. Every step
-                    // (including the journal editor, which grows to its actual content height —
-                    // see `RichTextEditor`) sizes to its real content, so this one `ScrollView` is
-                    // the only scrolling region; nothing needs the viewport height threaded in.
-                    ScrollView {
-                        JournalPageSurface(cornerRadius: 0, showsBinderHoles: false, bordered: false) {
-                            journalBody
-                                .padding(EdgeInsets(top: 14, leading: Metrics.pageHorizontalInset,
-                                                    bottom: 24, trailing: Metrics.pageHorizontalInset))
+                    topBar(look).capWidth(Metrics.maxContentWidth)
+                    // One page of this month's book, open on the desk: the cover shows around it,
+                    // its spine on the left, the pages beneath peeking out on the right. The editor
+                    // grows to its actual content height (see `RichTextEditor`), so this one
+                    // `ScrollView` is the only scrolling region; the page is at least a screen tall.
+                    GeometryReader { geo in
+                        ScrollView {
+                            bookPage(minHeight: geo.size.height - 12)
+                                .padding(.horizontal, Metrics.bookGutter)
+                                .padding(.bottom, 12)
+                                .capWidth(Metrics.maxContentWidth)
                         }
-                        .capWidth(Metrics.maxContentWidth)
+                        .scrollDismissesKeyboard(.interactively)
+                        .overlay {
+                            if showOpening {
+                                BookOpeningOverlay(look: look, pagesBefore: earlierPages.count) {
+                                    withAnimation(.easeOut(duration: 0.2)) { showOpening = false }
+                                }
+                                .clipShape(UnevenRoundedRectangle(topLeadingRadius: 4, bottomLeadingRadius: 4,
+                                                                  bottomTrailingRadius: 12, topTrailingRadius: 12,
+                                                                  style: .continuous))
+                                .padding(.horizontal, Metrics.bookGutter)
+                                .padding(.bottom, 12)
+                                .capWidth(Metrics.maxContentWidth)
+                                .transition(.opacity)
+                            }
+                        }
                     }
-                    .scrollDismissesKeyboard(.interactively)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                .background(PageThemeBackground(theme: theme))
+                .background(look.frameColor.ignoresSafeArea())
                 .safeAreaInset(edge: .bottom) {
                     // While the editor has focus, the footer becomes the formatting toolbar instead
                     // of the step CTA — same slot, same pattern as the rest of the ritual's chrome.
@@ -115,6 +141,12 @@ struct RitualView: View {
         .fullScreenCover(isPresented: $showPromptPicker) {
             PromptLibraryScreen()
         }
+        // Earlier pages of this month's book, read without leaving today's page.
+        .fullScreenCover(isPresented: $showBook) {
+            if let latest = earlierPages.last {
+                EntryDetailView(dayKey: latest.dayKey, book: MonthBookRoute(entry: latest))
+            }
+        }
         .sheet(isPresented: $showTagsSheet, onDismiss: { journalFocused = true }) {
             TagEditorSheet(tags: $tags)
         }
@@ -158,10 +190,14 @@ struct RitualView: View {
     // MARK: Top bar — close icon and tappable prompt library
     // it doesn't compete with the writing area below, and it's real page content, unlike a title
     // would be. No progress dots, no mood badge here — the date/mood live on the page itself, below.
-    private var topBar: some View {
+    private func topBar(_ look: CoverLook) -> some View {
         HStack(spacing: 10) {
             IconTileButton(icon: "xmark", size: 38, iconSize: 13) { onClose() }
-            topBarTitleView
+            topBarTitleView(ink: look.frameInk)
+            if !earlierPages.isEmpty {
+                IconTileButton(icon: "book", size: 38, iconSize: 14) { openEarlierPages() }
+                    .accessibilityLabel(Text("Read earlier pages"))
+            }
         }
         .padding(.horizontal, 20)
         .padding(.top, 10)
@@ -169,7 +205,7 @@ struct RitualView: View {
         .animation(Motion.gentle, value: step)
     }
 
-    private var topBarTitleView: some View {
+    private func topBarTitleView(ink: Color) -> some View {
         Button {
             journalFocused = false
             if premium.isPremium { showPromptPicker = true } else { flow.showPaywall() }
@@ -185,18 +221,55 @@ struct RitualView: View {
                 }
                 .font(Fonts.display(14, .bold))
                 .lineLimit(3)
-                .foregroundStyle(premium.isPremium ? Palette.ink : Palette.inkSofter)
+                .foregroundStyle(premium.isPremium ? ink : ink.opacity(0.7))
                 .lineSpacing(1)
                 .multilineTextAlignment(.leading)
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
                 Image(systemName: "chevron.down").font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(Palette.inkSofter)
+                    .foregroundStyle(ink.opacity(0.7))
             }
         }
         .buttonStyle(.plain)
         .accessibilityHint(Text(loc: "Choose a prompt"))
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    // MARK: The book page — today's page, set inside the month's book
+    private func bookPage(minHeight: CGFloat) -> some View {
+        let shape = UnevenRoundedRectangle(topLeadingRadius: 4, bottomLeadingRadius: 4,
+                                           bottomTrailingRadius: 12, topTrailingRadius: 12, style: .continuous)
+        return JournalPageSurface(cornerRadius: 0, showsBinderHoles: false, bordered: false) {
+            // Inset by the gutter less, so the text column stays exactly as wide as the reader's.
+            journalBody(minHeight: minHeight)
+                .padding(EdgeInsets(top: 18, leading: Metrics.pageHorizontalInset - Metrics.bookGutter,
+                                    bottom: 24, trailing: Metrics.pageHorizontalInset - Metrics.bookGutter))
+        }
+        .frame(maxWidth: .infinity, minHeight: minHeight, alignment: .top)
+        .background(PageThemeBackground(theme: theme))
+        .overlay(alignment: .leading) { BookGutterShade() }
+        .clipShape(shape)
+        .background(alignment: .trailing) {
+            BookPageStack()
+                .frame(width: 10)
+                .padding(.vertical, 6)
+                .offset(x: 5)
+        }
+        .shadow(color: .black.opacity(0.22), radius: 10, y: 6)
+        // Swipe from the spine to turn back to this month's earlier pages.
+        .simultaneousGesture(
+            DragGesture(minimumDistance: 24).onEnded { value in
+                guard !earlierPages.isEmpty, value.startLocation.x < 48,
+                      value.translation.width > 80, abs(value.translation.height) < 70 else { return }
+                openEarlierPages()
+            }
+        )
+    }
+
+    private func openEarlierPages() {
+        journalFocused = false
+        Haptics.tap()
+        showBook = true
     }
 
     // MARK: Footer CTA — pinned at the bottom, floats above the keyboard
@@ -211,7 +284,7 @@ struct RitualView: View {
     // MARK: Step 0 — journal (the prompt lives in the top bar now — see topBarTitleView — so it
     // never competes with the writing area for space). Mood is set via the tappable icon on the
     // date row, which opens `MoodPickerSheet` — no longer a separate blocking step.
-    private var journalBody: some View {
+    private func journalBody(minHeight: CGFloat) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             PageDateRow(date: Date(), mood: mood) {
                 Haptics.select()
@@ -220,12 +293,13 @@ struct RitualView: View {
 
             RichTextEditor(attributedText: $richText,
                            selectedRange: $selectedRange, placeholder: "Start writing…",
-                           keyboardAllowed: !editorSheetPresented)
+                           keyboardAllowed: !editorSheetPresented, ruled: true)
                 .focused($journalFocused)
                 // See the matching comment in EntryEditorView.swift — `.frame(minHeight:)`
                 // defaults to center alignment, which is why the empty placeholder sat mid-box
-                // instead of at its top until typed content grew past the floor.
-                .frame(minHeight: 220, alignment: .top)
+                // instead of at its top until typed content grew past the floor. The floor fills
+                // the page, so its rules run to the bottom like a notebook's.
+                .frame(minHeight: max(220, minHeight - 110), alignment: .top)
                 .padding(.top, 16)
         }
 
@@ -319,6 +393,7 @@ private struct MoodPickerSheet: View {
 // MARK: - Celebration (step 1)
 
 private struct CelebrationView: View {
+    let book: MonthBook
     let streak: Int
     let affirmation: String
     var onStart: () -> Void
@@ -332,8 +407,9 @@ private struct CelebrationView: View {
 
             VStack(spacing: 0) {
                 VStack(spacing: 0) {
-                    SunMark(size: 116).spin(period: 18).popIn(delay: 0.05)
-                        .frame(height: 170)
+                    // Today's page goes into the month's book, and the book closes over it.
+                    ClosingBookView(book: book, width: 128)
+                        .frame(height: 200)
 
                     Text(loc: screenTime.blockingPresentation.isScheduledNow
                          ? "Your apps are awake" : "You made time for yourself.")
@@ -341,6 +417,10 @@ private struct CelebrationView: View {
                         .multilineTextAlignment(.center)
                         .shadow(color: Color(hex: "78280A").opacity(0.3), radius: 14, y: 2)
                         .padding(.top, 12)
+                    Text("Page \(book.entries.count) of \(HDate.monthName(book.firstOfMonth))")
+                        .font(Fonts.ui(15, .heavy)).foregroundStyle(.white.opacity(0.92))
+                        .padding(.top, 8)
+                        .popIn(delay: 0.25)
                     HStack(spacing: 13) {
                         Text("\(streak)").font(Fonts.display(38, .heavy)).foregroundStyle(Palette.ink)
                         VStack(alignment: .leading, spacing: 0) {
