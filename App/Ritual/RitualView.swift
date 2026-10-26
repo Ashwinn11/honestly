@@ -58,7 +58,7 @@ struct RitualView: View {
             } else {
                 let look = covers.look(for: monthBook)
                 VStack(spacing: 0) {
-                    topBar(look).capWidth(Metrics.maxContentWidth)
+                    topBar.capWidth(Metrics.maxContentWidth)
                     // One page of this month's book, open on the desk: the cover shows around it,
                     // its spine on the left, the pages beneath peeking out on the right. The editor
                     // grows to its actual content height (see `RichTextEditor`), so this one
@@ -88,7 +88,7 @@ struct RitualView: View {
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                .background(look.frameColor.ignoresSafeArea())
+                .background(PageThemeBackground(theme: theme))
                 .safeAreaInset(edge: .bottom) {
                     // While the editor has focus, the footer becomes the formatting toolbar instead
                     // of the step CTA — same slot, same pattern as the rest of the ritual's chrome.
@@ -190,10 +190,10 @@ struct RitualView: View {
     // MARK: Top bar — close icon and tappable prompt library
     // it doesn't compete with the writing area below, and it's real page content, unlike a title
     // would be. No progress dots, no mood badge here — the date/mood live on the page itself, below.
-    private func topBar(_ look: CoverLook) -> some View {
+    private var topBar: some View {
         HStack(spacing: 10) {
             IconTileButton(icon: "xmark", size: 38, iconSize: 13) { onClose() }
-            topBarTitleView(ink: look.frameInk)
+            topBarTitleView
             if !earlierPages.isEmpty {
                 IconTileButton(icon: "book", size: 38, iconSize: 14) { openEarlierPages() }
                     .accessibilityLabel(Text("Read earlier pages"))
@@ -205,7 +205,7 @@ struct RitualView: View {
         .animation(Motion.gentle, value: step)
     }
 
-    private func topBarTitleView(ink: Color) -> some View {
+    private var topBarTitleView: some View {
         Button {
             journalFocused = false
             if premium.isPremium { showPromptPicker = true } else { flow.showPaywall() }
@@ -221,13 +221,13 @@ struct RitualView: View {
                 }
                 .font(Fonts.display(14, .bold))
                 .lineLimit(3)
-                .foregroundStyle(premium.isPremium ? ink : ink.opacity(0.7))
+                .foregroundStyle(premium.isPremium ? Palette.ink : Palette.inkSofter)
                 .lineSpacing(1)
                 .multilineTextAlignment(.leading)
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
                 Image(systemName: "chevron.down").font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(ink.opacity(0.7))
+                    .foregroundStyle(Palette.inkSofter)
             }
         }
         .buttonStyle(.plain)

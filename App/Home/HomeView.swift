@@ -16,6 +16,7 @@ struct HomeView: View {
             VStack(alignment: .leading, spacing: 0) {
                 header
                 todayCard.padding(.top, 4)
+                bookCard.padding(.top, 16)
                 streakCard.padding(.top, 16)
                 affirmationSection.padding(.top, 24)
             }
@@ -152,6 +153,44 @@ struct HomeView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, DesignScale.s(15))
+    }
+
+    // MARK: This month's book — a small closed copy of it; opens the book (or starts its first page)
+    @ViewBuilder private var bookCard: some View {
+        let book = MonthBook.containing(Date(), in: store)
+        let n = book.entries.count
+        let label = HStack(spacing: 14) {
+            MonthBookCover(book: book, width: 46)
+            VStack(alignment: .leading, spacing: 3) {
+                Eyebrow(text: "This month's book", tracking: 1, size: 10.5)
+                Text(verbatim: HDate.monthName(Date()))
+                    .font(Fonts.display(19, .bold)).foregroundStyle(Palette.ink)
+                Group {
+                    if store.ritualDoneToday {
+                        n == 1 ? Text("1 page so far.") : Text("\(n) pages so far.")
+                    } else {
+                        (n == 1 ? Text("1 page so far.") : Text("\(n) pages so far."))
+                            + Text(verbatim: " ") + Text("Today's page is next.")
+                    }
+                }
+                .font(Fonts.ui(12.5, .semibold)).foregroundStyle(Palette.inkSoft)
+                .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 0)
+            Image(systemName: "chevron.forward")
+                .font(.system(size: 13, weight: .bold)).foregroundStyle(Palette.inkSofter)
+        }
+        .softCard(padding: 14)
+
+        if let route = book.route {
+            NavigationLink(value: route) { label }
+                .buttonStyle(PressableStyle(scale: 0.98))
+                .staggeredAppear(index: 1)
+        } else {
+            Button { flow.startRitual() } label: { label }
+                .buttonStyle(PressableStyle(scale: 0.98))
+                .staggeredAppear(index: 1)
+        }
     }
 
     // MARK: Streak card

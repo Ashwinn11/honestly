@@ -11,7 +11,7 @@ struct EntryDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var selectedKey: String
     @State private var showEditor = false
-    @State private var scrubbing = false
+    @State private var showGrid = false
 
     init(dayKey: String, book: MonthBookRoute? = nil) {
         self.dayKey = dayKey
@@ -88,13 +88,13 @@ struct EntryDetailView: View {
             readerHeader
                 .capWidth(Metrics.maxContentWidth)
 
-            PageCurlReader(entries: entries,
-                           contents: book.map { (year: $0.year, month: $0.month) },
-                           selectedKey: $selectedKey,
-                           scrubbing: scrubbing)
-
-            if book != nil && pageKeys.count > 2 {
-                scrubber.capWidth(Metrics.maxContentWidth)
+            ZStack {
+                PageCurlReader(entries: entries,
+                               contents: book.map { (year: $0.year, month: $0.month) },
+                               selectedKey: $selectedKey)
+                if showGrid {
+                    pagesGrid.transition(.opacity)
+                }
             }
         }
         .background(alignment: .topTrailing) {
@@ -110,13 +110,21 @@ struct EntryDetailView: View {
         HStack(spacing: 12) {
             IconTileButton(icon: "chevron.backward", size: 38, iconSize: 15) { dismiss() }
             Spacer(minLength: 0)
-            if book != nil && selectedKey != MonthBookRoute.contentsKey {
+            if book != nil && (selectedKey != MonthBookRoute.contentsKey || showGrid) {
                 IconTileButton(icon: "calendar", size: 38, iconSize: 15) {
+                    withAnimation(Motion.snappy) { showGrid = false }
                     selectedKey = MonthBookRoute.contentsKey
                 }
                 .accessibilityLabel(Text("Contents"))
             }
-            if store.entry(for: selectedKey) != nil {
+            if book != nil {
+                IconTileButton(icon: showGrid ? "book" : "square.grid.2x2", size: 38, iconSize: 15) {
+                    Haptics.select()
+                    withAnimation(Motion.snappy) { showGrid.toggle() }
+                }
+                .accessibilityLabel(Text("See all pages"))
+            }
+            if store.entry(for: selectedKey) != nil && !showGrid {
                 IconTileButton(icon: "pencil", size: 38, iconSize: 15) {
                     // Reading this month is free; editing a page stays Premium.
                     if premium.isPremium { showEditor = true } else { flow.showPaywall() }
@@ -128,38 +136,25 @@ struct EntryDetailView: View {
         .padding(.bottom, 8)
     }
 
-    // MARK: Scrubber — drag along it and the pages fly past, instead of turning them one by one
-    private var scrubber: some View {
-        let keys = pageKeys
-        let index = Binding<Double>(
-            get: { Double(keys.firstIndex(of: selectedKey) ?? 0) },
-            set: { value in
-                let i = Int(value.rounded())
-                if keys.indices.contains(i), keys[i] != selectedKey { selectedKey = keys[i] }
-            })
-        let current = store.entry(for: selectedKey)
-        return VStack(spacing: 6) {
-            HStack(spacing: 6) {
-                if let current {
-                    MoodFace(mood: current.moodRaw, size: 16)
-                    Text(verbatim: HDate.monthDay(current.date))
-                } else {
-                    Text("Contents")
+    // MARK: All pages — the whole month at a glance; tap one to turn straight to it
+    private var pagesGrid: some View {
+        ScrollView {
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 3), spacing: 14) {
+                ForEach(entries, id: \.dayKey) { entry in
+                    Button {
+                        withAnimation(Motion.snappy) { showGrid = false }
+                        selectedKey = entry.dayKey
+                    } label: {
+                        MiniPage(entry: entry)
+                    }
+                    .buttonStyle(PressableStyle())
                 }
             }
-            .font(Fonts.ui(12, .heavy)).foregroundStyle(Palette.ink)
-            .padding(.horizontal, 10).padding(.vertical, 4)
-            .background(Palette.cream, in: Capsule())
-            .overlay(Capsule().strokeBorder(Palette.ink, lineWidth: 1.5))
-
-            Slider(value: index, in: 0...Double(keys.count - 1), step: 1,
-                   onEditingChanged: { editing in scrubbing = editing })
-            .tint(Palette.amber)
-            .accessibilityLabel(Text("Contents"))
+            .padding(EdgeInsets(top: 12, leading: 20, bottom: 30, trailing: 20))
+            .capWidth(Metrics.maxContentWidth)
         }
-        .padding(.horizontal, 24)
-        .padding(.top, 6)
-        .padding(.bottom, 10)
+        .scrollIndicators(.hidden)
+        .background(PaperBackground())
     }
 
     private var missing: some View {
@@ -182,8 +177,6 @@ private struct PageCurlReader: UIViewControllerRepresentable {
     /// The book's month when reading a month book — adds its Contents page in front.
     var contents: (year: Int, month: Int)? = nil
     @Binding var selectedKey: String
-    /// While the scrubber is held, jumps land instantly instead of curling — so the pages fly past.
-    var scrubbing = false
 
     var keys: [String] { (contents != nil ? [MonthBookRoute.contentsKey] : []) + entries.map(\.dayKey) }
 
@@ -219,9 +212,8 @@ private struct PageCurlReader: UIViewControllerRepresentable {
 
         let from = keys.firstIndex { $0 == visible } ?? 0
         let to = keys.firstIndex { $0 == selectedKey } ?? 0
-        // A jump from Contents or the header curls like turning straight to a page; a scrub lands
-        // instantly so dragging feels like flicking through the edge of the book.
-        let animated = !scrubbing && !UIAccessibility.isReduceMotionEnabled
+        // A jump from Contents, the page grid or the header curls like turning straight to a page.
+        let animated = !UIAccessibility.isReduceMotionEnabled
         if animated { context.coordinator.isTurning = true }
         pvc.setViewControllers([page], direction: to >= from ? .forward : .reverse, animated: animated) { _ in
             context.coordinator.isTurning = false
@@ -366,4 +358,36 @@ private struct JournalReaderPage: View {
         }
     }
 
+}
+
+/// One page in a book's "all pages" grid — its paper, date, mood and opening lines.
+private struct MiniPage: View {
+    let entry: JournalEntry
+
+    init(entry: JournalEntry) { self.entry = entry }
+
+    var body: some View {
+        let shape = UnevenRoundedRectangle(topLeadingRadius: 3, bottomLeadingRadius: 3,
+                                           bottomTrailingRadius: 9, topTrailingRadius: 9, style: .continuous)
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 4) {
+                Text(verbatim: HDate.monthDay(entry.date))
+                    .font(Fonts.ui(11, .heavy)).foregroundStyle(Palette.ink)
+                    .lineLimit(1).minimumScaleFactor(0.8)
+                Spacer(minLength: 0)
+                MoodFace(mood: entry.moodRaw, size: 14)
+            }
+            Text(entry.journal)
+                .font(Fonts.ui(9.5, .semibold)).foregroundStyle(Palette.inkBody)
+                .lineSpacing(2)
+                .multilineTextAlignment(.leading)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        }
+        .padding(9)
+        .aspectRatio(3 / 4.4, contentMode: .fit)
+        .background(PageThemeBackground(theme: PageTheme.from(entry.themeID)))
+        .clipShape(shape)
+        .overlay(shape.strokeBorder(Palette.ink, lineWidth: 1.5))
+        .accessibilityElement(children: .combine)
+    }
 }

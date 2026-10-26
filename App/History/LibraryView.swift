@@ -408,7 +408,7 @@ struct MonthBookCover: View {
                     Text(verbatim: HDate.monthName(book.firstOfMonth))
                         .font(Fonts.display(width * 0.165, .heavy))
                         .lineLimit(1).minimumScaleFactor(0.55)
-                    if !book.entries.isEmpty {
+                    if !book.entries.isEmpty && width >= 80 {     // too small to read on a mini book
                         HStack(spacing: w * 0.015) {
                             ForEach(Array(book.entries.suffix(7).enumerated()), id: \.offset) { _, e in
                                 MoodFace(mood: e.moodRaw, size: w * 0.085)
