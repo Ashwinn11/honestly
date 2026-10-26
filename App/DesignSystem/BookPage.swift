@@ -109,14 +109,16 @@ struct BookPageStack: View {
 /// already written riffle past to the fresh one. Pure decoration — it ends by removing itself.
 struct BookOpeningOverlay: View {
     let look: CoverLook
+    var month: Date = Date()
     let pagesBefore: Int
     var onFinished: () -> Void
 
     @State private var coverOpen = false
     @State private var riffled = false
 
-    init(look: CoverLook, pagesBefore: Int, onFinished: @escaping () -> Void) {
+    init(look: CoverLook, month: Date = Date(), pagesBefore: Int, onFinished: @escaping () -> Void) {
         self.look = look
+        self.month = month
         self.pagesBefore = pagesBefore
         self.onFinished = onFinished
     }
@@ -178,7 +180,7 @@ struct BookOpeningOverlay: View {
                 look.color
             }
             Rectangle().fill(.black.opacity(0.16)).frame(width: 18).frame(maxHeight: .infinity)
-            Text(verbatim: HDate.monthName(Date()))
+            Text(verbatim: HDate.monthName(month))
                 .font(Fonts.display(44, .heavy)).foregroundStyle(look.ink)
                 .padding(.leading, 36).padding(.bottom, 60)
         }

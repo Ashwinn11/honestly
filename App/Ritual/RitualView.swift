@@ -59,32 +59,26 @@ struct RitualView: View {
                 let look = covers.look(for: monthBook)
                 VStack(spacing: 0) {
                     topBar.capWidth(Metrics.maxContentWidth)
-                    // One page of this month's book, open on the desk: the cover shows around it,
-                    // its spine on the left, the pages beneath peeking out on the right. The editor
-                    // grows to its actual content height (see `RichTextEditor`), so this one
-                    // `ScrollView` is the only scrolling region; the page is at least a screen tall.
+                    // One page of this month's book, fixed in place: its spine on the left, the
+                    // pages beneath peeking out on the right. The date heads the page; the editor
+                    // grows to its actual content height (see `RichTextEditor`) inside the page's
+                    // own `ScrollView`, the only scrolling region.
                     GeometryReader { geo in
-                        ScrollView {
-                            bookPage(minHeight: geo.size.height - 12)
-                                .padding(.horizontal, Metrics.bookGutter)
-                                .padding(.bottom, 12)
-                                .capWidth(Metrics.maxContentWidth)
-                        }
-                        .scrollDismissesKeyboard(.interactively)
-                        .overlay {
-                            if showOpening {
-                                BookOpeningOverlay(look: look, pagesBefore: earlierPages.count) {
-                                    withAnimation(.easeOut(duration: 0.2)) { showOpening = false }
+                        bookPage(height: geo.size.height - 12)
+                            .overlay {
+                                if showOpening {
+                                    BookOpeningOverlay(look: look, pagesBefore: earlierPages.count) {
+                                        withAnimation(.easeOut(duration: 0.2)) { showOpening = false }
+                                    }
+                                    .clipShape(UnevenRoundedRectangle(topLeadingRadius: 4, bottomLeadingRadius: 4,
+                                                                      bottomTrailingRadius: 12, topTrailingRadius: 12,
+                                                                      style: .continuous))
+                                    .transition(.opacity)
                                 }
-                                .clipShape(UnevenRoundedRectangle(topLeadingRadius: 4, bottomLeadingRadius: 4,
-                                                                  bottomTrailingRadius: 12, topTrailingRadius: 12,
-                                                                  style: .continuous))
-                                .padding(.horizontal, Metrics.bookGutter)
-                                .padding(.bottom, 12)
-                                .capWidth(Metrics.maxContentWidth)
-                                .transition(.opacity)
                             }
-                        }
+                            .padding(.horizontal, Metrics.bookGutter)
+                            .padding(.bottom, 12)
+                            .capWidth(Metrics.maxContentWidth)
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -236,16 +230,27 @@ struct RitualView: View {
     }
 
     // MARK: The book page — today's page, set inside the month's book
-    private func bookPage(minHeight: CGFloat) -> some View {
+    private func bookPage(height: CGFloat) -> some View {
         let shape = UnevenRoundedRectangle(topLeadingRadius: 4, bottomLeadingRadius: 4,
                                            bottomTrailingRadius: 12, topTrailingRadius: 12, style: .continuous)
-        return JournalPageSurface(cornerRadius: 0, showsBinderHoles: false, bordered: false) {
-            // Inset by the gutter less, so the text column stays exactly as wide as the reader's.
-            journalBody(minHeight: minHeight)
-                .padding(EdgeInsets(top: 18, leading: Metrics.pageHorizontalInset - Metrics.bookGutter,
-                                    bottom: 24, trailing: Metrics.pageHorizontalInset - Metrics.bookGutter))
+        // Inset by the gutter less, so the text column stays exactly as wide as the reader's.
+        let inset = Metrics.pageHorizontalInset - Metrics.bookGutter
+        return VStack(alignment: .leading, spacing: 0) {
+            // The date and mood head the page and stay put; only the writing scrolls beneath them.
+            PageDateRow(date: Date(), mood: mood) {
+                Haptics.select()
+                showMoodSheet = true
+            }
+            .padding(EdgeInsets(top: 18, leading: inset, bottom: 0, trailing: inset))
+
+            ScrollView {
+                journalBody(minHeight: height)
+                    .padding(EdgeInsets(top: 16, leading: inset, bottom: 24, trailing: inset))
+            }
+            .scrollDismissesKeyboard(.interactively)
         }
-        .frame(maxWidth: .infinity, minHeight: minHeight, alignment: .top)
+        .frame(maxWidth: .infinity)
+        .frame(height: max(height, 0), alignment: .top)
         .background(PageThemeBackground(theme: theme))
         .overlay(alignment: .leading) { BookGutterShade() }
         .clipShape(shape)
@@ -286,11 +291,6 @@ struct RitualView: View {
     // date row, which opens `MoodPickerSheet` — no longer a separate blocking step.
     private func journalBody(minHeight: CGFloat) -> some View {
         VStack(alignment: .leading, spacing: 0) {
-            PageDateRow(date: Date(), mood: mood) {
-                Haptics.select()
-                showMoodSheet = true
-            }
-
             RichTextEditor(attributedText: $richText,
                            selectedRange: $selectedRange, placeholder: "Start writing…",
                            keyboardAllowed: !editorSheetPresented, ruled: true)
@@ -300,7 +300,6 @@ struct RitualView: View {
                 // instead of at its top until typed content grew past the floor. The floor fills
                 // the page, so its rules run to the bottom like a notebook's.
                 .frame(minHeight: max(220, minHeight - 110), alignment: .top)
-                .padding(.top, 16)
         }
 
     }
@@ -406,6 +405,16 @@ private struct CelebrationView: View {
             Palette.celebrationGradient.ignoresSafeArea()
 
             VStack(spacing: 0) {
+                // The streak, quietly at the top — the book and today's line are the moment.
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Text("\(streak)").font(Fonts.display(26, .heavy))
+                    Text("day streak").font(Fonts.ui(14, .heavy))
+                    Text("+1 this morning").font(Fonts.ui(12, .bold)).opacity(0.85)
+                }
+                .foregroundStyle(.white)
+                .padding(.top, 12)
+                .popIn(delay: 0.35)
+
                 VStack(spacing: 0) {
                     // Today's page goes into the month's book, and the book closes over it.
                     ClosingBookView(book: book, width: 128)
@@ -421,20 +430,6 @@ private struct CelebrationView: View {
                         .font(Fonts.ui(15, .heavy)).foregroundStyle(.white.opacity(0.92))
                         .padding(.top, 8)
                         .popIn(delay: 0.25)
-                    HStack(spacing: 13) {
-                        Text("\(streak)").font(Fonts.display(38, .heavy)).foregroundStyle(Palette.ink)
-                        VStack(alignment: .leading, spacing: 0) {
-                            Text("day streak").font(Fonts.ui(14, .heavy)).foregroundStyle(Palette.ink)
-                            Text("+1 this morning").font(Fonts.ui(12, .bold)).foregroundStyle(Palette.amberDeep)
-                        }
-                    }
-                    .padding(.horizontal, 20).padding(.vertical, 12)
-                    .background(Palette.onAmber, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Palette.ink, lineWidth: 2))
-                    .tactile(6, cornerRadius: 16)
-                    .padding(.top, 22)
-                    .popIn(delay: 0.35)
-
                     VStack(spacing: 6) {
                         Eyebrow(text: "Today's affirmation", color: .white.opacity(0.85), tracking: 1.2, size: 11)
                         Affirmations.text(affirmation)

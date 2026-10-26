@@ -8,15 +8,20 @@ struct EntryDetailView: View {
     @Environment(JournalStore.self) private var store
     @Environment(PremiumManager.self) private var premium
     @Environment(AppFlow.self) private var flow
+    @Environment(CoverStore.self) private var covers
     @Environment(\.dismiss) private var dismiss
     @State private var selectedKey: String
     @State private var showEditor = false
-    @State private var showGrid = false
+    @State private var showGrid: Bool
+    @State private var showOpening: Bool
 
     init(dayKey: String, book: MonthBookRoute? = nil) {
         self.dayKey = dayKey
         self.book = book
         _selectedKey = State(initialValue: dayKey)
+        // A book opened from its cover shows all its pages first; one opened at a page shows that page.
+        _showGrid = State(initialValue: book != nil && dayKey == MonthBookRoute.contentsKey)
+        _showOpening = State(initialValue: (book?.riffle ?? false) && !UIAccessibility.isReduceMotionEnabled)
     }
 
     private var entries: [JournalEntry] {
@@ -95,6 +100,14 @@ struct EntryDetailView: View {
                 if showGrid {
                     pagesGrid.transition(.opacity)
                 }
+                if showOpening, let book {
+                    let month = MonthBook.containing(book.firstOfMonth, in: store)
+                    BookOpeningOverlay(look: covers.look(for: month), month: book.firstOfMonth,
+                                       pagesBefore: entries.firstIndex { $0.dayKey == dayKey } ?? 0) {
+                        withAnimation(.easeOut(duration: 0.2)) { showOpening = false }
+                    }
+                    .transition(.opacity)
+                }
             }
         }
         .background(alignment: .topTrailing) {
@@ -117,10 +130,10 @@ struct EntryDetailView: View {
                 }
                 .accessibilityLabel(Text("Contents"))
             }
-            if book != nil {
-                IconTileButton(icon: showGrid ? "book" : "square.grid.2x2", size: 38, iconSize: 15) {
+            if book != nil && !showGrid {
+                IconTileButton(icon: "square.grid.2x2", size: 38, iconSize: 15) {
                     Haptics.select()
-                    withAnimation(Motion.snappy) { showGrid.toggle() }
+                    withAnimation(Motion.snappy) { showGrid = true }
                 }
                 .accessibilityLabel(Text("See all pages"))
             }
@@ -148,6 +161,11 @@ struct EntryDetailView: View {
                         MiniPage(entry: entry)
                     }
                     .buttonStyle(PressableStyle())
+                    .contextMenu {
+                        Button(role: .destructive) { delete(entry) } label: {
+                            Label("Delete page", systemImage: "trash")
+                        }
+                    }
                 }
             }
             .padding(EdgeInsets(top: 12, leading: 20, bottom: 30, trailing: 20))
@@ -155,6 +173,11 @@ struct EntryDetailView: View {
         }
         .scrollIndicators(.hidden)
         .background(PaperBackground())
+    }
+
+    private func delete(_ entry: JournalEntry) {
+        if selectedKey == entry.dayKey { selectedKey = MonthBookRoute.contentsKey }
+        withAnimation(Motion.snappy) { store.delete(entry) }
     }
 
     private var missing: some View {

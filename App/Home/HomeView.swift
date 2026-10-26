@@ -128,7 +128,7 @@ struct HomeView: View {
                     .padding(.top, 6)
                 // Today's page opens inside this month's book — free to read, like the rest of
                 // the current month.
-                NavigationLink(value: MonthBookRoute(entry: entry)) { readTodayLabel }
+                NavigationLink(value: MonthBookRoute(entry: entry, riffle: true)) { readTodayLabel }
                 .buttonStyle(TactileButtonStyle(fill: AnyShapeStyle(Palette.onAmber),
                                                 cornerRadius: DesignScale.s(16), ledge: 4, bordered: true))
                 .padding(.top, 18)
