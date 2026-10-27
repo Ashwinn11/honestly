@@ -10,20 +10,16 @@ struct MonthBookRoute: Hashable {
     let year: Int
     let month: Int
     let startKey: String
-    /// Open with the cover swinging open and the pages riffling to `startKey`, as writing does.
-    var riffle = false
-
-    init(year: Int, month: Int, startKey: String, riffle: Bool = false) {
+    init(year: Int, month: Int, startKey: String) {
         self.year = year
         self.month = month
         self.startKey = startKey
-        self.riffle = riffle
     }
 
     /// The book an entry lives in, opened at that entry.
-    init(entry: JournalEntry, riffle: Bool = false) {
+    init(entry: JournalEntry) {
         let c = Calendar.current.dateComponents([.year, .month], from: entry.date)
-        self.init(year: c.year ?? 0, month: c.month ?? 0, startKey: entry.dayKey, riffle: riffle)
+        self.init(year: c.year ?? 0, month: c.month ?? 0, startKey: entry.dayKey)
     }
 
     var firstOfMonth: Date {

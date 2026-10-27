@@ -8,7 +8,6 @@ struct EntryDetailView: View {
     @Environment(JournalStore.self) private var store
     @Environment(PremiumManager.self) private var premium
     @Environment(AppFlow.self) private var flow
-    @Environment(CoverStore.self) private var covers
     @Environment(\.dismiss) private var dismiss
     @State private var selectedKey: String
     @State private var showEditor = false
@@ -19,7 +18,6 @@ struct EntryDetailView: View {
     /// False for one jump: a page picked from the grid appears in place instead of curling over
     /// whatever page happened to sit under the grid.
     @State private var curlJumps = true
-    @State private var showOpening: Bool
     @State private var showPageActions = false
     @State private var confirmDelete = false
     /// Opened from a book's cover: closing a page goes back to the grid, not out of the book.
@@ -35,7 +33,6 @@ struct EntryDetailView: View {
         _selectedKey = State(initialValue: dayKey)
         // A book opened from its cover shows all its pages first; one opened at a page shows that page.
         _showGrid = State(initialValue: fromCover)
-        _showOpening = State(initialValue: (book?.riffle ?? false) && !UIAccessibility.isReduceMotionEnabled)
     }
 
     private var entries: [JournalEntry] {
@@ -145,15 +142,6 @@ struct EntryDetailView: View {
 
             if showGrid {
                 gridScreen.transition(.opacity)
-            }
-            if showOpening, let book {
-                let month = MonthBook.containing(book.firstOfMonth, in: store)
-                BookOpeningOverlay(look: covers.look(for: month), month: book.firstOfMonth,
-                                   pagesBefore: entries.firstIndex { $0.dayKey == dayKey } ?? 0) {
-                    withAnimation(.easeOut(duration: 0.2)) { showOpening = false }
-                }
-                .ignoresSafeArea()
-                .transition(.opacity)
             }
         }
     }

@@ -8,7 +8,6 @@ struct RitualView: View {
     @Environment(PremiumManager.self) private var premium
     @Environment(AppFlow.self) private var flow
     @Environment(PromptLibrary.self) private var prompts
-    @Environment(CoverStore.self) private var covers
 
     // 0: journal, 1: celebration — mood is no longer its own step; it's set via the mood-card
     // sheet, opened by tapping the mood icon on the journal page itself. Affirmations aren't
@@ -32,7 +31,6 @@ struct RitualView: View {
     @State private var showFormattingSheet = false
     @State private var theme: PageTheme = .paper
     // The month's book opens as the page appears — skipped for Reduce Motion and screenshots.
-    @State private var showOpening = !UIAccessibility.isReduceMotionEnabled && ScreenshotPreview.screen == nil
     @State private var showBook = false
 
     private var editorSheetPresented: Bool {
@@ -42,7 +40,7 @@ struct RitualView: View {
     /// This month's book — today's page is written into it.
     private var monthBook: MonthBook { MonthBook.containing(Date(), in: store) }
 
-    /// The month's pages before today's — what "read earlier pages" opens and the opening riffles past.
+    /// The month's pages before today's — what "read earlier pages" opens.
     private var earlierPages: [JournalEntry] { monthBook.entries.filter { $0.dayKey != store.todayKey } }
 
     private var journalText: String { richText.plainText }
@@ -54,7 +52,6 @@ struct RitualView: View {
                                 streak: store.streak,
                                 onStart: onClose)
             } else {
-                let look = covers.look(for: monthBook)
                 VStack(spacing: 0) {
                     // The whole screen is one page — no bar above it. The prompt is printed at its
                     // top, then the date; the editor grows to its actual content height (see
@@ -100,16 +97,6 @@ struct RitualView: View {
                 }
                 // The whole screen is the page: its edges run top to bottom, past the toolbar.
                 .overlay { BookEdges() }
-                // The book opens over the entire screen, edge to edge.
-                .overlay {
-                    if showOpening {
-                        BookOpeningOverlay(look: look, pagesBefore: earlierPages.count) {
-                            withAnimation(.easeOut(duration: 0.2)) { showOpening = false }
-                        }
-                        .ignoresSafeArea()
-                        .transition(.opacity)
-                    }
-                }
             }
         }
         // RitualView is itself a fullScreenCover off RootView, which also owns a fullScreenCover
