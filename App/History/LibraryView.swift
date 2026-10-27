@@ -223,7 +223,6 @@ struct LibraryView: View {
                 }
             }
             .padding(.top, 14)
-            ShelfPlank().padding(.top, 10)
         }
     }
 
@@ -511,24 +510,6 @@ private struct RibbonShape: Shape {
         p.addLine(to: CGPoint(x: rect.minX, y: rect.maxY))
         p.closeSubpath()
         return p
-    }
-}
-
-/// The wooden shelf a year of books stands on.
-private struct ShelfPlank: View {
-    var body: some View {
-        RoundedRectangle(cornerRadius: 4, style: .continuous)
-            .fill(Color(hex: "B98B5A"))
-            .overlay(RoundedRectangle(cornerRadius: 4, style: .continuous).strokeBorder(Palette.ink, lineWidth: 2))
-            .frame(height: DesignScale.s(14))
-            .background(alignment: .bottom) {
-                RoundedRectangle(cornerRadius: 4, style: .continuous)
-                    .fill(Color(hex: "8F6438"))
-                    .frame(height: DesignScale.s(14))
-                    .offset(y: DesignScale.s(5))
-                    .padding(.horizontal, 6)
-            }
-            .accessibilityHidden(true)
     }
 }
 

@@ -100,18 +100,10 @@ struct EntryDetailView: View {
                 .capWidth(Metrics.maxContentWidth)
 
             ZStack {
-                // The pages sit like the writing page: in from the edges by the book's gutter,
-                // the pages beneath peeking out on the right.
                 PageCurlReader(entries: entries,
                                contents: book.map { (year: $0.year, month: $0.month) },
                                selectedKey: $selectedKey,
                                curlJumps: curlJumps)
-                    .background(alignment: .trailing) {
-                        BookPageStack()
-                            .frame(width: 10)
-                            .offset(x: 5)
-                    }
-                    .padding(.horizontal, Metrics.bookGutter)
                 if showGrid {
                     pagesGrid.transition(.opacity)
                 }
@@ -130,6 +122,9 @@ struct EntryDetailView: View {
                 .offset(x: 74, y: -74)
         }
         .ignoresSafeArea(.container, edges: .top)
+        // The whole screen is the page, as when writing: its edges run top to bottom, header
+        // included. The grid of all pages isn't a page, so it goes without.
+        .overlay { if !showGrid { BookEdges() } }
     }
 
     // Back, and — in a book — a jump to its Contents page. The date lives on the page itself
@@ -374,15 +369,14 @@ private struct JournalReaderPage: View {
 
 
                 }
-                // Inset by the gutter less, so the text column matches the writing page's exactly.
-                .padding(EdgeInsets(top: 22, leading: Metrics.pageHorizontalInset - Metrics.bookGutter,
-                                    bottom: 24, trailing: Metrics.pageHorizontalInset - Metrics.bookGutter))
+                // The same margin as the writing page, so the text column matches it exactly.
+                .padding(EdgeInsets(top: 22, leading: Metrics.pageHorizontalInset,
+                                    bottom: 24, trailing: Metrics.pageHorizontalInset))
             }
             .capWidth(Metrics.maxContentWidth)
         }
         .scrollIndicators(.hidden)
         .background(PageThemeBackground(theme: PageTheme.from(entry.themeID)))
-        .overlay(alignment: .leading) { BookGutterShade() }
     }
 
     // Rich (formatted text + inline images) for entries written after this feature shipped;

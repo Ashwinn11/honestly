@@ -2,9 +2,8 @@ import SwiftUI
 import UIKit
 
 extension Metrics {
-    /// How far a book page sits in from the screen edge while writing, so the book's cover shows
-    /// around it. Writing pads its text by `pageHorizontalInset - bookGutter`, which keeps the
-    /// text column exactly as wide as the reader's (attachments are laid out to that width).
+    /// Width of the page edges showing down the screen's right side (see `BookEdges`). It sits
+    /// inside the page margin, so the text column is the same with or without it.
     static let bookGutter: CGFloat = 8
 }
 
@@ -99,6 +98,26 @@ struct BookPageStack: View {
             }
         }
         .clipShape(UnevenRoundedRectangle(bottomTrailingRadius: 10, topTrailingRadius: 10, style: .continuous))
+        .accessibilityHidden(true)
+    }
+}
+
+/// The book's edges down the whole screen — the spine's shade on the left, the pages beneath on
+/// the right — so the entire screen reads as one page, top bar and toolbar included. Sits above
+/// everything and takes no touches.
+struct BookEdges: View {
+    var body: some View {
+        HStack(spacing: 0) {
+            BookGutterShade()
+            Spacer(minLength: 0)
+            BookPageStack()
+                .frame(width: Metrics.bookGutter)
+                .overlay(alignment: .leading) {
+                    Rectangle().fill(Palette.ink.opacity(0.12)).frame(width: 1)   // the top page's edge
+                }
+        }
+        .ignoresSafeArea()
+        .allowsHitTesting(false)
         .accessibilityHidden(true)
     }
 }

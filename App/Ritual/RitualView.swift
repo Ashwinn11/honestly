@@ -74,7 +74,6 @@ struct RitualView: View {
                                     .transition(.opacity)
                                 }
                             }
-                            .padding(.horizontal, Metrics.bookGutter)
                             .capWidth(Metrics.maxContentWidth)
                     }
                 }
@@ -112,6 +111,8 @@ struct RitualView: View {
                     .padding(.top, 8)
                     .padding(.bottom, 14)
                 }
+                // The whole screen is the page: its edges run past the top bar and the toolbar.
+                .overlay { BookEdges() }
             }
         }
         // RitualView is itself a fullScreenCover off RootView, which also owns a fullScreenCover
@@ -228,8 +229,8 @@ struct RitualView: View {
 
     // MARK: The book page — today's page, set inside the month's book
     private func bookPage(height: CGFloat) -> some View {
-        // Inset by the gutter less, so the text column stays exactly as wide as the reader's.
-        let inset = Metrics.pageHorizontalInset - Metrics.bookGutter
+        // The same margin as the reader, so the text column is exactly as wide in both.
+        let inset = Metrics.pageHorizontalInset
         return VStack(alignment: .leading, spacing: 0) {
             // The date and mood head the page and stay put; only the writing scrolls beneath them.
             PageDateRow(date: Date(), mood: mood) {
@@ -246,14 +247,6 @@ struct RitualView: View {
         }
         .frame(maxWidth: .infinity)
         .frame(height: max(height, 0), alignment: .top)
-        .background(PageThemeBackground(theme: theme))
-        .overlay(alignment: .leading) { BookGutterShade() }
-        .clipped()
-        .background(alignment: .trailing) {
-            BookPageStack()
-                .frame(width: 10)
-                .offset(x: 5)
-        }
         // Swipe from the spine to turn back to this month's earlier pages.
         .simultaneousGesture(
             DragGesture(minimumDistance: 24).onEnded { value in
