@@ -162,168 +162,229 @@ extension MonthBook {
 
 // MARK: - Cover editor
 
-/// Pick a month's cover: automatic, one of the month's photos (or any from the camera roll), or a
-/// page theme's cloth. The book previews live as choices change.
+/// Pick a month's cover — every option on one screen: automatic, a photo (the month's own or
+/// one from the camera roll), or a page theme's cloth. The book previews the choice live; the
+/// tick saves it, the cross leaves the cover as it was.
 struct CoverEditorSheet: View {
     let book: MonthBook
     @Environment(CoverStore.self) private var covers
     @Environment(\.dismiss) private var dismiss
 
-    private enum Mode: Hashable { case auto, photo, theme }
+    private enum Choice: Equatable {
+        case auto
+        case photo(UIImage)
+        case theme(PageTheme)
 
-    @State private var mode: Mode = .auto
-    @State private var theme: PageTheme = .paper
-    @State private var photo: UIImage?
-    @State private var monthPhotos: [UIImage] = []
+        static func == (a: Choice, b: Choice) -> Bool {
+            switch (a, b) {
+            case (.auto, .auto): return true
+            case (.photo(let x), .photo(let y)): return x === y
+            case (.theme(let x), .theme(let y)): return x == y
+            default: return false
+            }
+        }
+    }
+
+    @State private var choice: Choice = .auto
+    @State private var photos: [UIImage] = []
     @State private var pickerItem: PhotosPickerItem?
 
     init(book: MonthBook) { self.book = book }
 
+    private let columns = [GridItem(.adaptive(minimum: 96), spacing: 12)]
+
     private var previewLook: CoverLook {
-        switch mode {
+        switch choice {
         case .auto:
             return CoverStore.autoLook(for: book)
-        case .theme:
+        case .photo(let image):
+            return CoverLook(photo: image, color: Palette.ink, ink: .white)
+        case .theme(let theme):
             let style = theme.cover
             return CoverLook(photo: nil, color: style.color, ink: style.ink)
-        case .photo:
-            if let photo { return CoverLook(photo: photo, color: Palette.ink, ink: .white) }
-            return CoverStore.autoLook(for: book)
         }
     }
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack {
-                Button { dismiss() } label: {
-                    Text("Cancel").font(Fonts.ui(15, .bold)).foregroundStyle(Palette.inkSoft).frame(minHeight: 44)
-                }
-                Spacer()
-                Text("Cover").font(Fonts.display(17, .bold)).foregroundStyle(Palette.ink)
-                Spacer()
-                Button { save() } label: {
-                    Text("Save").font(Fonts.ui(15, .heavy)).foregroundStyle(Palette.amberDeep).frame(minHeight: 44)
-                }
-                .disabled(mode == .photo && photo == nil)
-            }
-            .padding(.horizontal, 20).padding(.top, 8)
-
-            MonthBookCover(book: book, width: 150, lookOverride: previewLook)
-                .padding(.top, 16)
-                .animation(Motion.snappy, value: mode)
-
-            Picker(selection: $mode) {
-                Text("Auto").tag(Mode.auto)
-                Text("Photo").tag(Mode.photo)
-                Text("Theme").tag(Mode.theme)
-            } label: {
-                Text("Cover")
-            }
-            .pickerStyle(.segmented)
-            .padding(.horizontal, 20).padding(.top, 22)
-
+            topBar
             ScrollView {
-                Group {
-                    switch mode {
-                    case .auto: autoPane
-                    case .photo: photoPane
-                    case .theme: themePane
+                VStack(alignment: .leading, spacing: 0) {
+                    MonthBookCover(book: book, width: 140, lookOverride: previewLook)
+                        .frame(maxWidth: .infinity)
+                        .padding(.top, 6)
+                        .animation(Motion.snappy, value: choice)
+
+                    autoOption.padding(.top, 24)
+
+                    Eyebrow(text: "Photo", color: Palette.inkSoft).padding(.top, 24)
+                    LazyVGrid(columns: columns, spacing: 12) {
+                        cameraRollTile
+                        ForEach(Array(photos.enumerated()), id: \.offset) { _, image in
+                            photoTile(image)
+                        }
                     }
+                    .padding(.top, 10)
+
+                    Eyebrow(text: "Theme", color: Palette.inkSoft).padding(.top, 24)
+                    LazyVGrid(columns: columns, spacing: 14) {
+                        ForEach(PageTheme.allCases) { theme in themeTile(theme) }
+                    }
+                    .padding(.top, 10)
                 }
-                .padding(20)
+                .padding(EdgeInsets(top: 4, leading: 20, bottom: 30, trailing: 20))
             }
         }
-        .background(Palette.paper.ignoresSafeArea())
+        .background(Palette.cream.ignoresSafeArea())
         .presentationDetents([.large])
+        .presentationDragIndicator(.hidden)
         .task { load() }
         .onChange(of: pickerItem) { _, item in
             guard let item else { return }
             Task {
                 if let data = try? await item.loadTransferable(type: Data.self), let image = UIImage(data: data) {
-                    photo = image
+                    photos.insert(image, at: 0)
+                    pick(.photo(image))
                 }
             }
         }
     }
 
-    private var autoPane: some View {
-        Text("Made from your month: its newest photo, or the page theme you used most.")
-            .font(Fonts.ui(14, .semibold)).foregroundStyle(Palette.inkSoft)
-            .frame(maxWidth: .infinity, alignment: .leading)
+    private var topBar: some View {
+        HStack(spacing: 12) {
+            IconTileButton(icon: "xmark", size: 38, iconSize: 13) { dismiss() }
+            Text("Cover").font(Fonts.display(19, .bold)).foregroundStyle(Palette.ink)
+            Spacer(minLength: 0)
+            IconTileButton(icon: "checkmark", size: 38, iconSize: 14) { save() }
+        }
+        .padding(.horizontal, 20)
+        .padding(.top, 14)
+        .padding(.bottom, 12)
     }
 
-    private var photoPane: some View {
-        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 3), spacing: 10) {
-            PhotosPicker(selection: $pickerItem, matching: .images) {
-                VStack(spacing: 6) {
-                    Image(systemName: "photo.on.rectangle").font(.system(size: 20, weight: .semibold))
-                    Text("Camera roll").font(Fonts.ui(12, .heavy))
+    // Automatic — a card, coral with an ink outline when chosen.
+    private var autoOption: some View {
+        let selected = choice == .auto
+        return Button { pick(.auto) } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "sparkles")
+                    .font(.system(size: 16, weight: .bold)).foregroundStyle(Palette.ink)
+                    .frame(width: 40, height: 40)
+                    .background(selected ? Palette.onAmber : Palette.iconTile,
+                                in: RoundedRectangle(cornerRadius: 11, style: .continuous))
+                VStack(alignment: .leading, spacing: 3) {
+                    Text("Auto").font(Fonts.ui(14.5, .heavy)).foregroundStyle(Palette.ink)
+                    Text("Made from your month: its newest photo, or the page theme you used most.")
+                        .font(Fonts.ui(12.5, .semibold))
+                        .foregroundStyle(selected ? Palette.ink : Palette.inkSoft)
+                        .multilineTextAlignment(.leading)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
-                .foregroundStyle(Palette.ink)
-                .frame(maxWidth: .infinity)
-                .aspectRatio(3 / 4, contentMode: .fit)
-                .background(Palette.cream, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .strokeBorder(Palette.ink.opacity(0.35), style: StrokeStyle(lineWidth: 2, dash: [5, 4])))
+                Spacer(minLength: 0)
             }
-            ForEach(Array(monthPhotos.enumerated()), id: \.offset) { _, image in
-                Button { photo = image } label: {
-                    Color.clear
-                        .aspectRatio(3 / 4, contentMode: .fit)
-                        .overlay { Image(uiImage: image).resizable().scaledToFill() }
-                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-                        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .strokeBorder(photo === image ? Palette.amber : Palette.outlineSoft,
-                                          lineWidth: photo === image ? 3 : 1.5))
-                }
-                .buttonStyle(PressableStyle())
-            }
+            .padding(12)
+            .background(selected ? Palette.amber : Palette.paper,
+                        in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(selected ? Palette.ink : Palette.outlineSoft, lineWidth: selected ? 2 : 1.5))
         }
+        .buttonStyle(PressableStyle(scale: 0.98))
     }
 
-    private var themePane: some View {
-        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10), count: 4), spacing: 12) {
-            ForEach(PageTheme.allCases) { t in
-                Button { theme = t } label: {
-                    VStack(spacing: 6) {
-                        RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .fill(t.cover.color)
-                            .aspectRatio(3 / 4, contentMode: .fit)
-                            .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                .strokeBorder(theme == t ? Palette.amber : Palette.ink, lineWidth: theme == t ? 3 : 2))
-                        Text(loc: t.label).font(Fonts.ui(11, .bold)).foregroundStyle(Palette.inkSoft)
-                            .lineLimit(1).minimumScaleFactor(0.7)
-                    }
-                }
-                .buttonStyle(PressableStyle())
+    private var cameraRollTile: some View {
+        PhotosPicker(selection: $pickerItem, matching: .images) {
+            VStack(spacing: 6) {
+                Image(systemName: "photo.on.rectangle").font(.system(size: 20, weight: .semibold))
+                Text("Camera roll").font(Fonts.ui(12, .heavy))
+            }
+            .foregroundStyle(Palette.ink)
+            .frame(maxWidth: .infinity)
+            .frame(height: 128)
+            .background(Palette.paper, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(Palette.ink.opacity(0.35), style: StrokeStyle(lineWidth: 1.5, dash: [5, 4])))
+        }
+        .buttonStyle(PressableStyle(scale: 0.96))
+    }
+
+    private func photoTile(_ image: UIImage) -> some View {
+        let selected = choice == .photo(image)
+        return Button { pick(.photo(image)) } label: {
+            Color.clear
+                .frame(height: 128)
+                .overlay { Image(uiImage: image).resizable().scaledToFill() }
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .selectedRing(selected)
+        }
+        .buttonStyle(PressableStyle(scale: 0.96))
+    }
+
+    private func themeTile(_ theme: PageTheme) -> some View {
+        let selected = choice == .theme(theme)
+        let style = theme.cover
+        return Button { pick(.theme(theme)) } label: {
+            VStack(spacing: 7) {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(style.color)
+                    .frame(height: 108)
+                    .selectedRing(selected)
+                Text(loc: theme.label)
+                    .font(Fonts.ui(12, selected ? .heavy : .semibold))
+                    .foregroundStyle(selected ? Palette.ink : Palette.inkSoft)
+                    .lineLimit(1).minimumScaleFactor(0.7)
             }
         }
+        .buttonStyle(PressableStyle(scale: 0.96))
+    }
+
+    private func pick(_ new: Choice) {
+        Haptics.select()
+        withAnimation(Motion.snappy) { choice = new }
     }
 
     private func load() {
-        monthPhotos = book.photos()
+        var found = book.photos()
         switch covers.choice(year: book.year, month: book.month) {
         case .auto:
-            mode = .auto
+            choice = .auto
         case .theme(let id):
-            mode = .theme
-            theme = PageTheme.from(id)
+            choice = .theme(PageTheme.from(id))
         case .photo:
-            mode = .photo
-            photo = covers.look(for: book).photo
+            if let saved = covers.look(for: book).photo {
+                found.insert(saved, at: 0)
+                choice = .photo(saved)
+            }
         }
-        if mode != .theme { theme = book.theme }
+        photos = found
     }
 
     private func save() {
-        switch mode {
+        switch choice {
         case .auto: covers.setAuto(year: book.year, month: book.month)
-        case .theme: covers.setTheme(theme, year: book.year, month: book.month)
-        case .photo:
-            guard let photo else { return }
-            covers.setPhoto(photo, year: book.year, month: book.month)
+        case .theme(let theme): covers.setTheme(theme, year: book.year, month: book.month)
+        case .photo(let image): covers.setPhoto(image, year: book.year, month: book.month)
         }
         Haptics.success()
         dismiss()
+    }
+}
+
+private extension View {
+    /// A chosen tile: coral ring inside an ink outline, with a tick in the corner.
+    func selectedRing(_ selected: Bool) -> some View {
+        let shape = RoundedRectangle(cornerRadius: 14, style: .continuous)
+        return self
+            .overlay(shape.strokeBorder(selected ? Palette.ink : Palette.outlineSoft, lineWidth: selected ? 5 : 1.5))
+            .overlay(shape.inset(by: 2).strokeBorder(selected ? Palette.amber : .clear, lineWidth: 2.5))
+            .overlay(alignment: .topTrailing) {
+                if selected {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 10, weight: .heavy)).foregroundStyle(Palette.ink)
+                        .frame(width: 22, height: 22)
+                        .background(Palette.amber, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous).strokeBorder(Palette.ink, lineWidth: 1.5))
+                        .padding(7)
+                }
+            }
     }
 }
