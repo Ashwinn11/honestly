@@ -3,24 +3,9 @@ import UIKit
 import UniformTypeIdentifiers
 
 /// Prevent UIKit menu focus restoration from reopening the journal keyboard behind a sheet.
-/// Also rules the page when asked, like a notebook (see `drawJournalRules`).
 private final class JournalTextView: UITextView {
     var keyboardAllowed = true
     override var canBecomeFirstResponder: Bool { keyboardAllowed && super.canBecomeFirstResponder }
-
-    var ruled = false {
-        didSet { if ruled != oldValue { contentMode = ruled ? .redraw : .scaleToFill; setNeedsDisplay() } }
-    }
-
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        if ruled { setNeedsDisplay() }
-    }
-
-    override func draw(_ rect: CGRect) {
-        super.draw(rect)
-        if ruled { drawJournalRules(in: rect) }
-    }
 }
 
 extension Notification.Name {
@@ -40,8 +25,6 @@ struct RichTextEditor: UIViewRepresentable {
     @Binding var selectedRange: NSRange
     var placeholder: String = ""
     var keyboardAllowed = true
-    /// Notebook rules under the lines — the writing page reads as paper, not a text box.
-    var ruled = false
 
     static let defaultFont: UIFont =
         UIFont(name: "Manrope-Regular", size: DesignScale.s(16)) ?? .systemFont(ofSize: DesignScale.s(16))
@@ -63,7 +46,6 @@ struct RichTextEditor: UIViewRepresentable {
     func makeUIView(context: Context) -> UITextView {
         let tv = JournalTextView()
         tv.keyboardAllowed = keyboardAllowed
-        tv.ruled = ruled
         tv.backgroundColor = .clear
         tv.isOpaque = false
         tv.textContainerInset = UIEdgeInsets(top: 4, left: 6, bottom: 4, right: 6)
@@ -119,7 +101,6 @@ struct RichTextEditor: UIViewRepresentable {
         defer { context.coordinator.isApplyingSwiftUIUpdate = false }
         if let journal = uiView as? JournalTextView {
             journal.keyboardAllowed = keyboardAllowed
-            journal.ruled = ruled
             if !keyboardAllowed && journal.isFirstResponder { journal.resignFirstResponder() }
         }
         uiView.backgroundColor = .clear
@@ -288,7 +269,6 @@ struct RichTextEditor: UIViewRepresentable {
 
         func textViewDidChange(_ textView: UITextView) {
             attachmentEditor.dismiss()   // any text mutation can shift attachment indexes
-            if let journal = textView as? JournalTextView, journal.ruled { journal.setNeedsDisplay() }
             placeholderLabel?.isHidden = !(textView.text ?? "").isEmpty
             guard !isApplyingSwiftUIUpdate else { return }
             let attributedText = NSAttributedString(attributedString: textView.attributedText ?? NSAttributedString())

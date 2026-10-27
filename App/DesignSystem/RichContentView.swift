@@ -11,12 +11,9 @@ import UIKit
 /// impossible there, and every new editor attribute needed hand-mapping. Here they're free.
 struct RichContentView: UIViewRepresentable {
     let attributedText: NSAttributedString
-    /// Notebook rules under the lines, as on the writing page.
-    var ruled = false
 
     func makeUIView(context: Context) -> UITextView {
-        let tv = RuledTextView()
-        tv.ruled = ruled
+        let tv = UITextView()
         tv.isEditable = false
         tv.isSelectable = false
         tv.isScrollEnabled = false

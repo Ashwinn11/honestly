@@ -258,7 +258,7 @@ struct RitualView: View {
         VStack(alignment: .leading, spacing: 0) {
             RichTextEditor(attributedText: $richText,
                            selectedRange: $selectedRange, placeholder: "Start writing…",
-                           keyboardAllowed: !editorSheetPresented, ruled: true)
+                           keyboardAllowed: !editorSheetPresented)
                 .focused($journalFocused)
                 // See the matching comment in EntryEditorView.swift — `.frame(minHeight:)`
                 // defaults to center alignment, which is why the empty placeholder sat mid-box

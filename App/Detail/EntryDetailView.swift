@@ -456,7 +456,7 @@ private struct JournalReaderPage: View {
     @ViewBuilder private var journalContent: some View {
         if let data = entry.richContent, let attributed = NSAttributedString.from(rtfdData: data),
            attributed.length > 0 {
-            RichContentView(attributedText: attributed, ruled: true)
+            RichContentView(attributedText: attributed)
         } else {
             Text(entry.journal)
                 .font(Fonts.ui(16.5, .semibold))
