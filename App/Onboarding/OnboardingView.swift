@@ -387,7 +387,7 @@ private struct OnbJournalQuestionView: View {
                 }
             }
             JournalWritingIllustration()
-                .offset(y: -12)
+                .padding(.top, 6)
         }
     }
 }
@@ -436,9 +436,7 @@ private struct MorningOutcomeCard: View {
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var phase = Phase.locked
-    @State private var written = [0, 0, 0]          // characters typed per line
-    @State private var penLine = 0
-    @State private var penX: CGFloat = 0             // end of the line being written
+    @State private var ink: CGFloat = 0              // how much of the page is written
     private let brands: [Brand] = [.instagram, .tiktok, .snapchat]
 
     private static let pageLines = [
@@ -453,10 +451,6 @@ private struct MorningOutcomeCard: View {
 
     private var unlocked: Bool { phase.rawValue >= Phase.unlocked.rawValue }
 
-    private var inkFraction: CGFloat {
-        let total = Self.pageLines.reduce(0) { $0 + L10n.localized($1).count }
-        return total == 0 ? 1 : CGFloat(written.reduce(0, +)) / CGFloat(total)
-    }
 
     var body: some View {
         VStack(spacing: 18) {
@@ -486,14 +480,13 @@ private struct MorningOutcomeCard: View {
         .shadow(color: Palette.ink.opacity(0.09), radius: 18, x: 0, y: 12)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text(loc: "Block apps until you write"))
-        .task { await play() }
     }
 
     /// 7:00, ticking while the page is written, 7:04 at the unlock, in the app's language.
     private var clock: String {
         let minute = switch phase {
         case .locked:    0
-        case .writing:   1 + min(2, Int(inkFraction * 3))
+        case .writing:   1 + min(2, Int(ink * 3))
         case .unlocked:  4
         case .affirming: 5
         }
@@ -531,7 +524,7 @@ private struct MorningOutcomeCard: View {
 
     /// Fills with the ink as the page is written; full means unlocked.
     private var meter: some View {
-        let fill = unlocked ? 1 : max(0.04, inkFraction)
+        let fill = unlocked ? 1 : max(0.04, ink)
         return Capsule()
             .fill(Palette.ink.opacity(0.08))
             .frame(maxWidth: 190)
@@ -568,76 +561,28 @@ private struct MorningOutcomeCard: View {
         }
         // Fixed, so the card never resizes as the page gives way to the affirmation.
         .frame(maxWidth: .infinity)
-        .frame(height: 92)
+        .frame(height: DesignScale.s(140))
     }
 
-    /// The same pencil-and-ruled-lines writing as the journaling screen, at card size.
+    /// The month's book opening and the page being written — the same book as the journaling
+    /// screen, played once.
     private var page: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            ForEach(Self.pageLines.indices, id: \.self) { index in
-                pageLine(index)
-            }
-        }
-        .overlay(alignment: .topLeading) {
-            Image(systemName: "pencil")
-                .font(.system(size: 26, weight: .regular))
-                .foregroundStyle(Palette.amber)
-                .shadow(color: Palette.ink.opacity(0.14), radius: 2, x: 1, y: 3)
-                .rotationEffect(.degrees(-12))
-                // Tip on the end of the line being written (rows are 25pt + 6pt spacing).
-                .offset(x: penX - 4, y: CGFloat(penLine) * 31 - 9)
-                .opacity(unlocked ? 0 : 1)
-                .animation(.easeOut(duration: 0.3), value: unlocked)
-        }
-        .padding(.horizontal, 6)
+        BookWritingScene(lines: Self.pageLines, pageWidth: 92, onInk: { value in
+            ink = value
+            if value > 0 && phase == .locked { phase = .writing }
+        }, onWritten: { Task { await unlock() } })
     }
 
-    private func pageLine(_ index: Int) -> some View {
-        let line = L10n.localized(Self.pageLines[index])
-        return ZStack(alignment: .leading) {
-            Capsule()
-                .fill(Palette.ink.opacity(0.14))
-                .frame(height: 2)
-                .offset(y: 8)
-            Text(verbatim: String(line.prefix(written[index])))
-                .font(Fonts.ui(13, .semibold))
-                .foregroundStyle(Palette.ink)
-                .lineLimit(1)
-                .minimumScaleFactor(0.78)
-                .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { width in
-                    if index == penLine { penX = width }
-                }
-        }
-        .frame(maxWidth: .infinity, minHeight: 25, alignment: .leading)
-    }
-
-    private func play() async {
+    private func unlock() async {
         guard !reduceMotion else {
-            written = Self.pageLines.map { L10n.localized($0).count }
             phase = .affirming
             return
         }
-        do {
-            try await Task.sleep(for: .milliseconds(700))
-            phase = .writing
-            for (line, key) in Self.pageLines.enumerated() {
-                penLine = line
-                penX = 0
-                for character in 0...L10n.localized(key).count {
-                    try Task.checkCancellation()
-                    written[line] = character
-                    try await Task.sleep(for: .milliseconds(48))
-                }
-                try await Task.sleep(for: .milliseconds(140))
-            }
-            // The page is written, so the apps wake up.
-            withAnimation(Motion.gentle) { phase = .unlocked }
-            Haptics.success()
-            try await Task.sleep(for: .milliseconds(1100))
-            withAnimation(Motion.gentle) { phase = .affirming }
-        } catch {
-            return
-        }
+        // The page is written, so the apps wake up.
+        withAnimation(Motion.gentle) { phase = .unlocked }
+        Haptics.success()
+        try? await Task.sleep(for: .milliseconds(1100))
+        withAnimation(Motion.gentle) { phase = .affirming }
     }
 }
 
@@ -672,132 +617,31 @@ private struct OnbChoiceRow: View {
     }
 }
 
+/// The month's book opening and a page being written in it, again and again — the book the
+/// user will write in, met before they ever open it.
 private struct JournalWritingIllustration: View {
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var activeLine = 0
-    @State private var pencilProgress: CGFloat = 0
-
-    var body: some View {
-        ZStack {
-            SoftGlow(color: Palette.sunDisc, opacity: 0.22, size: 320)
-            JournalWritingCard { line, progress in
-                activeLine = line
-                pencilProgress = progress
-            }
-                .rotationEffect(.degrees(-4))
-
-            Image(systemName: "pencil")
-                .font(.system(size: 64, weight: .regular))
-                .foregroundStyle(Palette.amber)
-                .shadow(color: Palette.ink.opacity(0.14), radius: 3, x: 2, y: 4)
-                .rotationEffect(.degrees(-12))
-                .offset(x: -82 + 165 * pencilProgress, y: -55 + CGFloat(activeLine) * 24)
-                .accessibilityHidden(true)
-        }
-        .frame(maxWidth: .infinity)
-    }
-}
-
-private struct JournalWritingCard: View {
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var writtenCharacters = [0, 0, 0]
-    @State private var inkOpacity = 1.0
-    var onWritingProgress: (Int, CGFloat) -> Void
-
-    private static let writingLines = [
+    private static let lines = [
         "There’s a lot on my mind",
         "this morning, so I’ll start",
         "with just one thing."
     ]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 15) {
-            HStack {
-                Text(loc: "A moment for me")
-                    .font(Fonts.ui(11.5, .heavy))
-                    .foregroundStyle(Palette.inkSoft)
-                Spacer(minLength: 8)
-                SunMark(size: 24)
-            }
-            VStack(alignment: .leading, spacing: 6) {
-                ForEach(Self.writingLines.indices, id: \.self) { index in
-                    writingLine(index)
-                }
-            }
-            .opacity(inkOpacity)
-            .accessibilityHidden(true)
-
+        VStack(spacing: 12) {
+            BookWritingScene(heading: "A moment for me", lines: Self.lines, pageWidth: 124, loops: true)
+                .rotationEffect(.degrees(-3))
             HStack(spacing: 6) {
                 Image(systemName: "heart.fill")
                     .foregroundStyle(Palette.amberDeep)
                 Text(loc: "A few honest lines are enough.")
                     .foregroundStyle(Palette.inkSoft)
             }
-            .font(Fonts.ui(10.5, .semibold))
+            .font(Fonts.ui(11, .semibold))
             .fixedSize(horizontal: false, vertical: true)
         }
-        .padding(18)
-        .frame(maxWidth: 232, alignment: .leading)
-        .background(Palette.cream, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous)
-            .stroke(Palette.ink, lineWidth: 2))
-        .tactile(4, cornerRadius: 20)
-        .shadow(color: Palette.ink.opacity(0.09), radius: 18, x: 0, y: 12)
+        .frame(maxWidth: .infinity)
+        .background { SoftGlow(color: Palette.sunDisc, opacity: 0.22, size: 320) }
         .accessibilityHidden(true)
-        .task { await writeLines() }
-    }
-
-    @ViewBuilder
-    private func writingLine(_ index: Int) -> some View {
-        let translated = L10n.localized(Self.writingLines[index])
-        let count = reduceMotion ? translated.count : min(writtenCharacters[index], translated.count)
-        ZStack(alignment: .leading) {
-            Capsule()
-                .fill(Palette.ink.opacity(0.14))
-                .frame(height: 2)
-                .offset(y: 8)
-            Text(verbatim: String(translated.prefix(count)))
-                .font(Fonts.ui(13, .semibold))
-                .foregroundStyle(Palette.ink)
-                .lineLimit(1)
-                .minimumScaleFactor(0.78)
-        }
-        .frame(maxWidth: .infinity, minHeight: 25, alignment: .leading)
-    }
-
-    private func writeLines() async {
-        guard !reduceMotion else {
-            for (index, key) in Self.writingLines.enumerated() {
-                writtenCharacters[index] = L10n.localized(key).count
-            }
-            onWritingProgress(Self.writingLines.count - 1, 1)
-            return
-        }
-        // Loops for as long as the screen is up; a fresh visit starts again from a blank page.
-        do {
-            while true {
-                for (line, key) in Self.writingLines.enumerated() {
-                    let length = L10n.localized(key).count
-                    for character in 1...length {
-                        try Task.checkCancellation()
-                        writtenCharacters[line] = character
-                        onWritingProgress(line, CGFloat(character) / CGFloat(length))
-                        try await Task.sleep(for: .milliseconds(52))
-                    }
-                    try await Task.sleep(for: .milliseconds(140))
-                }
-                try await Task.sleep(for: .seconds(1.6))
-                // Lift the ink and glide the pencil home before writing the page again.
-                withAnimation(.easeOut(duration: 0.35)) { inkOpacity = 0 }
-                withAnimation(Motion.gentle) { onWritingProgress(0, 0) }
-                try await Task.sleep(for: .milliseconds(450))
-                writtenCharacters = [0, 0, 0]
-                inkOpacity = 1
-                try await Task.sleep(for: .milliseconds(300))
-            }
-        } catch {
-            return
-        }
     }
 }
 
