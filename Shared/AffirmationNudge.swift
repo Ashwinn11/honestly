@@ -2,7 +2,7 @@ import Foundation
 import UserNotifications
 
 /// Two kinds of notification. "Today's affirmation" carries a topic based affirmation on its own
-/// schedule. Separately, one "Journal reminder" carrying the writing page's prompt goes out at
+/// schedule. Separately, one "Journal reminder" carrying the day's writing prompt goes out at
 /// 8pm on days the page is still unwritten.
 enum AffirmationNudge {
     private static let reminderID = "honestly.affirmation.reminder"
@@ -15,7 +15,7 @@ enum AffirmationNudge {
     private static let maximumDailyTimes = 3
     private static let enabledKey = "affirmationNudgeOn"
     private static let reminderLastDayKey = "affirmationReminderLastSentDay"
-    private static let reminderPromptKey = "journalReminderPrompt"
+    private static let reminderPromptsKey = "journalReminderPrompts"   // day key → that day's prompt
 
     static let defaultMinutes = 9 * 60
 
@@ -117,13 +117,16 @@ enum AffirmationNudge {
         addReminder()
     }
 
-    /// The prompt at the top of the writing page, already in the app's language — mirrored by the
-    /// app (the 04:00 extension can't read the prompt library) so the reminder can ask it. A
-    /// reminder already waiting for tonight is swapped for one with the new prompt.
-    static func setReminderPrompt(_ prompt: String?) {
+    /// Each coming day's writing-page prompt, already in the app's language — mirrored by the
+    /// app (the 04:00 extension can't read the prompt library) so each night's reminder asks
+    /// that day's prompt. If today's changed, a reminder already waiting for tonight is swapped.
+    static func setReminderPrompts(_ byDay: [String: String]) {
         let d = SharedState.defaults
-        guard d.string(forKey: reminderPromptKey) != prompt else { return }
-        if let prompt { d.set(prompt, forKey: reminderPromptKey) } else { d.removeObject(forKey: reminderPromptKey) }
+        let old = d.dictionary(forKey: reminderPromptsKey) as? [String: String]
+        guard old != byDay else { return }
+        d.set(byDay, forKey: reminderPromptsKey)
+        let today = SharedState.dayKey()
+        guard old?[today] != byDay[today] else { return }
         Task {
             let pending = await UNUserNotificationCenter.current().pendingNotificationRequests()
             guard pending.contains(where: { $0.identifier == reminderID }) else { return }
@@ -135,8 +138,8 @@ enum AffirmationNudge {
         let content = UNMutableNotificationContent()
         // Not SwiftUI here, so `Text(loc:)` doesn't apply — do the String Catalog lookup directly.
         content.title = L10n.localized("Journal reminder")
-        let prompt = SharedState.defaults.string(forKey: reminderPromptKey)?
-            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let prompts = SharedState.defaults.dictionary(forKey: reminderPromptsKey) as? [String: String]
+        let prompt = prompts?[SharedState.dayKey()]?.trimmingCharacters(in: .whitespacesAndNewlines)
         content.body = prompt?.isEmpty == false
             ? prompt!
             : L10n.localized("Write today's page — a few quiet minutes, just for you.")
@@ -157,7 +160,7 @@ enum AffirmationNudge {
         cancel()
         SharedState.defaults.removeObject(forKey: enabledKey)
         SharedState.defaults.removeObject(forKey: reminderLastDayKey)
-        SharedState.defaults.removeObject(forKey: reminderPromptKey)
+        SharedState.defaults.removeObject(forKey: reminderPromptsKey)
     }
 
     /// Without a delegate, iOS silently drops local notifications while the app is in the

@@ -102,7 +102,7 @@ struct HonestlyApp: App {
                     screenTime.armSchedule()
                     Shielding.reconcile()
                     AffirmationNudge.schedule()
-                    prompts.shareWithReminder()
+                    prompts.refresh()
                 }
                 .onChange(of: premium.isPremium) { _, isPremium in
                     // Apply purchases and revocations to the app and its extensions.
@@ -116,7 +116,7 @@ struct HonestlyApp: App {
                 }
                 .onChange(of: l10n.code) { _, _ in
                     // A built-in prompt reads in the new language in tonight's reminder too.
-                    prompts.shareWithReminder()
+                    prompts.refresh()
                 }
                 .onChange(of: scenePhase) { _, phase in
                     // A warm resume redraws nothing on its own: if the day rolled over while the
@@ -133,7 +133,8 @@ struct HonestlyApp: App {
                     Shielding.reconcile()
                     // Rebuilds the next two weeks of affirmation notifications.
                     AffirmationNudge.schedule()
-                    prompts.shareWithReminder()
+                    // A new day opens on a new prompt.
+                    prompts.refresh()
                 }
         }
     }
