@@ -193,6 +193,51 @@ final class JournalStore {
         if wasToday { Shielding.reconcile() }
     }
 
+    #if DEBUG
+    /// Debug only: fills the last three months (before today) with sample pages — most days, a
+    /// few skipped — in mixed moods, themes and tags, so the Library, books, grid, calendar,
+    /// search and streaks can be tried with real volume. Days that already have a page are kept.
+    func seedSampleMonths(_ months: Int = 3) {
+        let samples = [
+            "Slept with the window open and woke up before the alarm. Lay there for a bit just listening.\n\nOne thing today: finish the draft. That's it.",
+            "A little more present today. I took a walk without my headphones and noticed how quiet the street can be.",
+            "Woke up anxious about the meeting. Writing it down makes it smaller. I know what I want to say.",
+            "I don't have every answer yet, and that's okay. Today I can start with one small, kind thing.",
+            "Rain again. Made the slow coffee and didn't look at my phone until it was gone. More of that.",
+            "Tired in the bones today. Going to be gentle with myself and cancel the thing I don't need to do.",
+            "Called Mum last night and we laughed about nothing for an hour. Still carrying that this morning.",
+            "Some days ask for less. I'm learning to listen instead of pushing through.",
+            "Couldn't sleep, kept replaying what I said. Letting it go here: it was fine, and they've forgotten.",
+            "A good conversation, a slow lunch, and a chapter before bed. There is a lot to be grateful for.",
+            "Three things I'm looking forward to: the new book, Friday dinner, finishing this sprint.",
+            "Felt behind all week. Listing what I actually did helps — it's more than I thought."
+        ]
+        let tagSets: [[String]] = [["morning thoughts"], ["small joys"], ["work"], ["family"], [], ["rest", "small joys"]]
+        let themes = PageTheme.allCases
+        let cal = Calendar.current
+        let today = cal.startOfDay(for: Date())
+        guard let start = cal.date(byAdding: .month, value: -months, to: today) else { return }
+        let taken = Set(entries.map(\.dayKey))
+        var rng = SystemRandomNumberGenerator()
+        var day = start
+        var n = 0
+        while day < today {
+            defer { day = cal.date(byAdding: .day, value: 1, to: day) ?? today }
+            guard !taken.contains(SharedState.dayKey(for: day)), Int.random(in: 0..<10, using: &rng) < 8 else { continue }
+            let text = samples[n % samples.count]
+            let at = cal.date(bySettingHour: Int.random(in: 6...9), minute: Int.random(in: 0...59), second: 0, of: day) ?? day
+            context.insert(JournalEntry(content: text, affirmationsRaw: "",
+                                        mood: (Mood(rawValue: Int.random(in: 0...4)) ?? .happy).storageKey,
+                                        wordCount: JournalEntry.wordCount(of: text), createdAt: at,
+                                        tags: tagSets[n % tagSets.count],
+                                        themeID: n % 3 == 0 ? themes[(n / 3) % themes.count].rawValue : ""))
+            n += 1
+        }
+        try? context.save()
+        reload()
+    }
+    #endif
+
     func deleteAll() {
         for e in entries { context.delete(e) }
         try? context.save()

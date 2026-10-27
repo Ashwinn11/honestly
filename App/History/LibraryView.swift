@@ -72,6 +72,7 @@ struct LibraryView: View {
     @State private var filter: Int? = nil          // nil = All
     @State private var query = ""
     @State private var coverBook: MonthBook?
+    @State private var editing: JournalEntry?
 
     private var isSearching: Bool {
         filter != nil || !query.trimmingCharacters(in: .whitespaces).isEmpty
@@ -141,6 +142,9 @@ struct LibraryView: View {
         }
         .sheet(item: $coverBook) { book in
             CoverEditorSheet(book: book)
+        }
+        .fullScreenCover(item: $editing) { entry in
+            EntryEditorView(entry: entry)
         }
     }
 
@@ -273,6 +277,10 @@ struct LibraryView: View {
                     }
                     .buttonStyle(PressableStyle())
                     .contextMenu {
+                        Button {
+                            // Editing a page is Premium, like everywhere else.
+                            if premium.isPremium { editing = e } else { flow.showPaywall() }
+                        } label: { Label("Edit page", systemImage: "pencil") }
                         Button(role: .destructive) {
                             withAnimation(Motion.snappy) { store.delete(e) }
                         } label: { Label("Delete page", systemImage: "trash") }

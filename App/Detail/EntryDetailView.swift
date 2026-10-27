@@ -12,6 +12,7 @@ struct EntryDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var selectedKey: String
     @State private var showEditor = false
+    @State private var editKey: String?             // the page the editor opens on
     /// The book's grid of all pages (or its calendar). Not a page: it has the only header.
     @State private var showGrid: Bool
     @State private var gridMode: GridMode = .pages
@@ -101,12 +102,12 @@ struct EntryDetailView: View {
             }
         }
         .fullScreenCover(isPresented: $showEditor) {
-            if premium.isPremium, let entry = store.entry(for: selectedKey) {
+            if premium.isPremium, let entry = store.entry(for: editKey ?? selectedKey) {
                 EntryEditorView(entry: entry)
             }
         }
         .confirmationDialog(Text(verbatim: pageTitle), isPresented: $showPageActions, titleVisibility: .visible) {
-            Button { edit() } label: { Text("Edit page") }
+            Button { edit(selectedKey) } label: { Text("Edit page") }
             Button(role: .destructive) { confirmDelete = true } label: { Text("Delete page") }
             Button(role: .cancel) {} label: { Text("Cancel") }
         }
@@ -170,8 +171,9 @@ struct EntryDetailView: View {
         store.entry(for: selectedKey).map { HDate.dayMonthYear($0.date) } ?? ""
     }
 
-    private func edit() {
+    private func edit(_ key: String) {
         // Reading this month is free; editing a page stays Premium.
+        editKey = key
         if premium.isPremium { showEditor = true } else { flow.showPaywall() }
     }
 
@@ -241,6 +243,9 @@ struct EntryDetailView: View {
                 Button { open(entry.dayKey) } label: { MiniPage(entry: entry) }
                     .buttonStyle(PressableStyle())
                     .contextMenu {
+                        Button { edit(entry.dayKey) } label: {
+                            Label("Edit page", systemImage: "pencil")
+                        }
                         Button(role: .destructive) { delete(entry) } label: {
                             Label("Delete page", systemImage: "trash")
                         }

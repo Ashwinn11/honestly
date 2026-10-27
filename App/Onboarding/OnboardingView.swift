@@ -805,36 +805,26 @@ private struct OnbReminderView: View {
     var body: some View {
         VStack(spacing: 24) {
             OnbHeader(eyebrow: "Two gentle reminders", title: "Today's prompt, and a kind thought.")
-            VStack(alignment: .leading, spacing: 10) {
+            VStack(spacing: 12) {
                 if visibleCount > 0 {
-                    reminder(caption: "In the evening, only if today's page is still blank.") {
-                        NotifCard(title: "Journal reminder", time: clock(AffirmationNudge.reminderHour * 60)) {
-                            Text(verbatim: prompts.pageText ?? L10n.localized("Write today's page — a few quiet minutes, just for you."))
-                        }
+                    NotifCard(title: "Journal reminder", time: clock(AffirmationNudge.reminderHour * 60)) {
+                        Text(verbatim: prompts.pageText ?? L10n.localized("Write today's page — a few quiet minutes, just for you."))
                     }
+                    .transition(arrival)
                 }
                 if visibleCount > 1 {
-                    reminder(caption: "At the times you choose.") {
-                        NotifCard(title: "Today's affirmation", time: clock(AffirmationNudge.defaultMinutes)) {
-                            Affirmations.text(affirmation)
-                        }
+                    NotifCard(title: "Today's affirmation", time: clock(AffirmationNudge.defaultMinutes)) {
+                        Affirmations.text(affirmation)
                     }
+                    .transition(arrival)
                 }
             }
         }
         .task { await revealNotifications() }
     }
 
-    private func reminder<Card: View>(caption: String, @ViewBuilder card: () -> Card) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            card()
-            Text(loc: caption)
-                .font(Fonts.ui(12.5, .semibold)).foregroundStyle(Palette.inkSoft)
-                .fixedSize(horizontal: false, vertical: true)
-                .padding(.leading, DesignScale.s(15))
-        }
-        .padding(.bottom, 6)
-        .transition(.asymmetric(insertion: .move(edge: .top).combined(with: .opacity), removal: .opacity))
+    private var arrival: AnyTransition {
+        .asymmetric(insertion: .move(edge: .top).combined(with: .opacity), removal: .opacity)
     }
 
     /// A time of day in the app's language — 8:00 PM, 20:00.

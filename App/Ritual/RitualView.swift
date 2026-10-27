@@ -8,7 +8,6 @@ struct RitualView: View {
     @Environment(PremiumManager.self) private var premium
     @Environment(AppFlow.self) private var flow
     @Environment(PromptLibrary.self) private var prompts
-    @Environment(AffirmationList.self) private var affirmations
     @Environment(CoverStore.self) private var covers
 
     // 0: journal, 1: celebration — mood is no longer its own step; it's set via the mood-card
@@ -53,7 +52,6 @@ struct RitualView: View {
             if step == 1 {
                 CelebrationView(book: monthBook,
                                 streak: store.streak,
-                                affirmation: affirmations.today(premium: premium.isPremium),
                                 onStart: onClose)
             } else {
                 let look = covers.look(for: monthBook)
@@ -374,7 +372,6 @@ private struct MoodPickerSheet: View {
 private struct CelebrationView: View {
     let book: MonthBook
     let streak: Int
-    let affirmation: String
     var onStart: () -> Void
 
     @Environment(\.requestReview) private var requestReview
@@ -385,15 +382,10 @@ private struct CelebrationView: View {
             Palette.celebrationGradient.ignoresSafeArea()
 
             VStack(spacing: 0) {
-                // The streak, quietly at the top — the book and today's line are the moment.
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    Text("\(streak)").font(Fonts.display(26, .heavy))
-                    Text("day streak").font(Fonts.ui(14, .heavy))
-                    Text("+1 this morning").font(Fonts.ui(12, .bold)).opacity(0.85)
-                }
-                .foregroundStyle(.white)
-                .padding(.top, 12)
-                .popIn(delay: 0.35)
+                // The streak at the top; the book closing is the moment.
+                StreakBadge(streak: streak)
+                    .padding(.top, 12)
+                    .popIn(delay: 0.2)
 
                 VStack(spacing: 0) {
                     // Today's page goes into the month's book, and the book closes over it.
@@ -410,16 +402,6 @@ private struct CelebrationView: View {
                         .font(Fonts.ui(15, .heavy)).foregroundStyle(.white.opacity(0.92))
                         .padding(.top, 8)
                         .popIn(delay: 0.25)
-                    VStack(spacing: 6) {
-                        Eyebrow(text: "Today's affirmation", color: .white.opacity(0.85), tracking: 1.2, size: 11)
-                        Affirmations.text(affirmation)
-                            .font(Fonts.display(19, .semibold)).foregroundStyle(.white)
-                            .multilineTextAlignment(.center).lineSpacing(2)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-                    .frame(maxWidth: 300)
-                    .padding(.top, 22)
-                    .popIn(delay: 0.5)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
 
@@ -438,3 +420,76 @@ private struct CelebrationView: View {
     }
 
 }
+
+/// The streak as a medal rather than a line: a flame in a coral seal, the count rolling up from
+/// yesterday's, and the last seven mornings as beads — today's lighting last.
+private struct StreakBadge: View {
+    let streak: Int
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var shown: Int
+    @State private var todayLit = false
+    @State private var flare = 0
+
+    init(streak: Int) {
+        self.streak = streak
+        _shown = State(initialValue: max(streak - 1, 0))
+    }
+
+    var body: some View {
+        HStack(spacing: 14) {
+            ZStack {
+                Circle().fill(Palette.amber)
+                Circle().strokeBorder(Palette.ink, lineWidth: 2)
+                Circle().strokeBorder(Palette.cream.opacity(0.55), lineWidth: 1.5).padding(5)
+                Image(systemName: "flame.fill")
+                    .font(.system(size: DesignScale.s(21), weight: .bold))
+                    .foregroundStyle(Palette.cream)
+                    .symbolEffect(.bounce, value: flare)
+            }
+            .frame(width: DesignScale.s(50), height: DesignScale.s(50))
+
+            VStack(alignment: .leading, spacing: 7) {
+                HStack(alignment: .firstTextBaseline, spacing: 6) {
+                    Text(verbatim: "\(shown)")
+                        .font(Fonts.display(30, .heavy))
+                        .monospacedDigit()
+                        .contentTransition(.numericText(value: Double(shown)))
+                    Text("day streak").font(Fonts.ui(14, .heavy))
+                }
+                week
+            }
+        }
+        .foregroundStyle(Palette.ink)
+        .padding(.vertical, 12).padding(.leading, 12).padding(.trailing, 22)
+        .background(Palette.cream, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).strokeBorder(Palette.ink, lineWidth: 2))
+        .tactile(5, cornerRadius: 24)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(verbatim: "\(streak) ") + Text("day streak"))
+        .task {
+            guard !reduceMotion else { shown = streak; todayLit = true; return }
+            try? await Task.sleep(for: .seconds(0.75))
+            withAnimation(Motion.pop) { shown = streak; todayLit = true }
+            flare += 1
+            Haptics.success()
+        }
+    }
+
+    /// The last seven mornings, oldest first; the streak's days are filled.
+    private var week: some View {
+        let run = min(streak, 7)
+        return HStack(spacing: 5) {
+            ForEach(0..<7, id: \.self) { i in
+                let isToday = i == 6
+                let filled = i >= 7 - run && (!isToday || todayLit)
+                Circle()
+                    .fill(filled ? Palette.amber : Palette.ink.opacity(0.08))
+                    .overlay(Circle().strokeBorder(Palette.ink.opacity(filled ? 1 : 0.25), lineWidth: 1.5))
+                    .frame(width: DesignScale.s(13), height: DesignScale.s(13))
+                    .scaleEffect(isToday && todayLit ? 1.15 : 1)
+            }
+        }
+    }
+}
+

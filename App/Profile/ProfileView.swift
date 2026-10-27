@@ -44,6 +44,9 @@ struct ProfileView: View {
                 sectionEyebrow("About")
                 aboutCard
                 deleteCard.padding(.top, 16)
+                #if DEBUG
+                debugCard.padding(.top, 16)
+                #endif
 
                 // OpenMoji's CC BY-SA 4.0 license requires this credit to ship with the stickers.
                 Text("Stickers: OpenMoji.org · CC BY-SA 4.0")
@@ -107,6 +110,25 @@ struct ProfileView: View {
         .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).strokeBorder(Palette.outlineSoft, lineWidth: 1.5))
         .shadow(color: Color(hex: "78501E").opacity(0.08), radius: 13, y: 10)
     }
+
+    #if DEBUG
+    // MARK: Debug — not in release builds
+    private var debugCard: some View {
+        Button {
+            Haptics.success()
+            store.seedSampleMonths()
+        } label: {
+            settingRow {
+                rowText("Debug: add 3 months of pages", "Sample pages on most days before today")
+            } trailing: {
+                Image(systemName: "hammer.fill").foregroundStyle(Palette.inkSofter)
+            }
+        }
+        .buttonStyle(RowPressStyle())
+        .background(Palette.cream, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).strokeBorder(Palette.outlineSoft, lineWidth: 1.5))
+    }
+    #endif
 
     // MARK: Hero
     private var heroCard: some View {
