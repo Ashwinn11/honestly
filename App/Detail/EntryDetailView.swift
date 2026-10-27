@@ -3,7 +3,7 @@ import SwiftUI
 struct EntryDetailView: View {
     let dayKey: String
     /// Set when opened as a month book: the reader then turns only that month's pages, oldest
-    /// first, behind a Contents page — like a real book. Nil keeps the all-pages reader, newest first.
+    /// first, like a real book. Nil keeps the all-pages reader, newest first.
     var book: MonthBookRoute? = nil
     @Environment(JournalStore.self) private var store
     @Environment(PremiumManager.self) private var premium
@@ -12,18 +12,28 @@ struct EntryDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var selectedKey: String
     @State private var showEditor = false
+    /// The book's grid of all pages (or its calendar). Not a page: it has the only header.
     @State private var showGrid: Bool
+    @State private var gridMode: GridMode = .pages
     /// False for one jump: a page picked from the grid appears in place instead of curling over
     /// whatever page happened to sit under the grid.
     @State private var curlJumps = true
     @State private var showOpening: Bool
+    @State private var showPageActions = false
+    @State private var confirmDelete = false
+    /// Opened from a book's cover: closing a page goes back to the grid, not out of the book.
+    private let startsInGrid: Bool
+
+    private enum GridMode: Hashable { case pages, calendar }
 
     init(dayKey: String, book: MonthBookRoute? = nil) {
         self.dayKey = dayKey
         self.book = book
+        let fromCover = book != nil && dayKey == MonthBookRoute.gridKey
+        startsInGrid = fromCover
         _selectedKey = State(initialValue: dayKey)
         // A book opened from its cover shows all its pages first; one opened at a page shows that page.
-        _showGrid = State(initialValue: book != nil && dayKey == MonthBookRoute.contentsKey)
+        _showGrid = State(initialValue: fromCover)
         _showOpening = State(initialValue: (book?.riffle ?? false) && !UIAccessibility.isReduceMotionEnabled)
     }
 
@@ -32,9 +42,10 @@ struct EntryDetailView: View {
         return store.entries(inYear: book.year, month: book.month).reversed()
     }
 
-    /// Every page the reader can turn to, in order: the Contents page first in a book.
+    /// Every page the reader can turn to, in order. A book has a title page in front of its first
+    /// page: curling back onto it is curling back to the grid.
     private var pageKeys: [String] {
-        (book != nil ? [MonthBookRoute.contentsKey] : []) + entries.map(\.dayKey)
+        (book != nil ? [MonthBookRoute.gridKey] : []) + entries.map(\.dayKey)
     }
 
     /// Free accounts can read the current month's book; every other page is Premium.
@@ -46,13 +57,11 @@ struct EntryDetailView: View {
     }
 
     private var hasPages: Bool {
-        store.entry(for: dayKey) != nil || (book != nil && dayKey == MonthBookRoute.contentsKey && !entries.isEmpty)
+        store.entry(for: dayKey) != nil || (book != nil && dayKey == MonthBookRoute.gridKey && !entries.isEmpty)
     }
 
-    // The reader header (back/edit buttons) used to sit over a fixed `PaperBackground()` while
-    // the page below it already switched to the entry's theme — a visible seam right where the
-    // two met. This tracks the same `selectedKey` the page curl uses, so the header and the page
-    // share one background and turn together.
+    // Behind the pages (it shows at the corners during an over-curl), tracking the page in view so
+    // nothing seams against it.
     @ViewBuilder private var background: some View {
         if let entry = store.entry(for: selectedKey) {
             PageThemeBackground(theme: PageTheme.from(entry.themeID))
@@ -83,111 +92,183 @@ struct EntryDetailView: View {
         .onChange(of: premium.isPremium) { _, active in
             if !active { showEditor = false }
         }
-        .onChange(of: selectedKey) { _, _ in
+        .onChange(of: selectedKey) { _, key in
             Haptics.select()
             curlJumps = true
+            // Curled back past the first page, onto the title page: that's the grid.
+            if key == MonthBookRoute.gridKey && !showGrid {
+                withAnimation(Motion.snappy) { showGrid = true }
+            }
         }
         .fullScreenCover(isPresented: $showEditor) {
             if premium.isPremium, let entry = store.entry(for: selectedKey) {
                 EntryEditorView(entry: entry)
             }
         }
+        .confirmationDialog(Text(verbatim: pageTitle), isPresented: $showPageActions, titleVisibility: .visible) {
+            Button { edit() } label: { Text("Edit page") }
+            Button(role: .destructive) { confirmDelete = true } label: { Text("Delete page") }
+            Button(role: .cancel) {} label: { Text("Cancel") }
+        }
+        .alert(Text("Delete this page?"), isPresented: $confirmDelete) {
+            Button(role: .destructive) { deleteSelected() } label: { Text("Delete page") }
+            Button(role: .cancel) {} label: { Text("Cancel") }
+        } message: {
+            Text("This can't be undone.")
+        }
     }
 
+    // MARK: The page — the whole screen, nothing on it but a small close mark
     private var reader: some View {
+        ZStack(alignment: .top) {
+            PageCurlReader(entries: entries,
+                           titlePage: book.map { $0.firstOfMonth },
+                           selectedKey: $selectedKey,
+                           curlJumps: curlJumps)
+                .ignoresSafeArea()
+                // Long-press a page for what you can do with it — nothing sits on the page itself.
+                .simultaneousGesture(
+                    LongPressGesture(minimumDuration: 0.5).onEnded { _ in
+                        guard store.entry(for: selectedKey) != nil else { return }
+                        Haptics.tap()
+                        showPageActions = true
+                    }
+                )
+                .closesOnPullDown { closePage() }
+
+            BookEdges()
+
+            PageCloseMark { closePage() }
+                .frame(maxWidth: .infinity, alignment: .trailing)
+                .padding(.trailing, 14)
+
+            if showGrid {
+                gridScreen.transition(.opacity)
+            }
+            if showOpening, let book {
+                let month = MonthBook.containing(book.firstOfMonth, in: store)
+                BookOpeningOverlay(look: covers.look(for: month), month: book.firstOfMonth,
+                                   pagesBefore: entries.firstIndex { $0.dayKey == dayKey } ?? 0) {
+                    withAnimation(.easeOut(duration: 0.2)) { showOpening = false }
+                }
+                .ignoresSafeArea()
+                .transition(.opacity)
+            }
+        }
+    }
+
+    /// Closing a page returns to where it was opened from: the book's grid, or out of the book.
+    private func closePage() {
+        if startsInGrid {
+            withAnimation(Motion.snappy) { showGrid = true }
+        } else {
+            dismiss()
+        }
+    }
+
+    private var pageTitle: String {
+        store.entry(for: selectedKey).map { HDate.dayMonthYear($0.date) } ?? ""
+    }
+
+    private func edit() {
+        // Reading this month is free; editing a page stays Premium.
+        if premium.isPremium { showEditor = true } else { flow.showPaywall() }
+    }
+
+    // MARK: The grid — all the month's pages, or its calendar. Not a page, so it has a header.
+    private var gridScreen: some View {
         VStack(spacing: 0) {
-            readerHeader
+            HStack(spacing: 12) {
+                IconTileButton(icon: "chevron.backward", size: 38, iconSize: 15) { dismiss() }
+                Text(verbatim: book.map { HDate.monthName($0.firstOfMonth) } ?? "")
+                    .font(Fonts.display(21, .bold)).foregroundStyle(Palette.ink)
+                    .lineLimit(1)
+                Spacer(minLength: 0)
+                gridModeSwitch
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 8)
+            .padding(.bottom, 10)
+            .capWidth(Metrics.maxContentWidth)
+
+            ScrollView {
+                Group {
+                    if gridMode == .pages {
+                        pagesGrid
+                    } else if let book {
+                        BookCalendar(year: book.year, month: book.month, entries: entries,
+                                     onPick: { open($0) })
+                    }
+                }
+                .padding(EdgeInsets(top: 8, leading: 20, bottom: 30, trailing: 20))
                 .capWidth(Metrics.maxContentWidth)
-
-            ZStack {
-                PageCurlReader(entries: entries,
-                               contents: book.map { (year: $0.year, month: $0.month) },
-                               selectedKey: $selectedKey,
-                               curlJumps: curlJumps)
-                if showGrid {
-                    pagesGrid.transition(.opacity)
-                }
-                if showOpening, let book {
-                    let month = MonthBook.containing(book.firstOfMonth, in: store)
-                    BookOpeningOverlay(look: covers.look(for: month), month: book.firstOfMonth,
-                                       pagesBefore: entries.firstIndex { $0.dayKey == dayKey } ?? 0) {
-                        withAnimation(.easeOut(duration: 0.2)) { showOpening = false }
-                    }
-                    .transition(.opacity)
-                }
             }
+            .scrollIndicators(.hidden)
         }
-        .background(alignment: .topTrailing) {
-            SoftGlow(color: Palette.sunDisc, opacity: 0.14, size: 240)
-                .offset(x: 74, y: -74)
-        }
-        .ignoresSafeArea(.container, edges: .top)
-        // The whole screen is the page, as when writing: its edges run top to bottom, header
-        // included. The grid of all pages isn't a page, so it goes without.
-        .overlay { if !showGrid { BookEdges() } }
+        .background(PaperBackground().ignoresSafeArea())
     }
 
-    // Back, and — in a book — a jump to its Contents page. The date lives on the page itself
-    // (PageDateRow), same as the writing screen, so this chrome doesn't need to repeat it.
-    private var readerHeader: some View {
-        HStack(spacing: 12) {
-            IconTileButton(icon: "chevron.backward", size: 38, iconSize: 15) { dismiss() }
-            Spacer(minLength: 0)
-            if book != nil && (selectedKey != MonthBookRoute.contentsKey || showGrid) {
-                IconTileButton(icon: "calendar", size: 38, iconSize: 15) {
-                    withAnimation(Motion.snappy) { showGrid = false }
-                    selectedKey = MonthBookRoute.contentsKey
-                }
-                .accessibilityLabel(Text("Contents"))
-            }
-            if book != nil && !showGrid {
-                IconTileButton(icon: "square.grid.2x2", size: 38, iconSize: 15) {
-                    Haptics.select()
-                    withAnimation(Motion.snappy) { showGrid = true }
-                }
-                .accessibilityLabel(Text("See all pages"))
-            }
-            if store.entry(for: selectedKey) != nil && !showGrid {
-                IconTileButton(icon: "pencil", size: 38, iconSize: 15) {
-                    // Reading this month is free; editing a page stays Premium.
-                    if premium.isPremium { showEditor = true } else { flow.showPaywall() }
-                }
-            }
+    // Pages | Calendar — rectangular, the active side coral, as elsewhere in the app.
+    private var gridModeSwitch: some View {
+        HStack(spacing: 0) {
+            modeButton(.pages, icon: "square.grid.2x2", label: Text("See all pages"))
+            Rectangle().fill(Palette.ink).frame(width: 2)
+            modeButton(.calendar, icon: "calendar", label: Text("Calendar"))
         }
-        .padding(.horizontal, 20)
-        .padding(.top, 56)
-        .padding(.bottom, 8)
+        .frame(height: 40)
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Palette.ink, lineWidth: 2))
     }
 
-    // MARK: All pages — the whole month at a glance; tap one to turn straight to it
+    private func modeButton(_ mode: GridMode, icon: String, label: Text) -> some View {
+        Button {
+            Haptics.select()
+            withAnimation(Motion.snappy) { gridMode = mode }
+        } label: {
+            Image(systemName: icon)
+                .font(.system(size: 15, weight: .bold)).foregroundStyle(Palette.ink)
+                .frame(width: 44, height: 40)
+                .background(gridMode == mode ? Palette.amber : Palette.cream)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(label)
+        .accessibilityAddTraits(gridMode == mode ? .isSelected : [])
+    }
+
     private var pagesGrid: some View {
-        ScrollView {
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 3), spacing: 14) {
-                ForEach(entries, id: \.dayKey) { entry in
-                    Button {
-                        curlJumps = false
-                        selectedKey = entry.dayKey
-                        withAnimation(Motion.snappy) { showGrid = false }
-                    } label: {
-                        MiniPage(entry: entry)
-                    }
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 3), spacing: 14) {
+            ForEach(entries, id: \.dayKey) { entry in
+                Button { open(entry.dayKey) } label: { MiniPage(entry: entry) }
                     .buttonStyle(PressableStyle())
                     .contextMenu {
                         Button(role: .destructive) { delete(entry) } label: {
                             Label("Delete page", systemImage: "trash")
                         }
                     }
-                }
             }
-            .padding(EdgeInsets(top: 12, leading: 20, bottom: 30, trailing: 20))
-            .capWidth(Metrics.maxContentWidth)
         }
-        .scrollIndicators(.hidden)
-        .background(PaperBackground())
+    }
+
+    /// Open a page from the grid: it's already in place under the grid as the grid fades away.
+    private func open(_ key: String) {
+        curlJumps = false
+        selectedKey = key
+        withAnimation(Motion.snappy) { showGrid = false }
+    }
+
+    private func deleteSelected() {
+        guard let entry = store.entry(for: selectedKey) else { return }
+        delete(entry)
+        // Back to the book's grid while it still has pages; otherwise out of the book.
+        if book != nil && !entries.isEmpty {
+            withAnimation(Motion.snappy) { showGrid = true }
+        } else {
+            dismiss()
+        }
     }
 
     private func delete(_ entry: JournalEntry) {
-        if selectedKey == entry.dayKey { selectedKey = MonthBookRoute.contentsKey }
+        if selectedKey == entry.dayKey { selectedKey = MonthBookRoute.gridKey }
         withAnimation(Motion.snappy) { store.delete(entry) }
     }
 
@@ -208,13 +289,14 @@ struct EntryDetailView: View {
 /// Lives in this file because it hosts the private `JournalReaderPage`.
 private struct PageCurlReader: UIViewControllerRepresentable {
     let entries: [JournalEntry]
-    /// The book's month when reading a month book — adds its Contents page in front.
-    var contents: (year: Int, month: Int)? = nil
+    /// The book's month when reading a month book — adds its title page in front of the first
+    /// page, which is where curling back to the grid lands.
+    var titlePage: Date? = nil
     @Binding var selectedKey: String
     /// Whether a jump made from outside the reader curls; false lands on the page in place.
     var curlJumps = true
 
-    var keys: [String] { (contents != nil ? [MonthBookRoute.contentsKey] : []) + entries.map(\.dayKey) }
+    var keys: [String] { (titlePage != nil ? [MonthBookRoute.gridKey] : []) + entries.map(\.dayKey) }
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
 
@@ -248,7 +330,7 @@ private struct PageCurlReader: UIViewControllerRepresentable {
 
         let from = keys.firstIndex { $0 == visible } ?? 0
         let to = keys.firstIndex { $0 == selectedKey } ?? 0
-        // A jump from Contents, the page grid or the header curls like turning straight to a page.
+        // A jump made from outside the reader curls like turning straight to a page.
         let animated = curlJumps && !UIAccessibility.isReduceMotionEnabled
         if animated { context.coordinator.isTurning = true }
         pvc.setViewControllers([page], direction: to >= from ? .forward : .reverse, animated: animated) { _ in
@@ -290,17 +372,14 @@ private struct PageCurlReader: UIViewControllerRepresentable {
         @objc private func handleEntryUpdate(_ notification: Notification) {
             guard let dayKey = notification.object as? String else { return }
             hosts.removeValue(forKey: dayKey)
-            hosts.removeValue(forKey: MonthBookRoute.contentsKey)    // its mood faces may have changed
         }
 
         func page(for key: String) -> PageHost? {
             if let cached = hosts[key] { return cached }
             let fresh: PageHost
-            if key == MonthBookRoute.contentsKey, let contents = parent.contents {
-                fresh = PageHost(key: key, color: PageTheme.paper.baseUIColor, content: AnyView(
-                    BookContentsPage(year: contents.year, month: contents.month,
-                                     entries: parent.entries,
-                                     onPick: { [weak self] picked in self?.parent.selectedKey = picked })))
+            if key == MonthBookRoute.gridKey, let month = parent.titlePage {
+                fresh = PageHost(key: key, color: PageTheme.paper.baseUIColor,
+                                 content: AnyView(BookTitlePage(month: month, pages: parent.entries.count)))
             } else if let entry = parent.entries.first(where: { $0.dayKey == key }) ?? parent.entries.first {
                 if let cached = hosts[entry.dayKey] { return cached }
                 fresh = PageHost(key: entry.dayKey, color: PageTheme.from(entry.themeID).baseUIColor,
@@ -370,7 +449,7 @@ private struct JournalReaderPage: View {
 
                 }
                 // The same margin as the writing page, so the text column matches it exactly.
-                .padding(EdgeInsets(top: 22, leading: Metrics.pageHorizontalInset,
+                .padding(EdgeInsets(top: 48, leading: Metrics.pageHorizontalInset,
                                     bottom: 24, trailing: Metrics.pageHorizontalInset))
             }
             .capWidth(Metrics.maxContentWidth)
@@ -396,3 +475,23 @@ private struct JournalReaderPage: View {
 
 }
 
+
+/// The quiet page in front of a book's first page — the month's name, as on a title page. It's
+/// only ever seen mid-curl: landing on it opens the grid.
+private struct BookTitlePage: View {
+    let month: Date
+    let pages: Int
+
+    var body: some View {
+        VStack(spacing: 10) {
+            Text(verbatim: String(Calendar.current.component(.year, from: month)))
+                .font(Fonts.ui(13, .heavy)).tracking(3).foregroundStyle(Palette.inkSoft)
+            Text(verbatim: HDate.monthName(month))
+                .font(Fonts.display(40, .heavy)).foregroundStyle(Palette.ink)
+            (pages == 1 ? Text("1 page") : Text("\(pages) pages"))
+                .font(Fonts.ui(14, .semibold)).foregroundStyle(Palette.inkSoft)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(PageThemeBackground(theme: .paper))
+    }
+}

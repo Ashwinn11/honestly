@@ -58,22 +58,11 @@ struct RitualView: View {
             } else {
                 let look = covers.look(for: monthBook)
                 VStack(spacing: 0) {
-                    topBar.capWidth(Metrics.maxContentWidth)
-                    // One continuous page, top to bottom like before — only its sides say "book":
-                    // the spine's shade on the left, the pages beneath peeking out on the right.
-                    // The date heads the page; the editor grows to its actual content height (see
+                    // The whole screen is one page — no bar above it. The prompt is printed at its
+                    // top, then the date; the editor grows to its actual content height (see
                     // `RichTextEditor`) inside the page's own `ScrollView`, the only scrolling region.
                     GeometryReader { geo in
                         bookPage(height: geo.size.height)
-                            .overlay {
-                                if showOpening {
-                                    BookOpeningOverlay(look: look, pagesBefore: earlierPages.count) {
-                                        withAnimation(.easeOut(duration: 0.2)) { showOpening = false }
-                                    }
-                                    .clipped()
-                                    .transition(.opacity)
-                                }
-                            }
                             .capWidth(Metrics.maxContentWidth)
                     }
                 }
@@ -111,8 +100,18 @@ struct RitualView: View {
                     .padding(.top, 8)
                     .padding(.bottom, 14)
                 }
-                // The whole screen is the page: its edges run past the top bar and the toolbar.
+                // The whole screen is the page: its edges run top to bottom, past the toolbar.
                 .overlay { BookEdges() }
+                // The book opens over the entire screen, edge to edge.
+                .overlay {
+                    if showOpening {
+                        BookOpeningOverlay(look: look, pagesBefore: earlierPages.count) {
+                            withAnimation(.easeOut(duration: 0.2)) { showOpening = false }
+                        }
+                        .ignoresSafeArea()
+                        .transition(.opacity)
+                    }
+                }
             }
         }
         // RitualView is itself a fullScreenCover off RootView, which also owns a fullScreenCover
@@ -182,22 +181,9 @@ struct RitualView: View {
     // MARK: Top bar — close icon and tappable prompt library
     // it doesn't compete with the writing area below, and it's real page content, unlike a title
     // would be. No progress dots, no mood badge here — the date/mood live on the page itself, below.
-    private var topBar: some View {
-        HStack(spacing: 10) {
-            IconTileButton(icon: "xmark", size: 38, iconSize: 13) { onClose() }
-            topBarTitleView
-            if !earlierPages.isEmpty {
-                IconTileButton(icon: "book", size: 38, iconSize: 14) { openEarlierPages() }
-                    .accessibilityLabel(Text("Read earlier pages"))
-            }
-        }
-        .padding(.horizontal, 20)
-        .padding(.top, 10)
-        .padding(.bottom, 10)
-        .animation(Motion.gentle, value: step)
-    }
-
-    private var topBarTitleView: some View {
+    // The day's prompt, printed at the top of the page like a guided journal's question. Tapping it
+    // still opens the prompt list.
+    private var promptHeading: some View {
         Button {
             journalFocused = false
             if premium.isPremium { showPromptPicker = true } else { flow.showPaywall() }
@@ -211,15 +197,13 @@ struct RitualView: View {
                         Text(loc: premium.isPremium ? "Choose a prompt" : "Unlock writing prompts")
                     }
                 }
-                .font(Fonts.display(14, .bold))
+                .font(Fonts.display(19, .bold))
                 .lineLimit(3)
                 .foregroundStyle(premium.isPremium ? Palette.ink : Palette.inkSofter)
-                .lineSpacing(1)
+                .lineSpacing(2)
                 .multilineTextAlignment(.leading)
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-                Image(systemName: "chevron.down").font(.system(size: 11, weight: .bold))
-                    .foregroundStyle(Palette.inkSofter)
             }
         }
         .buttonStyle(.plain)
@@ -232,12 +216,20 @@ struct RitualView: View {
         // The same margin as the reader, so the text column is exactly as wide in both.
         let inset = Metrics.pageHorizontalInset
         return VStack(alignment: .leading, spacing: 0) {
-            // The date and mood head the page and stay put; only the writing scrolls beneath them.
+            // The prompt and the date head the page and stay put; only the writing scrolls beneath.
+            // The page's one control is the small close mark beside the prompt.
+            HStack(alignment: .top, spacing: 4) {
+                promptHeading
+                PageCloseMark { onClose() }
+                    .padding(.trailing, -12)
+            }
+            .padding(EdgeInsets(top: 6, leading: inset, bottom: 0, trailing: inset))
+
             PageDateRow(date: Date(), mood: mood) {
                 Haptics.select()
                 showMoodSheet = true
             }
-            .padding(EdgeInsets(top: 18, leading: inset, bottom: 0, trailing: inset))
+            .padding(EdgeInsets(top: 14, leading: inset, bottom: 0, trailing: inset))
 
             ScrollView {
                 journalBody(minHeight: height)
@@ -255,6 +247,8 @@ struct RitualView: View {
                 openEarlierPages()
             }
         )
+        // Pull the page down from its top to close it, as with the close mark.
+        .closesOnPullDown { onClose() }
     }
 
     private func openEarlierPages() {
@@ -272,7 +266,7 @@ struct RitualView: View {
         }
     }
 
-    // MARK: Step 0 — journal (the prompt lives in the top bar now — see topBarTitleView — so it
+    // MARK: Step 0 — journal (the prompt is printed at the top of the page — see promptHeading — so it
     // never competes with the writing area for space). Mood is set via the tappable icon on the
     // date row, which opens `MoodPickerSheet` — no longer a separate blocking step.
     private func journalBody(minHeight: CGFloat) -> some View {

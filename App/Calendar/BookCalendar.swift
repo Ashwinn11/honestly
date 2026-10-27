@@ -1,9 +1,9 @@
 import SwiftUI
 
-/// The first page inside a month book: the month as a calendar, a mood face on every morning
-/// written. Tapping a face turns straight to that page — so a book never has to be swiped through
-/// to find a day. (This is where the old Calendar tab's grid lives now.)
-struct BookContentsPage: View {
+/// A month book's calendar: a mood face on every morning written; tap one to open that page. It
+/// isn't a page of the book — it's the other view of the book's grid, beside all the pages.
+/// (This is where the old Calendar tab's grid lives now.)
+struct BookCalendar: View {
     let year: Int
     let month: Int
     let entries: [JournalEntry]          // this month's pages
@@ -17,6 +17,7 @@ struct BookContentsPage: View {
         self.entries = entries
         self.onPick = onPick
     }
+
     // Sunday-first, matching the grid's fixed layout (`leading` below assumes weekday 1 = Sunday).
     // `veryShortWeekdaySymbols` is always Sunday…Saturday regardless of the locale's first-day-of-week.
     private var weekdayLetters: [String] {
@@ -36,30 +37,14 @@ struct BookContentsPage: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
-                Eyebrow(text: "Contents", color: Palette.inkSoft)
-                Text(verbatim: HDate.monthName(first))
-                    .font(Fonts.display(30, .bold)).foregroundStyle(Palette.ink)
-                    .padding(.top, 6)
-                Text("Tap a day to turn straight to it.")
-                    .font(Fonts.ui(13.5, .semibold)).foregroundStyle(Palette.inkSoft)
-                    .padding(.top, 6)
-
-                VStack(spacing: 0) {
-                    weekdayHeader
-                    grid
-                }
-                .padding(.top, 22)
-
-                moodBar.padding(.top, 26)
-            }
-            .padding(EdgeInsets(top: 30, leading: Metrics.pageHorizontalInset,
-                                bottom: 30, trailing: Metrics.pageHorizontalInset))
-            .capWidth(Metrics.maxContentWidth)
+        VStack(alignment: .leading, spacing: 0) {
+            weekdayHeader
+            grid
+            Text("Tap a day to turn straight to it.")
+                .font(Fonts.ui(13, .semibold)).foregroundStyle(Palette.inkSoft)
+                .padding(.top, 18)
+            moodBar.padding(.top, 24)
         }
-        .scrollIndicators(.hidden)
-        .background(PageThemeBackground(theme: .paper))
     }
 
     private var weekdayHeader: some View {
@@ -116,7 +101,7 @@ struct BookContentsPage: View {
     }
 
     // The month's moods as one bar — what used to be the Calendar tab's "all told" card, now
-    // scoped to the book it sits in.
+    // scoped to the book.
     private var moodBar: some View {
         let c = counts
         let total = max(c.reduce(0, +), 1)

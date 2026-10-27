@@ -65,7 +65,7 @@
 		202D7B64B98338633FFF1DF2 /* BookCovers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BC04CD671C53C05C24B47DD /* BookCovers.swift */; };
 		D6CC23C409C0D15AB4381D66 /* BookPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 366362B09E10730407670682 /* BookPage.swift */; };
 		69C3FBAEAEB3F185C8064723 /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 467A5480FADE60412A768408 /* LibraryView.swift */; };
-		6B16962BB5B38A531DFDC368 /* BookContentsPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54CE3C1C4576F0863F5CC877 /* BookContentsPage.swift */; };
+		6B16962BB5B38A531DFDC368 /* BookCalendar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54CE3C1C4576F0863F5CC877 /* BookCalendar.swift */; };
 		6D009AB54CDDF82869DC6EBD /* TextLocalization.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4503890E8EE490EB68F8AE82 /* TextLocalization.swift */; };
 		6D674A8E3EE8C314F7DEEC31 /* BlockingCodec.swift in Sources */ = {isa = PBXBuildFile; fileRef = 061ECF0CF39440C344FB8DE7 /* BlockingCodec.swift */; };
 		707629C47E4B9B1D6986F8EA /* ShieldActionExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 2B50BFB4245FC077633028D0 /* ShieldActionExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -234,7 +234,7 @@
 		505A07C250F2C843086FD26F /* AppLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLink.swift; sourceTree = "<group>"; };
 		5178328B8EC34E2140DCCCA1 /* Honestly.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Honestly.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		537AFEF703575D2C77812527 /* MoodFace.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MoodFace.swift; sourceTree = "<group>"; };
-		54CE3C1C4576F0863F5CC877 /* BookContentsPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookContentsPage.swift; sourceTree = "<group>"; };
+		54CE3C1C4576F0863F5CC877 /* BookCalendar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookCalendar.swift; sourceTree = "<group>"; };
 		5DCCC5A53E1B5A453F93DB72 /* ActivityMonitorExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityMonitorExtension.swift; sourceTree = "<group>"; };
 		5E2C5AA39ACE8C45A80BB192 /* PromptLibraryStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptLibraryStorage.swift; sourceTree = "<group>"; };
 		5E3F5F633C63FE29DF255196 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -428,7 +428,7 @@
 		5D93F101DE855DD79FDFBB96 /* Calendar */ = {
 			isa = PBXGroup;
 			children = (
-				54CE3C1C4576F0863F5CC877 /* BookContentsPage.swift */,
+				54CE3C1C4576F0863F5CC877 /* BookCalendar.swift */,
 			);
 			path = Calendar;
 			sourceTree = "<group>";
@@ -904,7 +904,7 @@
 				51C5B6F36C0547625270F6A0 /* Backup.swift in Sources */,
 				FF5BB9EF989C7FC8A18C17FF /* BlockingCodec.swift in Sources */,
 				9A8DB69EDA02B9A15B24B46F /* BrandIcon.swift in Sources */,
-				6B16962BB5B38A531DFDC368 /* BookContentsPage.swift in Sources */,
+				6B16962BB5B38A531DFDC368 /* BookCalendar.swift in Sources */,
 				67DDF327D636834DEB368EAE /* CloudBackup.swift in Sources */,
 				9071F6C7B274D8892B85F1C9 /* Color+Hex.swift in Sources */,
 				0ED62D414A1D8F0224515A71 /* Components.swift in Sources */,

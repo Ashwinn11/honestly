@@ -122,6 +122,44 @@ struct BookEdges: View {
     }
 }
 
+// MARK: - Closing a page
+
+/// The one control a page carries: a small ink ✕ in its top corner — a mark on the paper, not a
+/// button in a bar. Pulling the page down from its top closes it too (`closesOnPullDown`).
+struct PageCloseMark: View {
+    var action: () -> Void
+
+    init(action: @escaping () -> Void) { self.action = action }
+
+    var body: some View {
+        Button { Haptics.tap(); action() } label: {
+            Image(systemName: "xmark")
+                .font(.system(size: DesignScale.s(14), weight: .bold))
+                .foregroundStyle(Palette.ink.opacity(0.7))
+                .frame(width: 44, height: 44)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(PressableStyle(scale: 0.88))
+        .accessibilityLabel(Text("Close"))
+    }
+}
+
+extension View {
+    /// Close the page by pulling it down from its top edge — like setting the book down. Only a
+    /// pull that starts near the top counts, so scrolling back up through a long page never
+    /// closes it.
+    func closesOnPullDown(topBand: CGFloat = 140, _ action: @escaping () -> Void) -> some View {
+        simultaneousGesture(
+            DragGesture(minimumDistance: 24).onEnded { value in
+                guard value.startLocation.y < topBand,
+                      value.translation.height > 110,
+                      abs(value.translation.width) < 90 else { return }
+                action()
+            }
+        )
+    }
+}
+
 // MARK: - Opening the book
 
 /// Plays over the writing page as it appears: the month's cover swings open, then the pages

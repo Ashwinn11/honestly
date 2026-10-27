@@ -3,8 +3,9 @@ import SwiftUI
 /// Which month book to open, and the page to open it at. Pushed on the tab's NavigationStack;
 /// `MainTabView` turns it into a month-scoped `EntryDetailView`.
 struct MonthBookRoute: Hashable {
-    /// The page key of a book's Contents page — sits in front of the month's first page.
-    static let contentsKey = "book-contents"
+    /// Opens a book at its grid of all pages; also the key of the title page in front of its first
+    /// page, where curling back to the grid lands.
+    static let gridKey = "book-grid"
 
     let year: Int
     let month: Int
@@ -58,9 +59,9 @@ struct MonthBook: Identifiable {
         entries.reversed().lazy.compactMap { $0.thumbnail.flatMap(UIImage.init(data:)) }.first
     }
 
-    /// Opens on the Contents page; nil while the month has no pages yet.
+    /// Opens on the grid of all pages; nil while the month has no pages yet.
     var route: MonthBookRoute? {
-        entries.isEmpty ? nil : MonthBookRoute(year: year, month: month, startKey: MonthBookRoute.contentsKey)
+        entries.isEmpty ? nil : MonthBookRoute(year: year, month: month, startKey: MonthBookRoute.gridKey)
     }
 }
 
