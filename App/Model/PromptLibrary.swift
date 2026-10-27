@@ -27,9 +27,21 @@ final class PromptLibrary {
     func delete(_ line: String) { storage.delete(line); reload() }
     func clear() { storage.clear(); reload() }
 
+    /// The prompt as the writing page shows it, in the app's language — what tonight's journal
+    /// reminder asks.
+    var pageText: String? {
+        guard let selected else { return nil }
+        return builtIn.contains(selected) ? L10n.localized(selected) : selected
+    }
+
+    /// Hands the page's prompt to the journal reminder. Call on launch, on returning to the app,
+    /// and when the language changes; prompt changes call it themselves.
+    func shareWithReminder() { AffirmationNudge.setReminderPrompt(pageText) }
+
     private func reload() {
         builtIn = storage.builtIn
         custom = storage.custom
         selected = storage.selected
+        shareWithReminder()
     }
 }

@@ -1,8 +1,9 @@
 import Foundation
 import UserNotifications
 
-/// Topic based affirmation notifications use their own schedule. Separately, a single "come
-/// write today" reminder goes out at 8pm on days the page is still unwritten.
+/// Two kinds of notification. "Today's affirmation" carries a topic based affirmation on its own
+/// schedule. Separately, one "Journal reminder" carrying the writing page's prompt goes out at
+/// 8pm on days the page is still unwritten.
 enum AffirmationNudge {
     private static let reminderID = "honestly.affirmation.reminder"
     private static let dailyIDPrefix = "honestly.affirmation.daily."
@@ -14,6 +15,7 @@ enum AffirmationNudge {
     private static let maximumDailyTimes = 3
     private static let enabledKey = "affirmationNudgeOn"
     private static let reminderLastDayKey = "affirmationReminderLastSentDay"
+    private static let reminderPromptKey = "journalReminderPrompt"
 
     static let defaultMinutes = 9 * 60
 
@@ -82,8 +84,7 @@ enum AffirmationNudge {
             for (timeIndex, time) in times.enumerated() {
                 guard let fire = cal.date(bySettingHour: time / 60, minute: time % 60, second: 0, of: day), fire > now else { continue }
                 let content = UNMutableNotificationContent()
-                // iOS shows the app name in the notification header automatically; keeping the
-                // title empty lets the affirmation itself be the only notification message.
+                content.title = L10n.localized("Today's affirmation")
                 let line = Affirmations.dailyLine(on: day, occurrence: timeIndex,
                                                   premium: SharedState.premiumActive)
                 guard !line.isEmpty else { continue }
@@ -106,18 +107,39 @@ enum AffirmationNudge {
     /// app itself is never opened, so a day with zero app-opens still gets a reminder. Ritual can
     /// never be done yet at 04:00, so this schedules for a fixed later time of day, cancelled by
     /// `ritualWritten` if the user does end up writing before then. Fires at most once per day.
-    private static let reminderHour = 20   // 8pm — gives the whole day to write first
+    static let reminderHour = 20   // 8pm — gives the whole day to write first
     static func scheduleReminderIfNeeded(ritualDoneToday: Bool) {
         guard isEnabled, !ritualDoneToday else { return }
         let d = SharedState.defaults
         let today = SharedState.dayKey()
         guard d.string(forKey: reminderLastDayKey) != today else { return }   // already handled today
         d.set(today, forKey: reminderLastDayKey)
+        addReminder()
+    }
 
+    /// The prompt at the top of the writing page, already in the app's language — mirrored by the
+    /// app (the 04:00 extension can't read the prompt library) so the reminder can ask it. A
+    /// reminder already waiting for tonight is swapped for one with the new prompt.
+    static func setReminderPrompt(_ prompt: String?) {
+        let d = SharedState.defaults
+        guard d.string(forKey: reminderPromptKey) != prompt else { return }
+        if let prompt { d.set(prompt, forKey: reminderPromptKey) } else { d.removeObject(forKey: reminderPromptKey) }
+        Task {
+            let pending = await UNUserNotificationCenter.current().pendingNotificationRequests()
+            guard pending.contains(where: { $0.identifier == reminderID }) else { return }
+            addReminder()
+        }
+    }
+
+    private static func addReminder() {
         let content = UNMutableNotificationContent()
-        content.title = "Honestly"   // brand name — not localized
         // Not SwiftUI here, so `Text(loc:)` doesn't apply — do the String Catalog lookup directly.
-        content.body = Affirmations.localized("Write today's page — a few quiet minutes, just for you.")
+        content.title = L10n.localized("Journal reminder")
+        let prompt = SharedState.defaults.string(forKey: reminderPromptKey)?
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        content.body = prompt?.isEmpty == false
+            ? prompt!
+            : L10n.localized("Write today's page — a few quiet minutes, just for you.")
         content.sound = .default
 
         var when = DateComponents()
@@ -135,6 +157,7 @@ enum AffirmationNudge {
         cancel()
         SharedState.defaults.removeObject(forKey: enabledKey)
         SharedState.defaults.removeObject(forKey: reminderLastDayKey)
+        SharedState.defaults.removeObject(forKey: reminderPromptKey)
     }
 
     /// Without a delegate, iOS silently drops local notifications while the app is in the

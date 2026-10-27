@@ -90,7 +90,7 @@ struct OnboardingView: View {
         case .notif:
             chrome(primary: .init(title: "Allow notifications") { requestNotifications() },
                    secondary: .init(title: "Maybe later") { advance() }) {
-                OnbReminderView(affirmations: reminderSamples)
+                OnbReminderView(affirmation: reminderSamples.first ?? sampleAffirmation)
             }
 
         case .paywall:
@@ -761,9 +761,11 @@ private struct AppBlockLoop: View {
 
 // MARK: - Notification preview
 
-private struct NotifCard: View {
-    let text: String
-    var time: String = "now"
+/// A notification as it will arrive: its title, what it says, and when.
+private struct NotifCard<Message: View>: View {
+    let title: String                    // String Catalog key
+    let time: String
+    @ViewBuilder var message: Message
 
     var body: some View {
         HStack(alignment: .top, spacing: DesignScale.s(12)) {
@@ -772,14 +774,14 @@ private struct NotifCard: View {
                 .clipShape(RoundedRectangle(cornerRadius: DesignScale.s(10), style: .continuous))
                 .overlay(RoundedRectangle(cornerRadius: DesignScale.s(10), style: .continuous).strokeBorder(Palette.ink.opacity(0.12), lineWidth: 1))
             VStack(alignment: .leading, spacing: DesignScale.s(3)) {
-                HStack {
-                    Text("Honestly").font(Fonts.ui(14, .heavy)).foregroundStyle(Palette.ink)
+                HStack(alignment: .firstTextBaseline) {
+                    Text(loc: title).font(Fonts.ui(14, .heavy)).foregroundStyle(Palette.ink)
                     Spacer()
-                    Text(loc: time).font(Fonts.ui(12, .semibold)).foregroundStyle(Palette.inkSofter)
+                    Text(verbatim: time).font(Fonts.ui(12, .semibold)).foregroundStyle(Palette.inkSofter)
                 }
-                Affirmations.text(text)
+                message
                     .font(Fonts.ui(13.5, .semibold)).foregroundStyle(Color(hex: "5A4A38"))
-                    .lineSpacing(2).fixedSize(horizontal: false, vertical: true)
+                    .lineSpacing(2).lineLimit(3).fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
@@ -788,24 +790,34 @@ private struct NotifCard: View {
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: DesignScale.s(22), style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: DesignScale.s(22), style: .continuous).strokeBorder(Palette.ink, lineWidth: 2))
         .shadow(color: Color(hex: "78501E").opacity(0.14), radius: DesignScale.s(16), y: DesignScale.s(9))
+        .accessibilityElement(children: .combine)
     }
 }
 
+/// The two notifications Honestly sends, as they'll arrive: the writing page's prompt in the
+/// evening when the day's page is still blank, and an affirmation at the times the user picks.
 private struct OnbReminderView: View {
-    let affirmations: [String]
+    let affirmation: String
+    @Environment(PromptLibrary.self) private var prompts
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var visibleCount = 0
 
     var body: some View {
         VStack(spacing: 24) {
-            OnbHeader(eyebrow: "A gentle reminder", title: "A kind thought, when you need it.")
-            VStack(spacing: 12) {
-                ForEach(Array(affirmations.enumerated()), id: \.offset) { index, affirmation in
-                    if visibleCount > index {
-                        NotifCard(text: affirmation, time: index == 0 ? "now" : "yesterday")
-                            .transition(.asymmetric(
-                                insertion: .move(edge: .top).combined(with: .opacity),
-                                removal: .opacity))
+            OnbHeader(eyebrow: "Two gentle reminders", title: "Today's prompt, and a kind thought.")
+            VStack(alignment: .leading, spacing: 10) {
+                if visibleCount > 0 {
+                    reminder(caption: "In the evening, only if today's page is still blank.") {
+                        NotifCard(title: "Journal reminder", time: clock(AffirmationNudge.reminderHour * 60)) {
+                            Text(verbatim: prompts.pageText ?? L10n.localized("Write today's page — a few quiet minutes, just for you."))
+                        }
+                    }
+                }
+                if visibleCount > 1 {
+                    reminder(caption: "At the times you choose.") {
+                        NotifCard(title: "Today's affirmation", time: clock(AffirmationNudge.defaultMinutes)) {
+                            Affirmations.text(affirmation)
+                        }
                     }
                 }
             }
@@ -813,20 +825,36 @@ private struct OnbReminderView: View {
         .task { await revealNotifications() }
     }
 
+    private func reminder<Card: View>(caption: String, @ViewBuilder card: () -> Card) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            card()
+            Text(loc: caption)
+                .font(Fonts.ui(12.5, .semibold)).foregroundStyle(Palette.inkSoft)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.leading, DesignScale.s(15))
+        }
+        .padding(.bottom, 6)
+        .transition(.asymmetric(insertion: .move(edge: .top).combined(with: .opacity), removal: .opacity))
+    }
+
+    /// A time of day in the app's language — 8:00 PM, 20:00.
+    private func clock(_ minutes: Int) -> String {
+        let time = Calendar.current.date(bySettingHour: minutes / 60, minute: minutes % 60, second: 0, of: .now) ?? .now
+        return time.formatted(.dateTime.hour().minute().locale(HDate.appLocale))
+    }
+
     private func revealNotifications() async {
         guard !reduceMotion else {
-            visibleCount = affirmations.count
+            visibleCount = 2
             Haptics.notificationSound()
             return
         }
         do {
             try await Task.sleep(for: .milliseconds(300))
-            for index in affirmations.indices {
+            for index in 0..<2 {
                 withAnimation(Motion.snappy) { visibleCount = index + 1 }
                 Haptics.notificationSound()
-                if index < affirmations.count - 1 {
-                    try await Task.sleep(for: .milliseconds(700))
-                }
+                if index == 0 { try await Task.sleep(for: .milliseconds(700)) }
             }
         } catch {
             return
