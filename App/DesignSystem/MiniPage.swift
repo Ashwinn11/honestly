@@ -1,8 +1,9 @@
 import SwiftUI
 
 /// A page shown small — the real page in miniature: the same header (the day over its month and
-/// year, the mood) and its words with their photos, doodles and stickers, laid out as on a phone and shrunk to the card. The one card for a page anywhere pages
-/// are listed: a book's grid, the Library's search results, the book closing on a finished page.
+/// year, the mood) and its words with their photos, doodles and stickers, laid out as on a phone
+/// and shrunk to the card. The one card for a page anywhere pages are listed: a book's grid, the
+/// Library's search results, the book closing on a finished page.
 /// With a search term it shows the words from near the first match instead, the match highlighted.
 struct MiniPage: View {
     let entry: JournalEntry
