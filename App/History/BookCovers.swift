@@ -1,28 +1,49 @@
 import SwiftUI
 import PhotosUI
 
-/// What a month book's cover looks like: a photo, or a cloth colour with the ink that reads on it.
+/// What a month book's cover looks like: one of the cover designs, a photo, or (for covers chosen
+/// before designs existed) a plain cloth colour.
 struct CoverLook {
-    var photo: UIImage?
+    var design: CoverDesign? = nil
+    var photo: UIImage? = nil
     var color: Color
     var ink: Color
 
-    /// The colour the book frames the page in while writing — a photo cover can't frame a page,
-    /// so it falls back to a leather brown.
+    init(design: CoverDesign) {
+        self.design = design
+        self.color = design.base
+        self.ink = design.ink
+    }
+
+    init(photo: UIImage) {
+        self.photo = photo
+        self.color = Palette.ink
+        self.ink = .white
+    }
+
+    init(color: Color, ink: Color) {
+        self.color = color
+        self.ink = ink
+    }
+
+    /// The colour the book frames the page in — a photo cover can't frame a page, so it falls
+    /// back to a leather brown.
     var frameColor: Color { photo == nil ? color : Palette.leather }
     var frameInk: Color { photo == nil ? ink : Palette.leatherInk }
 }
 
 /// Remembers each month's chosen cover. Covers are a presentation choice, not journal content,
 /// so they live beside the store rather than in it: the choice in UserDefaults, a chosen photo
-/// as a JPEG in Application Support. A month with no choice gets an automatic cover.
+/// as a JPEG in Application Support. A month with no choice wears its own design
+/// (`CoverDesign.forMonth`), so every month looks different until someone changes it.
 @MainActor
 @Observable
 final class CoverStore {
     enum Choice: Codable, Equatable {
         case auto
-        case theme(String)          // PageTheme raw value
+        case theme(String)          // PageTheme raw value — covers chosen before designs existed
         case photo                  // the JPEG saved under the month's key
+        case design(String)         // CoverDesign raw value
     }
 
     private(set) var choices: [String: Choice] = [:]
@@ -48,35 +69,27 @@ final class CoverStore {
         switch choice(year: book.year, month: book.month) {
         case .theme(let id):
             let style = PageTheme.from(id).cover
-            return CoverLook(photo: nil, color: style.color, ink: style.ink)
+            return CoverLook(color: style.color, ink: style.ink)
         case .photo:
-            if let photo = photo(year: book.year, month: book.month) {
-                return CoverLook(photo: photo, color: Palette.ink, ink: .white)
-            }
+            if let photo = photo(year: book.year, month: book.month) { return CoverLook(photo: photo) }
             return Self.autoLook(for: book)
+        case .design(let id):
+            return CoverLook(design: CoverDesign(rawValue: id) ?? .forMonth(year: book.year, month: book.month))
         case .auto:
             return Self.autoLook(for: book)
         }
     }
 
-    /// The month's newest photo if it has one, else its most-used page theme.
+    /// The month's own design.
     static func autoLook(for book: MonthBook) -> CoverLook {
-        if let photo = book.coverPhoto { return CoverLook(photo: photo, color: Palette.ink, ink: .white) }
-        let style = book.theme.cover
-        return CoverLook(photo: nil, color: style.color, ink: style.ink)
+        CoverLook(design: .forMonth(year: book.year, month: book.month))
     }
 
-    func setAuto(year: Int, month: Int) {
+    func setDesign(_ design: CoverDesign, year: Int, month: Int) {
         let key = Self.key(year: year, month: month)
         removePhoto(key)
-        choices[key] = nil
-        persist()
-    }
-
-    func setTheme(_ theme: PageTheme, year: Int, month: Int) {
-        let key = Self.key(year: year, month: month)
-        removePhoto(key)
-        choices[key] = .theme(theme.rawValue)
+        // The month's own design needs no saved choice — it's what an unset month shows anyway.
+        choices[key] = design == .forMonth(year: year, month: month) ? nil : .design(design.rawValue)
         persist()
     }
 
@@ -162,9 +175,8 @@ extension MonthBook {
 
 // MARK: - Cover editor
 
-/// Pick a month's cover — every option on one screen: a photo (the month's own or one from the
-/// camera roll) or a page theme's cloth. A month that was never customized opens on whichever of
-/// those its cover already shows. The book previews the choice live; the tick saves it, the cross
+/// Pick a month's cover: a design (Illustrated, Patterns, Classic) or a photo — the month's own or
+/// one from the camera roll. The book previews the choice live; the tick saves it, the cross
 /// leaves the cover as it was.
 struct CoverEditorSheet: View {
     let book: MonthBook
@@ -172,33 +184,53 @@ struct CoverEditorSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     private enum Choice: Equatable {
+        case design(CoverDesign)
         case photo(UIImage)
-        case theme(PageTheme)
+        case cloth(PageTheme)       // a plain colour chosen before designs existed
 
         static func == (a: Choice, b: Choice) -> Bool {
             switch (a, b) {
+            case (.design(let x), .design(let y)): return x == y
             case (.photo(let x), .photo(let y)): return x === y
-            case (.theme(let x), .theme(let y)): return x == y
+            case (.cloth(let x), .cloth(let y)): return x == y
             default: return false
             }
         }
     }
 
-    @State private var choice: Choice = .theme(.paper)
+    private enum Tab: CaseIterable { case illustrated, patterns, classic, photo
+        var title: String {
+            switch self {
+            case .illustrated: "Illustrated"
+            case .patterns: "Patterns"
+            case .classic: "Classic"
+            case .photo: "Photo"
+            }
+        }
+        var group: CoverDesign.Group? {
+            switch self {
+            case .illustrated: .illustrated
+            case .patterns: .patterns
+            case .classic: .classic
+            case .photo: nil
+            }
+        }
+    }
+
+    @State private var choice: Choice = .design(.bouquet)
+    @State private var tab: Tab = .illustrated
     @State private var photos: [UIImage] = []
     @State private var pickerItem: PhotosPickerItem?
 
     init(book: MonthBook) { self.book = book }
 
-    private let columns = [GridItem(.adaptive(minimum: 96), spacing: 12)]
+    private let columns = [GridItem(.adaptive(minimum: 88), spacing: 12)]
 
     private var previewLook: CoverLook {
         switch choice {
-        case .photo(let image):
-            return CoverLook(photo: image, color: Palette.ink, ink: .white)
-        case .theme(let theme):
-            let style = theme.cover
-            return CoverLook(photo: nil, color: style.color, ink: style.ink)
+        case .design(let design): CoverLook(design: design)
+        case .photo(let image): CoverLook(photo: image)
+        case .cloth(let theme): CoverLook(color: theme.cover.color, ink: theme.cover.ink)
         }
     }
 
@@ -212,20 +244,17 @@ struct CoverEditorSheet: View {
                         .padding(.top, 6)
                         .animation(Motion.snappy, value: choice)
 
-                    Eyebrow(text: "Photo", color: Palette.inkSoft).padding(.top, 24)
-                    LazyVGrid(columns: columns, spacing: 12) {
-                        cameraRollTile
-                        ForEach(Array(photos.enumerated()), id: \.offset) { _, image in
-                            photoTile(image)
+                    tabs.padding(.top, 24)
+
+                    LazyVGrid(columns: columns, spacing: 14) {
+                        if let group = tab.group {
+                            ForEach(CoverDesign.allCases.filter { $0.group == group }) { designTile($0) }
+                        } else {
+                            cameraRollTile
+                            ForEach(Array(photos.enumerated()), id: \.offset) { _, image in photoTile(image) }
                         }
                     }
-                    .padding(.top, 10)
-
-                    Eyebrow(text: "Theme", color: Palette.inkSoft).padding(.top, 24)
-                    LazyVGrid(columns: columns, spacing: 14) {
-                        ForEach(PageTheme.allCases) { theme in themeTile(theme) }
-                    }
-                    .padding(.top, 10)
+                    .padding(.top, 16)
                 }
                 .padding(EdgeInsets(top: 4, leading: 20, bottom: 30, trailing: 20))
             }
@@ -256,6 +285,47 @@ struct CoverEditorSheet: View {
         .padding(.bottom, 12)
     }
 
+    // Illustrated | Patterns | Classic | Photo — rectangular, the active side coral.
+    private var tabs: some View {
+        HStack(spacing: 0) {
+            ForEach(Array(Tab.allCases.enumerated()), id: \.offset) { index, item in
+                if index > 0 { Rectangle().fill(Palette.ink).frame(width: 2) }
+                Button {
+                    Haptics.select()
+                    withAnimation(Motion.snappy) { tab = item }
+                } label: {
+                    Text(loc: item.title)
+                        .font(Fonts.ui(12.5, .heavy)).foregroundStyle(Palette.ink)
+                        .lineLimit(1).minimumScaleFactor(0.7)
+                        .frame(maxWidth: .infinity, minHeight: 40)
+                        .background(tab == item ? Palette.amber : Palette.cream)
+                }
+                .buttonStyle(.plain)
+                .accessibilityAddTraits(tab == item ? .isSelected : [])
+            }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: Radius.chip, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: Radius.chip, style: .continuous).strokeBorder(Palette.ink, lineWidth: 2))
+    }
+
+    private func designTile(_ design: CoverDesign) -> some View {
+        let selected = choice == .design(design)
+        return Button { pick(.design(design)) } label: {
+            VStack(spacing: 6) {
+                CoverArt(design: design, month: book.firstOfMonth)
+                    .clipShape(RoundedRectangle(cornerRadius: Radius.control, style: .continuous))
+                    .selectedRing(selected)
+                Text(loc: design.name)
+                    .font(Fonts.ui(12, selected ? .heavy : .semibold))
+                    .foregroundStyle(selected ? Palette.ink : Palette.inkSoft)
+                    .lineLimit(1).minimumScaleFactor(0.7)
+            }
+        }
+        .buttonStyle(PressableStyle(scale: 0.96))
+        .accessibilityLabel(Text(loc: design.name))
+        .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+
     private var cameraRollTile: some View {
         PhotosPicker(selection: $pickerItem, matching: .images) {
             VStack(spacing: 6) {
@@ -264,7 +334,7 @@ struct CoverEditorSheet: View {
             }
             .foregroundStyle(Palette.ink)
             .frame(maxWidth: .infinity)
-            .frame(height: 128)
+            .aspectRatio(120 / 170, contentMode: .fit)
             .background(Palette.paper, in: RoundedRectangle(cornerRadius: Radius.control, style: .continuous))
             .overlay(RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
                 .strokeBorder(Palette.ink.opacity(0.35), style: StrokeStyle(lineWidth: 1.5, dash: [5, 4])))
@@ -276,28 +346,10 @@ struct CoverEditorSheet: View {
         let selected = choice == .photo(image)
         return Button { pick(.photo(image)) } label: {
             Color.clear
-                .frame(height: 128)
+                .aspectRatio(120 / 170, contentMode: .fit)
                 .overlay { Image(uiImage: image).resizable().scaledToFill() }
                 .clipShape(RoundedRectangle(cornerRadius: Radius.control, style: .continuous))
                 .selectedRing(selected)
-        }
-        .buttonStyle(PressableStyle(scale: 0.96))
-    }
-
-    private func themeTile(_ theme: PageTheme) -> some View {
-        let selected = choice == .theme(theme)
-        let style = theme.cover
-        return Button { pick(.theme(theme)) } label: {
-            VStack(spacing: 7) {
-                RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
-                    .fill(style.color)
-                    .frame(height: 108)
-                    .selectedRing(selected)
-                Text(loc: theme.label)
-                    .font(Fonts.ui(12, selected ? .heavy : .semibold))
-                    .foregroundStyle(selected ? Palette.ink : Palette.inkSoft)
-                    .lineLimit(1).minimumScaleFactor(0.7)
-            }
         }
         .buttonStyle(PressableStyle(scale: 0.96))
     }
@@ -311,28 +363,29 @@ struct CoverEditorSheet: View {
         var found = book.photos()
         switch covers.choice(year: book.year, month: book.month) {
         case .auto:
-            // Never customized: start on what the cover shows now — its newest photo, else the
-            // theme the month used most.
-            if book.coverPhoto != nil, let newest = found.first {
-                choice = .photo(newest)
-            } else {
-                choice = .theme(book.theme)
-            }
+            choice = .design(.forMonth(year: book.year, month: book.month))
+        case .design(let id):
+            choice = .design(CoverDesign(rawValue: id) ?? .forMonth(year: book.year, month: book.month))
         case .theme(let id):
-            choice = .theme(PageTheme.from(id))
+            choice = .cloth(PageTheme.from(id))
         case .photo:
             if let saved = covers.look(for: book).photo {
                 found.insert(saved, at: 0)
                 choice = .photo(saved)
+                tab = .photo
             }
+        }
+        if case .design(let design) = choice {
+            tab = Tab.allCases.first { $0.group == design.group } ?? .illustrated
         }
         photos = found
     }
 
     private func save() {
         switch choice {
-        case .theme(let theme): covers.setTheme(theme, year: book.year, month: book.month)
+        case .design(let design): covers.setDesign(design, year: book.year, month: book.month)
         case .photo(let image): covers.setPhoto(image, year: book.year, month: book.month)
+        case .cloth: break           // unchanged: keep the cloth it already has
         }
         Haptics.success()
         dismiss()

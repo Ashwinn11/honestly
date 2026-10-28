@@ -71,6 +71,7 @@
 		4047CBE5FD4889A50D93EC2F /* MonthBookCover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C928280549161A283B7F41F /* MonthBookCover.swift */; };
 		1C9AEE38808F06850A07D784 /* OnboardingScreens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8912A708BDA3AFF67A9C6D7D /* OnboardingScreens.swift */; };
 		28D7404098175D9A0427789D /* OnboardingIllustrations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DE703FAB54C727B3F05BE51 /* OnboardingIllustrations.swift */; };
+		4BC90A8817B94D2486FA2819 /* CoverDesigns.swift in Sources */ = {isa = PBXBuildFile; fileRef = 701B2D406E5C7FBD7D222048 /* CoverDesigns.swift */; };
 		69C3FBAEAEB3F185C8064723 /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 467A5480FADE60412A768408 /* LibraryView.swift */; };
 		6B16962BB5B38A531DFDC368 /* BookCalendar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54CE3C1C4576F0863F5CC877 /* BookCalendar.swift */; };
 		6D009AB54CDDF82869DC6EBD /* TextLocalization.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4503890E8EE490EB68F8AE82 /* TextLocalization.swift */; };
@@ -240,6 +241,7 @@
 		3C928280549161A283B7F41F /* MonthBookCover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonthBookCover.swift; sourceTree = "<group>"; };
 		8912A708BDA3AFF67A9C6D7D /* OnboardingScreens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingScreens.swift; sourceTree = "<group>"; };
 		2DE703FAB54C727B3F05BE51 /* OnboardingIllustrations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingIllustrations.swift; sourceTree = "<group>"; };
+		701B2D406E5C7FBD7D222048 /* CoverDesigns.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoverDesigns.swift; sourceTree = "<group>"; };
 		467A5480FADE60412A768408 /* LibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryView.swift; sourceTree = "<group>"; };
 		468C6373F86CE0AF2AEB0E30 /* Shielding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shielding.swift; sourceTree = "<group>"; };
 		49CAFAD61DDEC967C658D01B /* AffirmationList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AffirmationList.swift; sourceTree = "<group>"; };
@@ -450,6 +452,7 @@
 		76A221D4A77E7501663E1184 /* History */ = {
 			isa = PBXGroup;
 			children = (
+				701B2D406E5C7FBD7D222048 /* CoverDesigns.swift */,
 				3C928280549161A283B7F41F /* MonthBookCover.swift */,
 				3631C820515D735AECDD124E /* MonthBook.swift */,
 				7BC04CD671C53C05C24B47DD /* BookCovers.swift */,
@@ -947,6 +950,7 @@
 				4047CBE5FD4889A50D93EC2F /* MonthBookCover.swift in Sources */,
 				1C9AEE38808F06850A07D784 /* OnboardingScreens.swift in Sources */,
 				28D7404098175D9A0427789D /* OnboardingIllustrations.swift in Sources */,
+				4BC90A8817B94D2486FA2819 /* CoverDesigns.swift in Sources */,
 				69C3FBAEAEB3F185C8064723 /* LibraryView.swift in Sources */,
 				2A79495612C3D4AEB9AF3897 /* HomeView.swift in Sources */,
 				135AAC3EDCED7165DFAFF9DE /* HonestlyApp.swift in Sources */,

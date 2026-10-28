@@ -63,6 +63,17 @@ enum Fonts {
         .custom(manrope(weight), fixedSize: DesignScale.s(size))
     }
 
+    /// An exact size, not scaled with the screen — for drawings that scale as a whole, like book
+    /// covers.
+    static func fixed(_ size: CGFloat, _ weight: Font.Weight = .bold) -> Font {
+        .custom(manrope(weight), fixedSize: size)
+    }
+
+    /// Baskerville at an exact size — the covers' serif titles.
+    static func serif(_ size: CGFloat, italic: Bool = false) -> Font {
+        .custom(italic ? "Baskerville-SemiBoldItalic" : "Baskerville-SemiBold", fixedSize: size)
+    }
+
     private static func manrope(_ w: Font.Weight) -> String {
         switch w {
         case .ultraLight, .thin, .light, .regular: return "Manrope-Regular"

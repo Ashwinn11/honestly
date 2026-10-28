@@ -2,9 +2,9 @@ import SwiftUI
 
 // MARK: - The book
 
-/// A month as a closed book: cover (the month's newest photo, else its most-used theme), the
-/// month's moods along the bottom, and a block of page edges that thickens as pages are written.
-/// The book still being written carries a ribbon.
+/// A month as a closed book: its cover (a design, or a chosen photo with the month's name and
+/// moods), and a block of page edges that thickens as pages are written. The book still being
+/// written carries a ribbon.
 struct MonthBookCover: View {
     let book: MonthBook
     var width: CGFloat = 92
@@ -37,35 +37,44 @@ struct MonthBookCover: View {
                 .offset(x: w - w * 0.08, y: w * 0.035)
 
             ZStack(alignment: .bottomLeading) {
-                if let photo {
-                    Image(uiImage: photo).resizable().scaledToFill()
-                        .frame(width: w, height: h).clipped()
-                    LinearGradient(colors: [.clear, .black.opacity(0.55)], startPoint: .center, endPoint: .bottom)
+                if let design = look.design {
+                    // A design carries its own artwork and title.
+                    CoverArt(design: design, month: book.firstOfMonth)
+                        .frame(width: w, height: h)
+                    Rectangle().fill(.black.opacity(0.16))                 // the spine's fold
+                        .frame(width: w * 0.07)
+                        .frame(maxHeight: .infinity, alignment: .leading)
                 } else {
-                    look.color
-                    CoverDots(color: look.ink.opacity(0.09), spacing: w * 0.11)
-                }
-                Rectangle().fill(.black.opacity(0.16))                     // the spine's fold
-                    .frame(width: w * 0.07)
-                    .frame(maxHeight: .infinity, alignment: .leading)
-
-                VStack(alignment: .leading, spacing: w * 0.025) {
-                    Text(verbatim: String(book.year))
-                        .font(Fonts.ui(width * 0.075, .heavy)).tracking(width * 0.015)
-                    Text(verbatim: HDate.monthName(book.firstOfMonth))
-                        .font(Fonts.display(width * 0.165, .heavy))
-                        .lineLimit(1).minimumScaleFactor(0.55)
-                    if !book.entries.isEmpty && width >= 80 {     // too small to read on a mini book
-                        HStack(spacing: w * 0.015) {
-                            ForEach(Array(book.entries.suffix(7).enumerated()), id: \.offset) { _, e in
-                                MoodFace(mood: e.moodRaw, size: w * 0.085)
-                            }
-                        }
-                        .padding(.top, w * 0.03)
+                    if let photo {
+                        Image(uiImage: photo).resizable().scaledToFill()
+                            .frame(width: w, height: h).clipped()
+                        LinearGradient(colors: [.clear, .black.opacity(0.55)], startPoint: .center, endPoint: .bottom)
+                    } else {
+                        look.color
+                        CoverDots(color: look.ink.opacity(0.09), spacing: w * 0.11)
                     }
+                    Rectangle().fill(.black.opacity(0.16))                     // the spine's fold
+                        .frame(width: w * 0.07)
+                        .frame(maxHeight: .infinity, alignment: .leading)
+
+                    VStack(alignment: .leading, spacing: w * 0.025) {
+                        Text(verbatim: String(book.year))
+                            .font(Fonts.ui(width * 0.075, .heavy)).tracking(width * 0.015)
+                        Text(verbatim: HDate.monthName(book.firstOfMonth))
+                            .font(Fonts.display(width * 0.165, .heavy))
+                            .lineLimit(1).minimumScaleFactor(0.55)
+                        if !book.entries.isEmpty && width >= 80 {     // too small to read on a mini book
+                            HStack(spacing: w * 0.015) {
+                                ForEach(Array(book.entries.suffix(7).enumerated()), id: \.offset) { _, e in
+                                    MoodFace(mood: e.moodRaw, size: w * 0.085)
+                                }
+                            }
+                            .padding(.top, w * 0.03)
+                        }
+                    }
+                    .foregroundStyle(ink)
+                    .padding(.leading, w * 0.14).padding(.trailing, w * 0.06).padding(.bottom, w * 0.1)
                 }
-                .foregroundStyle(ink)
-                .padding(.leading, w * 0.14).padding(.trailing, w * 0.06).padding(.bottom, w * 0.1)
             }
             .frame(width: w, height: h)
             .clipShape(coverShape)

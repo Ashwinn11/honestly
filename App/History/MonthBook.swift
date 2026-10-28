@@ -40,21 +40,6 @@ struct MonthBook: Identifiable {
         Calendar.current.date(from: DateComponents(year: year, month: month, day: 1)) ?? Date()
     }
 
-    /// The month's most-used page theme (ties go to the most recent page) — what an auto cover
-    /// is dressed in until covers become customizable.
-    var theme: PageTheme {
-        var counts: [PageTheme: Int] = [:]
-        for e in entries { counts[PageTheme.from(e.themeID), default: 0] += 1 }
-        return entries.reversed()
-            .max { counts[PageTheme.from($0.themeID), default: 0] < counts[PageTheme.from($1.themeID), default: 0] }
-            .map { PageTheme.from($0.themeID) } ?? .paper
-    }
-
-    /// The newest photo written into the month, if any — it becomes the cover.
-    var coverPhoto: UIImage? {
-        entries.reversed().lazy.compactMap { $0.thumbnail.flatMap(UIImage.init(data:)) }.first
-    }
-
     /// Opens on the grid of all pages; nil while the month has no pages yet.
     var route: MonthBookRoute? {
         entries.isEmpty ? nil : MonthBookRoute(year: year, month: month, startKey: MonthBookRoute.gridKey)
