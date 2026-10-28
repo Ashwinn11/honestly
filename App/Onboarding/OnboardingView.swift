@@ -230,7 +230,8 @@ struct OnboardingView: View {
 
     private func requestNotifications() {
         Task {
-            _ = await AffirmationNudge.requestPermission()
+            // Allowing notifications here turns the reminders on — the screen just promised them.
+            if await AffirmationNudge.requestPermission() { AffirmationNudge.enable() }
             advance()
         }
     }

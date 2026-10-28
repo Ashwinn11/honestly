@@ -266,9 +266,7 @@ struct AffirmationDeliverySettingsScreen: View {
                 Text(loc: detail).font(Fonts.ui(12, .medium)).foregroundStyle(Palette.inkSofter)
             }
             Spacer(minLength: 4)
-            AmberToggle(isOn: Binding(get: { enabled }, set: { value in
-                if !premium.isPremium && value { flow.showPaywall() } else { enabled = value }
-            }))
+            AmberToggle(isOn: $enabled)       // reminders are free; the widget section stays Premium
         }
     }
 

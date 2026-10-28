@@ -2,6 +2,8 @@ import SwiftUI
 
 struct PromptLibraryScreen: View {
     @Environment(PromptLibrary.self) private var prompts
+    @Environment(PremiumManager.self) private var premium
+    @Environment(AppFlow.self) private var flow
     @Environment(\.dismiss) private var dismiss
     @State private var draft = ""
     @State private var pendingDelete: String?
@@ -49,7 +51,9 @@ struct PromptLibraryScreen: View {
         }, onDelete: { pendingDelete = line })
     }
 
+    /// Choosing from the list is free; writing your own prompt is Premium.
     private func add() {
+        guard premium.isPremium else { flow.showPaywall(); return }
         guard prompts.add(draft) else { Haptics.rigid(); return }
         draft = ""
         Haptics.select()

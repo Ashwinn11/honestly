@@ -215,7 +215,7 @@ struct RitualView: View {
 
     private func choosePrompt() {
         journalFocused = false
-        if premium.isPremium { showPromptPicker = true } else { flow.showPaywall() }
+        showPromptPicker = true            // the prompt list is free; writing your own is Premium
     }
 
     // MARK: First-time tips — the mood, then the page; one at a time, never again once done

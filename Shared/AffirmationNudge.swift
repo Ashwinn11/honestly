@@ -22,12 +22,17 @@ enum AffirmationNudge {
     private static var dailyIDs: [String] { (0..<(horizonDays * maximumDailyTimes)).map { dailyIDPrefix + "\($0)" } }
     private static var allIDs: [String] { [reminderID] + dailyIDs + legacyEchoIDs }
 
-    /// Nudges are a premium feature: OFF until a premium user flips the profile toggle (which
-    /// writes `enabledKey`), and they go quiet again if the subscription lapses — same
-    /// `premiumActive` mirror the shielding extension relies on. An absent key is OFF, matching
-    /// the toggle's own default, so onboarding's permission beat never enables anything by itself.
+    /// Reminders are free. They're on once someone allows notifications in onboarding (see
+    /// `enable`) or flips the toggle in Affirmation delivery; an absent key is OFF.
     static var isEnabled: Bool {
-        SharedState.premiumActive && SharedState.defaults.bool(forKey: enabledKey)
+        SharedState.defaults.bool(forKey: enabledKey)
+    }
+
+    /// Turns reminders on and lays out their schedule — onboarding calls this the moment
+    /// notifications are allowed, so the permission it asked for actually brings reminders.
+    static func enable() {
+        SharedState.defaults.set(true, forKey: enabledKey)
+        schedule()
     }
 
     /// Legacy single-time preference, used once when migrating older installs.
@@ -46,7 +51,7 @@ enum AffirmationNudge {
         return raw.filter { (1...7).contains($0) }
     }
     /// Used when reminders are enabled in Profile. Requests permission, then lays out the schedule.
-    /// Onboarding requests permission separately without enabling reminders.
+    /// Onboarding asks for permission itself and then calls `enable`.
     /// Scheduling only sticks if iOS is authorized at the moment `add` runs — a later grant never
     /// resurrects dropped requests — which is why grant and schedule live together.
     /// Returns false when iOS won't allow notifications (a fresh denial, or one from earlier —
@@ -59,7 +64,7 @@ enum AffirmationNudge {
         return true
     }
 
-    /// Permission alone does not enable or schedule Premium reminders.
+    /// Asks iOS for permission only; `enable` turns the reminders on.
     static func requestPermission() async -> Bool {
         (try? await UNUserNotificationCenter.current()
             .requestAuthorization(options: [.alert, .sound])) ?? false
