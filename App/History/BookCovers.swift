@@ -246,15 +246,27 @@ struct CoverEditorSheet: View {
 
                     tabs.padding(.top, 24)
 
-                    LazyVGrid(columns: columns, spacing: 14) {
-                        if let group = tab.group {
+                    if let group = tab.group {
+                        LazyVGrid(columns: columns, spacing: 14) {
                             ForEach(CoverDesign.allCases.filter { $0.group == group }) { designTile($0) }
+                        }
+                        .padding(.top, 16)
+                    } else {
+                        // The camera roll is its own full-width row, so it never squeezes in among
+                        // (or stands alone without) the month's photos.
+                        cameraRollRow.padding(.top, 16)
+                        if photos.isEmpty {
+                            Text(loc: "Photos you add to this month's pages show up here.")
+                                .font(Fonts.ui(13, .semibold)).foregroundStyle(Palette.inkSoft)
+                                .fixedSize(horizontal: false, vertical: true)
+                                .padding(.top, 14)
                         } else {
-                            cameraRollTile
-                            ForEach(Array(photos.enumerated()), id: \.offset) { _, image in photoTile(image) }
+                            LazyVGrid(columns: columns, spacing: 14) {
+                                ForEach(Array(photos.enumerated()), id: \.offset) { _, image in photoTile(image) }
+                            }
+                            .padding(.top, 14)
                         }
                     }
-                    .padding(.top, 16)
                 }
                 .padding(EdgeInsets(top: 4, leading: 20, bottom: 30, trailing: 20))
             }
@@ -326,20 +338,23 @@ struct CoverEditorSheet: View {
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
 
-    private var cameraRollTile: some View {
+    private var cameraRollRow: some View {
         PhotosPicker(selection: $pickerItem, matching: .images) {
-            VStack(spacing: 6) {
-                Image(systemName: "photo.on.rectangle").font(.system(size: 20, weight: .semibold))
-                Text("Camera roll").font(Fonts.ui(12, .heavy))
+            HStack(spacing: 12) {
+                IconTile(size: 38) {
+                    Image(systemName: "photo.on.rectangle")
+                        .font(.system(size: DesignScale.s(15), weight: .bold)).foregroundStyle(Palette.ink)
+                }
+                Text("Camera roll").font(Fonts.ui(15, .bold)).foregroundStyle(Palette.ink)
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.forward")
+                    .font(.system(size: 12, weight: .bold)).foregroundStyle(Palette.inkSofter)
             }
-            .foregroundStyle(Palette.ink)
-            .frame(maxWidth: .infinity)
-            .aspectRatio(120 / 170, contentMode: .fit)
-            .background(Palette.paper, in: RoundedRectangle(cornerRadius: Radius.control, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
-                .strokeBorder(Palette.ink.opacity(0.35), style: StrokeStyle(lineWidth: 1.5, dash: [5, 4])))
+            .padding(12)
+            .outlinedSurface()
+            .contentShape(Rectangle())
         }
-        .buttonStyle(PressableStyle(scale: 0.96))
+        .buttonStyle(PressableStyle(scale: 0.98))
     }
 
     private func photoTile(_ image: UIImage) -> some View {
