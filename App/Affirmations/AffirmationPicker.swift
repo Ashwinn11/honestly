@@ -86,10 +86,10 @@ struct AffirmationTopicPicker: View {
             .padding(.horizontal, 12)
             .frame(maxWidth: .infinity, minHeight: 48)
             .background(selected ? Palette.amber : Palette.cream,
-                        in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        in: RoundedRectangle(cornerRadius: Radius.control, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
                 .strokeBorder(selected ? Palette.ink : Palette.outlineSoft, lineWidth: selected ? 1.8 : 1.2))
-            .contentShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: Radius.control, style: .continuous))
         }
         .buttonStyle(PressableStyle(scale: 0.98))
         .accessibilityAddTraits(selected ? .isSelected : [])
@@ -172,8 +172,7 @@ struct AffirmationsScreen: View {
             .accessibilityLabel(Text(loc: "Manage affirmation"))
         }
         .padding(.leading, 12)
-        .background(Palette.cream, in: RoundedRectangle(cornerRadius: 14))
-        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Palette.outlineSoft, lineWidth: 1.2))
+        .outlinedSurface(radius: Radius.control)
     }
 
     private func addDraft() {

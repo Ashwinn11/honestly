@@ -33,7 +33,7 @@ struct InlineJournalColorPicker: View {
                         .position(x: 10 + saturation * max(0, geometry.size.width - 20),
                                   y: 10 + (1 - brightness) * max(0, geometry.size.height - 20))
                 }
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .clipShape(RoundedRectangle(cornerRadius: Radius.chip))
                 .contentShape(Rectangle())
                 .gesture(DragGesture(minimumDistance: 0).onChanged { value in
                     saturation = min(1, max(0, (value.location.x - 10) / max(1, geometry.size.width - 20)))

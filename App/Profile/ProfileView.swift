@@ -106,9 +106,7 @@ struct ProfileView: View {
                 .buttonStyle(RowPressStyle())
             }
         }
-        .background(Palette.cream, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).strokeBorder(Palette.outlineSoft, lineWidth: 1.5))
-        .shadow(color: Color(hex: "78501E").opacity(0.08), radius: 13, y: 10)
+        .softCard(padding: 0, radius: Radius.card)
     }
 
     #if DEBUG
@@ -125,15 +123,14 @@ struct ProfileView: View {
             }
         }
         .buttonStyle(RowPressStyle())
-        .background(Palette.cream, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).strokeBorder(Palette.outlineSoft, lineWidth: 1.5))
+        .outlinedSurface(radius: Radius.card)
     }
     #endif
 
     // MARK: Hero
     private var heroCard: some View {
         ZStack(alignment: .topTrailing) {
-            SunMark(size: 54, tint: Color(hex: "FFF4E0"))
+            SunMark(size: 54, tint: Palette.sunTint)
                 .rotationEffect(.degrees(-8)).offset(x: -2, y: 14).floaty(period: 6)
             VStack(alignment: .leading, spacing: 0) {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
@@ -153,10 +150,10 @@ struct ProfileView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(20)
-        .background(Palette.amber, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).strokeBorder(Palette.ink, lineWidth: 2))
-        .tactile(6, cornerRadius: 22)
+        .background(Palette.amber, in: RoundedRectangle(cornerRadius: Radius.card, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: Radius.card, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: Radius.card, style: .continuous).strokeBorder(Palette.ink, lineWidth: 2))
+        .tactile(6, cornerRadius: Radius.card)
     }
     private func stat(_ value: String, _ label: String) -> some View {
         VStack(alignment: .leading, spacing: 2) {
@@ -223,9 +220,7 @@ struct ProfileView: View {
             divider
             LanguagePickerRow()
         }
-        .background(Palette.cream, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).strokeBorder(Palette.outlineSoft, lineWidth: 1.5))
-        .shadow(color: Color(hex: "78501E").opacity(0.08), radius: 13, y: 10)
+        .softCard(padding: 0, radius: Radius.card)
     }
 
     // MARK: Account
@@ -283,9 +278,7 @@ struct ProfileView: View {
                 }
             }
         }
-        .background(Palette.cream, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).strokeBorder(Palette.outlineSoft, lineWidth: 1.5))
-        .shadow(color: Color(hex: "78501E").opacity(0.08), radius: 13, y: 10)
+        .softCard(padding: 0, radius: Radius.card)
     }
 
     // MARK: About
@@ -310,9 +303,7 @@ struct ProfileView: View {
             divider
             legalRow("Privacy Policy", .privacy)
         }
-        .background(Palette.cream, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).strokeBorder(Palette.outlineSoft, lineWidth: 1.5))
-        .shadow(color: Color(hex: "78501E").opacity(0.08), radius: 13, y: 10)
+        .softCard(padding: 0, radius: Radius.card)
     }
     private func legalRow(_ title: String, _ doc: LegalDoc) -> some View {
         NavigationLink {
@@ -336,14 +327,12 @@ struct ProfileView: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(RowPressStyle())
-        .background(Palette.cream, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).strokeBorder(Palette.outlineSoft, lineWidth: 1.5))
-        .shadow(color: Color(hex: "78501E").opacity(0.08), radius: 13, y: 10)
+        .softCard(padding: 0, radius: Radius.card)
     }
 
     // MARK: Row building blocks
     private func sectionEyebrow(_ text: String) -> some View {
-        Eyebrow(text: text, color: Color(hex: "C0B29A"), tracking: 1.2, size: 11)
+        Eyebrow(text: text, color: Palette.eyebrowSoft, tracking: 1.2, size: 11)
             .padding(.top, 22).padding(.bottom, 8).padding(.horizontal, 4)
     }
     private func settingRow<L: View, T: View>(@ViewBuilder _ leading: () -> L,
@@ -374,7 +363,7 @@ struct ProfileView: View {
 private struct RowPressStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .background(configuration.isPressed ? Color(hex: "FAF5EE") : .clear)
+            .background(configuration.isPressed ? Palette.pressedRow : .clear)
             .animation(.easeOut(duration: 0.15), value: configuration.isPressed)
     }
 }

@@ -31,8 +31,7 @@ struct TagEditorSheet: View {
                     .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || tags.count >= TagEditing.maxTags)
             }
             .padding(12)
-            .background(Palette.cream, in: RoundedRectangle(cornerRadius: 14))
-            .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Palette.outlineSoft, lineWidth: 1.5))
+            .outlinedSurface(radius: Radius.control)
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {

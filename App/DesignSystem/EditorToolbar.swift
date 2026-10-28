@@ -300,10 +300,10 @@ struct TextFormattingSheet: View {
                             .foregroundStyle(panel == item ? .white : Palette.ink)
                             .frame(maxWidth: .infinity, minHeight: 44)
                             .background(panel == item ? Palette.amber : .clear,
-                                        in: RoundedRectangle(cornerRadius: 10))
+                                        in: RoundedRectangle(cornerRadius: Radius.tile))
                             .overlay {
                                 if panel == item {
-                                    RoundedRectangle(cornerRadius: 10)
+                                    RoundedRectangle(cornerRadius: Radius.tile)
                                         .strokeBorder(Palette.ink, lineWidth: 2)
                                 }
                             }
@@ -313,7 +313,7 @@ struct TextFormattingSheet: View {
                 }
             }
             .padding(4)
-            .background(Palette.cream, in: RoundedRectangle(cornerRadius: 14))
+            .background(Palette.cream, in: RoundedRectangle(cornerRadius: Radius.control))
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
@@ -336,10 +336,10 @@ struct TextFormattingSheet: View {
                                     .frame(height: 34)
                                     .background(
                                         active ? AnyShapeStyle(Palette.amber) : AnyShapeStyle(Palette.paper),
-                                        in: RoundedRectangle(cornerRadius: 9, style: .continuous)
+                                        in: RoundedRectangle(cornerRadius: Radius.tile, style: .continuous)
                                     )
                                     .overlay(
-                                        RoundedRectangle(cornerRadius: 9, style: .continuous)
+                                        RoundedRectangle(cornerRadius: Radius.tile, style: .continuous)
                                             .strokeBorder(active ? Palette.ink : Palette.outlineSoft,
                                                     lineWidth: active ? 2 : 1.2)
                                     )
@@ -449,7 +449,7 @@ struct TextFormattingSheet: View {
     private var colorPanel: some View {
         VStack(alignment: .leading, spacing: 8) {
             InlineJournalColorPicker(
-                color: selectedColor ?? (editingHighlight ? UIColor(Color(hex: "FFE89A")) : Palette.inkUI),
+                color: selectedColor ?? (editingHighlight ? UIColor(Palette.highlighter) : Palette.inkUI),
                 onChange: { applyColor($0) }
             )
             .id(panel)
@@ -512,8 +512,7 @@ struct TextFormattingSheet: View {
         .foregroundStyle(Palette.ink)
         .padding(.horizontal, 12)
         .frame(maxWidth: .infinity, minHeight: 44)
-        .background(Palette.cream, in: RoundedRectangle(cornerRadius: 10))
-        .overlay(RoundedRectangle(cornerRadius: 10).strokeBorder(Palette.ink, lineWidth: 1.5))
+        .outlinedSurface(radius: Radius.tile, bold: true)
     }
 
     @ViewBuilder

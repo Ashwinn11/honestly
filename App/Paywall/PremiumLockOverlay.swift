@@ -40,8 +40,7 @@ struct PremiumLockedRow: View {
                 Spacer()
             }
             .padding(14).frame(minHeight: 48)
-            .background(Palette.cream, in: RoundedRectangle(cornerRadius: Radius.control))
-            .overlay(RoundedRectangle(cornerRadius: Radius.control).strokeBorder(Palette.outlineSoft, lineWidth: 1.2))
+            .outlinedSurface(radius: Radius.control)
         }
         .buttonStyle(.plain)
     }
@@ -59,7 +58,7 @@ struct PremiumUnlockCard: View {
     var body: some View {
         Button(action: action) {
             VStack(spacing: 14) {
-                IconTile(size: 48, radius: 16) {
+                IconTile(size: 48, radius: Radius.control) {
                     Image(systemName: icon).font(.system(size: 19, weight: .bold))
                         .foregroundStyle(Palette.amberDeep)
                 }
@@ -78,6 +77,6 @@ struct PremiumUnlockCard: View {
             .frame(maxWidth: .infinity)
         }
         .buttonStyle(PressableStyle(scale: 0.97))
-        .softCard(padding: 0, radius: 22, emphasized: true)
+        .softCard(padding: 0, radius: Radius.card, emphasized: true)
     }
 }

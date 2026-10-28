@@ -132,9 +132,9 @@ struct PaywallView: View {
                 }
             }
             .padding(15)
-            .background(isSel ? Color(hex: "FFF6E7") : Palette.cream,
-                        in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
+            .background(isSel ? Palette.selectedFill : Palette.cream,
+                        in: RoundedRectangle(cornerRadius: Radius.control, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
                 .strokeBorder(isSel ? Palette.amber : Palette.ink.opacity(0.18), lineWidth: isSel ? 2 : 1.5))
         }
         .buttonStyle(PressableStyle(scale: 0.98))

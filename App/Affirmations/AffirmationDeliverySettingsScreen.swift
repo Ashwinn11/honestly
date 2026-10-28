@@ -90,8 +90,8 @@ struct AffirmationDeliverySettingsScreen: View {
                                         HStack(spacing: 12) {
                                             PageThemeBackground(theme: PageTheme.from(widgetThemeID))
                                                 .frame(width: 56, height: 44)
-                                                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                                                .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                                .clipShape(RoundedRectangle(cornerRadius: Radius.tile, style: .continuous))
+                                                .overlay(RoundedRectangle(cornerRadius: Radius.tile, style: .continuous)
                                                     .strokeBorder(Palette.ink.opacity(0.22), lineWidth: 1))
                                             VStack(alignment: .leading, spacing: 2) {
                                                 Text(loc: "Page theme")
@@ -119,11 +119,11 @@ struct AffirmationDeliverySettingsScreen: View {
 
                                     Button { showingWidgetFont = true } label: {
                                         HStack(spacing: 10) {
-                                            Image(systemName: "textformat")
-                                                .font(.system(size: 15, weight: .semibold))
-                                                .foregroundStyle(Palette.ink)
-                                                .frame(width: 32, height: 32)
-                                                .background(Palette.paper, in: RoundedRectangle(cornerRadius: 9))
+                                            IconTile(size: 32) {
+                                                Image(systemName: "textformat")
+                                                    .font(.system(size: DesignScale.s(14), weight: .bold))
+                                                    .foregroundStyle(Palette.ink)
+                                            }
                                             Text(loc: "Font").font(Fonts.ui(14, .bold)).foregroundStyle(Palette.ink)
                                             Spacer()
                                             Text(widgetFontName).font(Fonts.ui(12, .medium)).foregroundStyle(Palette.inkSofter)
@@ -191,8 +191,7 @@ struct AffirmationDeliverySettingsScreen: View {
     private func card<Content: View>(@ViewBuilder content: () -> Content) -> some View {
         content()
                 .padding(16)
-                .background(Palette.cream, in: RoundedRectangle(cornerRadius: 18))
-                .overlay(RoundedRectangle(cornerRadius: 18).strokeBorder(Palette.outlineSoft, lineWidth: 1.3))
+                .outlinedSurface(radius: Radius.panel)
     }
 
     private var widgetThemeSelection: Binding<PageTheme> {
@@ -375,8 +374,8 @@ private struct WidgetFontPickerSheet: View {
                                 .foregroundStyle(active ? .white : Palette.ink)
                                 .frame(maxWidth: .infinity, minHeight: 48)
                                 .background(active ? Palette.amber : Palette.cream,
-                                            in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                                .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                            in: RoundedRectangle(cornerRadius: Radius.chip, style: .continuous))
+                                .overlay(RoundedRectangle(cornerRadius: Radius.chip, style: .continuous)
                                     .strokeBorder(active ? Palette.ink : Palette.outlineSoft,
                                                   lineWidth: active ? 2 : 1.2))
                         }

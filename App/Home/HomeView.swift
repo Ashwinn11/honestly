@@ -60,7 +60,7 @@ struct HomeView: View {
             : "A few honest lines. A little space for yourself.")
         return ZStack(alignment: .topTrailing) {
             Circle().fill(.white.opacity(0.16)).frame(width: 120, height: 120).offset(x: 30, y: -30)
-            SunMark(size: 50, tint: Color(hex: "FFF4E0")).rotationEffect(.degrees(-8))
+            SunMark(size: 50, tint: Palette.sunTint).rotationEffect(.degrees(-8))
                 .offset(x: -6, y: 10).floaty(period: 5)
             VStack(alignment: .leading, spacing: 0) {
                 Eyebrow(text: "This morning", color: .white.opacity(0.92))
@@ -100,10 +100,10 @@ struct HomeView: View {
             }
         }
         .padding(20)
-        .background(Palette.heroGradient, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).strokeBorder(Palette.ink, lineWidth: 2))
-        .tactile(6, cornerRadius: 24)
+        .background(Palette.heroGradient, in: RoundedRectangle(cornerRadius: Radius.hero, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: Radius.hero, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: Radius.hero, style: .continuous).strokeBorder(Palette.ink, lineWidth: 2))
+        .tactile(6, cornerRadius: Radius.hero)
         .shadow(color: Palette.heroDeep.opacity(0.42), radius: 22, y: 14)
         .staggeredAppear(index: 0)
     }
@@ -111,10 +111,9 @@ struct HomeView: View {
     private func doneCard(_ entry: JournalEntry) -> some View {
         ZStack(alignment: .topTrailing) {
             Circle().fill(.white.opacity(0.25)).frame(width: 120, height: 120).offset(x: 30, y: -34)
-            MoodFace(mood: entry.moodRaw, size: 44)
-                .frame(width: 60, height: 60)
-                .background(.white, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Palette.ink, lineWidth: 2))
+            IconTile(size: 60, fill: .white, radius: Radius.control) {
+                MoodFace(mood: entry.moodRaw, size: DesignScale.s(44))
+            }
                 .padding(.top, 4)
                 .padding(.trailing, 4)
 
@@ -131,16 +130,16 @@ struct HomeView: View {
                 // the current month.
                 NavigationLink(value: MonthBookRoute(entry: entry)) { readTodayLabel }
                 .buttonStyle(TactileButtonStyle(fill: AnyShapeStyle(Palette.onAmber),
-                                                cornerRadius: DesignScale.s(16), ledge: 4, bordered: true))
+                                                cornerRadius: DesignScale.s(Radius.control), ledge: 4, bordered: true))
                 .padding(.top, 18)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(20)
-        .background(Palette.mood(1), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).strokeBorder(Palette.ink, lineWidth: 2))
-        .shadow(color: Color(hex: "3C5A28").opacity(0.4), radius: 20, y: 12)
+        .background(Palette.mood(1), in: RoundedRectangle(cornerRadius: Radius.hero, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: Radius.hero, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: Radius.hero, style: .continuous).strokeBorder(Palette.ink, lineWidth: 2))
+        .shadow(color: Palette.leafShadow.opacity(0.4), radius: 20, y: 12)
         .staggeredAppear(index: 0)
     }
 
@@ -220,8 +219,7 @@ struct HomeView: View {
                         .foregroundStyle(Palette.inkSofter)
                 }
                 .padding(EdgeInsets(top: 14, leading: 14, bottom: 14, trailing: 14))
-                .background(Palette.cream, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous).strokeBorder(Palette.outlineSoft, lineWidth: 1.5))
+                .outlinedSurface(radius: Radius.control)
             }
             .buttonStyle(PressableStyle(scale: 0.99))
             .accessibilityHint(Text(loc: "Read and browse affirmations"))

@@ -71,7 +71,7 @@ struct MoodFace: View {
                 stroke({ $0.move(to: pt(21, 39)); $0.addQuadCurve(to: pt(39, 39), control: pt(30, 29)) }, 4.5)
                 stroke({ $0.move(to: pt(61, 39)); $0.addQuadCurve(to: pt(79, 39), control: pt(70, 29)) }, 4.5)
                 if expressive {
-                    let tear = Color(hex: "5B8FD6")
+                    let tear = Palette.tear
                     for cx in [CGFloat(30), CGFloat(70)] {
                         var t = Path()
                         t.move(to: pt(cx, 46))

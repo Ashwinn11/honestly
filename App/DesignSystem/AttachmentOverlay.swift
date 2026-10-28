@@ -140,7 +140,7 @@ final class AttachmentEditBar: UIView {
         layer.cornerCurve = .continuous
         layer.borderWidth = 1.2
         layer.borderColor = UIColor(Palette.outlineSoft).cgColor
-        layer.shadowColor = UIColor(Color(hex: "78501E")).cgColor
+        layer.shadowColor = UIColor(Palette.warmShadow).cgColor
         layer.shadowOpacity = 0.18
         layer.shadowRadius = 8
         layer.shadowOffset = CGSize(width: 0, height: 4)

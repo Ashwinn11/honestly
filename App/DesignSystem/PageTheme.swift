@@ -368,7 +368,7 @@ struct ThemePickerSheet: View {
             selection = theme
         } label: {
             VStack(spacing: 7) {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
                     .fill(.clear)
                     .frame(height: 108)
                     .overlay {
@@ -376,8 +376,8 @@ struct ThemePickerSheet: View {
                             // A mini page: same drawing, just clipped — ignoresSafeArea inside
                             // is neutralized by the clip.
                     }
-                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .clipShape(RoundedRectangle(cornerRadius: Radius.control, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
                         .strokeBorder(selected ? Palette.amber : Palette.outlineSoft, lineWidth: selected ? 2.5 : 1.5))
                     .overlay(alignment: .topTrailing) {
                         if selected {

@@ -22,7 +22,7 @@ struct PrimaryButton: View {
         }
         .buttonStyle(TactileButtonStyle(
             fill: enabled ? AnyShapeStyle(color) : AnyShapeStyle(Palette.ink.opacity(0.06)),
-            cornerRadius: DesignScale.s(17), ledge: enabled ? 4 : 0, bordered: enabled))
+            cornerRadius: DesignScale.s(Radius.panel), ledge: enabled ? 4 : 0, bordered: enabled))
         .frame(maxWidth: Metrics.maxButtonWidth)          // capped on iPad…
         .frame(maxWidth: .infinity)                       // …centered in its parent
         .disabled(!enabled)
@@ -73,7 +73,7 @@ struct CreamButton: View {
             .padding(.vertical, DesignScale.s(15))
         }
         .buttonStyle(TactileButtonStyle(fill: AnyShapeStyle(fill),
-                                        cornerRadius: DesignScale.s(16), ledge: 4, bordered: true))
+                                        cornerRadius: DesignScale.s(Radius.control), ledge: 4, bordered: true))
     }
 }
 
@@ -90,9 +90,11 @@ struct PressableStyle: ButtonStyle {
 
 // MARK: - Soft white card
 
+/// The app's card: cream, a soft (or, emphasized, ink) outline, and the warm shadow. Use this
+/// rather than rebuilding the background/outline/shadow by hand.
 struct SoftCard: ViewModifier {
     var padding: CGFloat = 18
-    var radius: CGFloat = 22
+    var radius: CGFloat = Radius.card
     var emphasized: Bool = false          // 2px solid ink vs 1.5px soft outline
     func body(content: Content) -> some View {
         let shape = RoundedRectangle(cornerRadius: DesignScale.s(radius), style: .continuous)
@@ -101,12 +103,29 @@ struct SoftCard: ViewModifier {
             .background(Palette.cream, in: shape)
             .overlay(shape.strokeBorder(emphasized ? Palette.ink : Palette.outlineSoft,
                                   lineWidth: emphasized ? 2 : 1.5))
-            .shadow(color: Color(hex: "78501E").opacity(0.09), radius: DesignScale.s(13), x: 0, y: DesignScale.s(10))
+            .shadow(color: Palette.warmShadow.opacity(0.09), radius: DesignScale.s(13), x: 0, y: DesignScale.s(10))
+    }
+}
+
+/// A flat surface on a screen or sheet — rows, inputs, small panels: cream with a soft outline,
+/// no shadow. `bold` gives it the ink outline instead.
+struct OutlinedSurface: ViewModifier {
+    var radius: CGFloat = Radius.control
+    var bold = false
+    func body(content: Content) -> some View {
+        let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
+        content
+            .background(Palette.cream, in: shape)
+            .overlay(shape.strokeBorder(bold ? Palette.ink : Palette.outlineSoft, lineWidth: bold ? 2 : 1.5))
     }
 }
 
 extension View {
-    func softCard(padding: CGFloat = 18, radius: CGFloat = 22, emphasized: Bool = false) -> some View {
+    func outlinedSurface(radius: CGFloat = Radius.control, bold: Bool = false) -> some View {
+        modifier(OutlinedSurface(radius: radius, bold: bold))
+    }
+
+    func softCard(padding: CGFloat = 18, radius: CGFloat = Radius.card, emphasized: Bool = false) -> some View {
         modifier(SoftCard(padding: padding, radius: radius, emphasized: emphasized))
     }
 }
@@ -117,7 +136,7 @@ extension View {
 struct IconTile<Content: View>: View {
     var size: CGFloat = 38
     var fill: Color = Palette.iconTile
-    var radius: CGFloat = 11
+    var radius: CGFloat = Radius.tile
     @ViewBuilder var content: () -> Content
     var body: some View {
         content()
@@ -289,11 +308,11 @@ func afterMenuCloses(_ action: @escaping @MainActor () -> Void) {
     }
 }
 
-// MARK: - Empty pages — the one empty state wherever pages are listed
+// MARK: - Empty state — the one "nothing here" screen
 
 /// A sun, a line saying what's missing, and an optional next step. Used by the Library's search
-/// and filters, an empty month book, and a page that's gone.
-struct EmptyPagesState: View {
+/// and filters, an empty month book, a page that's gone, and the affirmation reader.
+struct EmptyState: View {
     let title: String                    // String Catalog keys
     var message: String? = nil
     var actionTitle: String? = nil
@@ -328,7 +347,7 @@ struct EmptyPagesState: View {
                         .padding(.horizontal, 18).frame(minHeight: 46)
                 }
                 .buttonStyle(TactileButtonStyle(fill: AnyShapeStyle(Palette.onAmber),
-                                                cornerRadius: DesignScale.s(14), ledge: 4, bordered: true))
+                                                cornerRadius: DesignScale.s(Radius.control), ledge: 4, bordered: true))
                 .padding(.top, 4)
             }
         }

@@ -29,7 +29,7 @@ struct JournalPageSurface<Content: View>: View {
                         .padding(.leading, 10)
                 }
             }
-            .shadow(color: Color(hex: "78501E").opacity(bordered ? shadowOpacity : 0),
+            .shadow(color: Palette.warmShadow.opacity(bordered ? shadowOpacity : 0),
                     radius: shadowRadius, x: 0, y: shadowRadius * 0.7)
     }
 }

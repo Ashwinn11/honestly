@@ -188,11 +188,11 @@ struct LibraryView: View {
         if !store.ritualDoneToday {
             Button { flow.startRitual() } label: { actionLabel("Write today's page") }
                 .buttonStyle(TactileButtonStyle(fill: AnyShapeStyle(Palette.onAmber),
-                                                cornerRadius: DesignScale.s(14), ledge: 4, bordered: true))
+                                                cornerRadius: DesignScale.s(Radius.control), ledge: 4, bordered: true))
         } else if canOpen(book), let route = book.route {
             NavigationLink(value: route) { actionLabel("Open book") }
                 .buttonStyle(TactileButtonStyle(fill: AnyShapeStyle(Palette.onAmber),
-                                                cornerRadius: DesignScale.s(14), ledge: 4, bordered: true))
+                                                cornerRadius: DesignScale.s(Radius.control), ledge: 4, bordered: true))
         }
     }
 
@@ -261,7 +261,7 @@ struct LibraryView: View {
         let term = query.trimmingCharacters(in: .whitespaces)
         let highlight = term.hasPrefix("#") ? String(term.dropFirst()) : term
         return ForEach(Array(groups.enumerated()), id: \.element.label) { _, group in
-            Text(group.label).font(Fonts.display(18, .bold)).foregroundStyle(Color(hex: "A0917C"))
+            Text(group.label).font(Fonts.display(18, .bold)).foregroundStyle(Palette.sectionLabel)
                 .padding(.top, 18).padding(.bottom, 10)
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: columnCount), spacing: 14) {
                 ForEach(group.items, id: \.dayKey) { e in
@@ -300,8 +300,7 @@ struct LibraryView: View {
             }
         }
         .padding(EdgeInsets(top: 11, leading: 14, bottom: 11, trailing: 14))
-        .background(Palette.cream, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(Palette.outlineSoft, lineWidth: 1.5))
+        .outlinedSurface(radius: Radius.control)
     }
 
     // MARK: Filter row — an "All" pill + five mood tiles, spread across the full width
@@ -321,8 +320,8 @@ struct LibraryView: View {
                     MoodFace(mood: i, size: 26)
                         .frame(width: 40, height: 40)
                         .background(filter == i ? Palette.moodSoft(i) : Palette.cream,
-                                    in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                    in: RoundedRectangle(cornerRadius: Radius.chip, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: Radius.chip, style: .continuous)
                             .strokeBorder(filter == i ? Palette.mood(i) : Palette.ink.opacity(0.22),
                                     lineWidth: filter == i ? 2.5 : 2))
                         .frame(maxWidth: .infinity)          // spread evenly across the width
@@ -333,7 +332,7 @@ struct LibraryView: View {
     }
 
     private var emptyState: some View {
-        EmptyPagesState(title: emptyTitle, message: emptyBody)
+        EmptyState(title: emptyTitle, message: emptyBody)
     }
 
     private func toggle(_ value: Int?) {
@@ -436,7 +435,7 @@ struct MonthBookCover: View {
             }
         }
         .frame(width: w + edge, height: h, alignment: .topLeading)
-        .shadow(color: Color(hex: "78501E").opacity(0.22), radius: w * 0.08, x: 0, y: w * 0.07)
+        .shadow(color: Palette.warmShadow.opacity(0.22), radius: w * 0.08, x: 0, y: w * 0.07)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text(verbatim: HDate.monthTitle(book.firstOfMonth)))
         .accessibilityHint(locked ? Text("Unlock Premium") : Text(verbatim: ""))
@@ -452,7 +451,7 @@ private struct PageEdges: View {
             var x: CGFloat = 2
             while x < size.width {
                 ctx.fill(Path(CGRect(x: x, y: 0, width: 0.75, height: size.height)),
-                         with: .color(Color(hex: "D8CBB6")))
+                         with: .color(Palette.hairline))
                 x += 2.5
             }
         }

@@ -162,10 +162,10 @@ struct OnboardingView: View {
                 .foregroundStyle(b.enabled ? .white : Palette.inkSofter)
                 .frame(maxWidth: .infinity, minHeight: DesignScale.s(56))
                 .background(b.enabled ? AnyShapeStyle(Palette.amber) : AnyShapeStyle(Palette.ink.opacity(0.06)),
-                            in: RoundedRectangle(cornerRadius: DesignScale.s(17), style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: DesignScale.s(17), style: .continuous)
+                            in: RoundedRectangle(cornerRadius: DesignScale.s(Radius.panel), style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: DesignScale.s(Radius.panel), style: .continuous)
                     .strokeBorder(Palette.ink, lineWidth: b.enabled ? 2 : 0))
-                .tactile(b.enabled ? 4 : 0, cornerRadius: DesignScale.s(17))
+                .tactile(b.enabled ? 4 : 0, cornerRadius: DesignScale.s(Radius.panel))
         }
         .buttonStyle(PressableStyle())
         .disabled(!b.enabled)
@@ -331,10 +331,10 @@ private struct OnbWelcomeView: View {
             ZStack {
                 SoftGlow(color: Palette.sunDisc, opacity: 0.22, size: 280)
                 SunMark(size: 118).spin(period: 26)
-                InkGlyph(kind: .sparkle, size: 24, fill: Color(hex: "F6C33F"))
+                InkGlyph(kind: .sparkle, size: 24, fill: Palette.glyphGold)
                     .offset(x: -74, y: -60)
                     .floaty(period: 4)
-                InkGlyph(kind: .heart, size: 20, fill: Color(hex: "F19DA6"))
+                InkGlyph(kind: .heart, size: 20, fill: Palette.glyphBlush)
                     .offset(x: 76, y: -44)
                     .floaty(period: 5, delay: 0.4)
             }
@@ -474,10 +474,10 @@ private struct MorningOutcomeCard: View {
         }
         .padding(18)
         .frame(maxWidth: 300)
-        .background(Palette.cream, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous)
+        .background(Palette.cream, in: RoundedRectangle(cornerRadius: Radius.hero, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: Radius.hero, style: .continuous)
             .stroke(Palette.ink, lineWidth: 2))
-        .tactile(5, cornerRadius: 24)
+        .tactile(5, cornerRadius: Radius.hero)
         .shadow(color: Palette.ink.opacity(0.09), radius: 18, x: 0, y: 12)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text(loc: "Block apps until you write"))
@@ -608,10 +608,10 @@ private struct OnbChoiceRow: View {
             .padding(.horizontal, 14)
             .frame(maxWidth: .infinity, minHeight: 50)
             .background(selected ? Palette.amber : Palette.cream,
-                        in: RoundedRectangle(cornerRadius: 15, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 15, style: .continuous)
+                        in: RoundedRectangle(cornerRadius: Radius.control, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
                 .strokeBorder(selected ? Palette.ink : Palette.outlineSoft, lineWidth: selected ? 1.8 : 1.2))
-            .contentShape(RoundedRectangle(cornerRadius: 15, style: .continuous))
+            .contentShape(RoundedRectangle(cornerRadius: Radius.control, style: .continuous))
         }
         .buttonStyle(PressableStyle(scale: 0.98))
         .accessibilityAddTraits(selected ? .isSelected : [])
@@ -690,9 +690,9 @@ private struct OnbAffirmationPreview: View {
         }
         .frame(maxWidth: 300)
         .frame(height: 118)
-        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: Radius.hero, style: .continuous))
         .overlay {
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
+            RoundedRectangle(cornerRadius: Radius.hero, style: .continuous)
                 .strokeBorder(Palette.ink.opacity(0.10), lineWidth: 1)
         }
         .shadow(color: Palette.ink.opacity(0.10), radius: 13, x: 0, y: 6)
@@ -728,8 +728,8 @@ private struct AppBlockLoop: View {
             }
             .padding(.horizontal, 20)
             .padding(.vertical, 12)
-            .background(Palette.cream.opacity(0.88), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous)
+            .background(Palette.cream.opacity(0.88), in: RoundedRectangle(cornerRadius: Radius.panel, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: Radius.panel, style: .continuous)
                 .strokeBorder(Palette.outlineSoft, lineWidth: 1.2))
             Text(loc: "Write first, scroll later.")
                 .font(Fonts.ui(11.5, .bold))
@@ -772,8 +772,8 @@ private struct NotifCard<Message: View>: View {
         HStack(alignment: .top, spacing: DesignScale.s(12)) {
             Image("app-mark").resizable().scaledToFill()
                 .frame(width: DesignScale.s(42), height: DesignScale.s(42))
-                .clipShape(RoundedRectangle(cornerRadius: DesignScale.s(10), style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: DesignScale.s(10), style: .continuous).strokeBorder(Palette.ink.opacity(0.12), lineWidth: 1))
+                .clipShape(RoundedRectangle(cornerRadius: DesignScale.s(Radius.tile), style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: DesignScale.s(Radius.tile), style: .continuous).strokeBorder(Palette.ink.opacity(0.12), lineWidth: 1))
             VStack(alignment: .leading, spacing: DesignScale.s(3)) {
                 HStack(alignment: .firstTextBaseline) {
                     Text(loc: title).font(Fonts.ui(14, .heavy)).foregroundStyle(Palette.ink)
@@ -781,16 +781,16 @@ private struct NotifCard<Message: View>: View {
                     Text(verbatim: time).font(Fonts.ui(12, .semibold)).foregroundStyle(Palette.inkSofter)
                 }
                 message
-                    .font(Fonts.ui(13.5, .semibold)).foregroundStyle(Color(hex: "5A4A38"))
+                    .font(Fonts.ui(13.5, .semibold)).foregroundStyle(Palette.notifBody)
                     .lineSpacing(2).lineLimit(3).fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
         .padding(EdgeInsets(top: DesignScale.s(15), leading: DesignScale.s(15), bottom: DesignScale.s(15), trailing: DesignScale.s(16)))
         .frame(maxWidth: DesignScale.s(330))
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: DesignScale.s(22), style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: DesignScale.s(22), style: .continuous).strokeBorder(Palette.ink, lineWidth: 2))
-        .shadow(color: Color(hex: "78501E").opacity(0.14), radius: DesignScale.s(16), y: DesignScale.s(9))
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: DesignScale.s(Radius.card), style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: DesignScale.s(Radius.card), style: .continuous).strokeBorder(Palette.ink, lineWidth: 2))
+        .shadow(color: Palette.warmShadow.opacity(0.14), radius: DesignScale.s(16), y: DesignScale.s(9))
         .accessibilityElement(children: .combine)
     }
 }
@@ -866,7 +866,7 @@ private struct OnbSocialProofView: View {
             OnbHeader(eyebrow: "From the App Store", title: "A small part of\nsomeone’s morning.")
             HStack(spacing: 5) {
                 ForEach(0..<5, id: \.self) { index in
-                    InkGlyph(kind: .star, size: 28, fill: Color(hex: "F6C33F"), lineWidth: 1.4)
+                    InkGlyph(kind: .star, size: 28, fill: Palette.glyphGold, lineWidth: 1.4)
                         .opacity(hasAppeared ? 1 : 0)
                         .scaleEffect(hasAppeared ? 1 : 0.9)
                         .animation(reduceMotion ? nil : Motion.snappy.delay(Double(index) * 0.07),

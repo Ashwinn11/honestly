@@ -451,7 +451,7 @@ private struct CelebrationView: View {
                          ? "Your apps are awake" : "You made time for yourself.")
                         .font(Fonts.display(34, .heavy)).foregroundStyle(.white)
                         .multilineTextAlignment(.center)
-                        .shadow(color: Color(hex: "78280A").opacity(0.3), radius: 14, y: 2)
+                        .shadow(color: Palette.emberShadow.opacity(0.3), radius: 14, y: 2)
                         .padding(.top, 12)
                     Text("Page \(book.entries.count) of \(HDate.monthName(book.firstOfMonth))")
                         .font(Fonts.ui(15, .heavy)).foregroundStyle(.white.opacity(0.92))
@@ -517,9 +517,8 @@ private struct StreakBadge: View {
         }
         .foregroundStyle(Palette.ink)
         .padding(.vertical, 12).padding(.leading, 12).padding(.trailing, 22)
-        .background(Palette.cream, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).strokeBorder(Palette.ink, lineWidth: 2))
-        .tactile(5, cornerRadius: 24)
+        .outlinedSurface(radius: Radius.hero, bold: true)
+        .tactile(5, cornerRadius: Radius.hero)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(Text(verbatim: "\(streak) ") + Text("day streak"))
         .task {

@@ -29,8 +29,8 @@ struct DoodleSheet: View {
             topBar
             DoodleCanvas(canvasView: canvasView, onStrokeCountChange: { strokeCount = $0 })
                 .background(Palette.paper)
-                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .clipShape(RoundedRectangle(cornerRadius: Radius.panel, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: Radius.panel, style: .continuous)
                     .strokeBorder(Palette.outlineSoft, lineWidth: 1.5))
                 .padding(.horizontal, 16)
             toolRow

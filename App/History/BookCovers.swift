@@ -9,8 +9,8 @@ struct CoverLook {
 
     /// The colour the book frames the page in while writing — a photo cover can't frame a page,
     /// so it falls back to a leather brown.
-    var frameColor: Color { photo == nil ? color : Color(hex: "4A3626") }
-    var frameInk: Color { photo == nil ? ink : Color(hex: "FFF7EA") }
+    var frameColor: Color { photo == nil ? color : Palette.leather }
+    var frameInk: Color { photo == nil ? ink : Palette.leatherInk }
 }
 
 /// Remembers each month's chosen cover. Covers are a presentation choice, not journal content,
@@ -265,8 +265,8 @@ struct CoverEditorSheet: View {
             .foregroundStyle(Palette.ink)
             .frame(maxWidth: .infinity)
             .frame(height: 128)
-            .background(Palette.paper, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
+            .background(Palette.paper, in: RoundedRectangle(cornerRadius: Radius.control, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
                 .strokeBorder(Palette.ink.opacity(0.35), style: StrokeStyle(lineWidth: 1.5, dash: [5, 4])))
         }
         .buttonStyle(PressableStyle(scale: 0.96))
@@ -278,7 +278,7 @@ struct CoverEditorSheet: View {
             Color.clear
                 .frame(height: 128)
                 .overlay { Image(uiImage: image).resizable().scaledToFill() }
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: Radius.control, style: .continuous))
                 .selectedRing(selected)
         }
         .buttonStyle(PressableStyle(scale: 0.96))
@@ -289,7 +289,7 @@ struct CoverEditorSheet: View {
         let style = theme.cover
         return Button { pick(.theme(theme)) } label: {
             VStack(spacing: 7) {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
                     .fill(style.color)
                     .frame(height: 108)
                     .selectedRing(selected)
@@ -342,7 +342,7 @@ struct CoverEditorSheet: View {
 private extension View {
     /// A chosen tile: coral ring inside an ink outline, with a tick in the corner.
     func selectedRing(_ selected: Bool) -> some View {
-        let shape = RoundedRectangle(cornerRadius: 14, style: .continuous)
+        let shape = RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
         return self
             .overlay(shape.strokeBorder(selected ? Palette.ink : Palette.outlineSoft, lineWidth: selected ? 5 : 1.5))
             .overlay(shape.inset(by: 2).strokeBorder(selected ? Palette.amber : .clear, lineWidth: 2.5))
@@ -351,8 +351,8 @@ private extension View {
                     Image(systemName: "checkmark")
                         .font(.system(size: 10, weight: .heavy)).foregroundStyle(Palette.ink)
                         .frame(width: 22, height: 22)
-                        .background(Palette.amber, in: RoundedRectangle(cornerRadius: 7, style: .continuous))
-                        .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous).strokeBorder(Palette.ink, lineWidth: 1.5))
+                        .background(Palette.amber, in: RoundedRectangle(cornerRadius: Radius.badge, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: Radius.badge, style: .continuous).strokeBorder(Palette.ink, lineWidth: 1.5))
                         .padding(7)
                 }
             }

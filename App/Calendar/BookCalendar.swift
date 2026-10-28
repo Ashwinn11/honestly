@@ -112,7 +112,7 @@ struct BookCalendar: View {
                 let avail = geo.size.width - gaps
                 HStack(spacing: 1.5) {
                     if visible == 0 {
-                        Color(hex: "F2EADB")
+                        Palette.emptyTrack
                     } else {
                         ForEach(0..<5, id: \.self) { i in
                             if c[i] > 0 {
@@ -123,8 +123,8 @@ struct BookCalendar: View {
                 }
                 .frame(height: 14)
                 .background(visible >= 2 ? Palette.ink : Color.clear)
-                .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous).strokeBorder(Palette.ink, lineWidth: 2))
+                .clipShape(RoundedRectangle(cornerRadius: Radius.badge, style: .continuous))
+                .overlay(RoundedRectangle(cornerRadius: Radius.badge, style: .continuous).strokeBorder(Palette.ink, lineWidth: 2))
             }
             .frame(height: 14)
             HStack {

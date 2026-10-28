@@ -39,6 +39,24 @@ enum Palette {
     static let success     = Color(hex: "5B9A6B")   // "On" / "Goal met"
     static let danger      = Color(hex: "D3574A")   // destructive
 
+    // MARK: Supporting tones — every colour a screen uses lives here, never as a hex in a view
+    static let warmShadow  = Color(hex: "78501E")   // the brown in every card and book shadow
+    static let pressedRow  = Color(hex: "FAF5EE")   // a settings row while pressed
+    static let selectedFill = Color(hex: "FFF6E7")  // a chosen plan / option card
+    static let notifBody   = Color(hex: "5A4A38")   // body text in a notification preview
+    static let sunTint     = Color(hex: "FFF4E0")   // a sun drawn on a coral card
+    static let sectionLabel = Color(hex: "A0917C")  // month labels over search results
+    static let eyebrowSoft = Color(hex: "C0B29A")   // section eyebrows in Profile
+    static let emptyTrack  = Color(hex: "F2EADB")   // an empty bar (no moods yet)
+    static let glyphGold   = Color(hex: "F6C33F")   // sparkles and stars in illustrations
+    static let glyphBlush  = Color(hex: "F19DA6")   // hearts in illustrations
+    static let leather     = Color(hex: "4A3626")   // the book's frame when its cover is a photo
+    static let leatherInk  = Color(hex: "FFF7EA")   // text on leather
+    static let highlighter = Color(hex: "FFE89A")   // the text highlighter
+    static let tear        = Color(hex: "5B8FD6")   // the crying face's tears
+    static let leafShadow  = Color(hex: "3C5A28")   // shadow under the green "done" card
+    static let emberShadow = Color(hex: "78280A")   // glow under text on the celebration gradient
+
     // MARK: Moods — index 0…4 = Happy · Confused · Sad · Awful · Cry
     static let moods: [Color]    = ["F7C24B", "A8CB8C", "90B4DC", "C79ACD", "6E9BD6"].map { Color(hex: $0) }
     static let moodSoft: [Color] = ["FCEFCB", "E9F1DF", "E1EAF6", "EFE2F1", "DDE8F5"].map { Color(hex: $0) }

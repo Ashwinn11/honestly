@@ -32,11 +32,11 @@ struct AffirmationReaderScreen: View {
                         filterMenuItem("Favorites", value: .favorites)
                         filterMenuItem("Recently read", value: .recentlyRead)
                     } label: {
-                        Image(systemName: "line.3.horizontal.decrease")
-                            .font(.system(size: 15, weight: .semibold)).foregroundStyle(Palette.ink)
-                            .frame(width: 38, height: 38)
-                            .background(Palette.paper, in: RoundedRectangle(cornerRadius: 12))
-                            .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Palette.ink, lineWidth: 1.5))
+                        IconTile(size: 38, fill: Palette.cream) {
+                            Image(systemName: "line.3.horizontal.decrease")
+                                .font(.system(size: DesignScale.s(15), weight: .bold)).foregroundStyle(Palette.ink)
+                        }
+                        .frame(minWidth: 44, minHeight: 44)
                     }
                     .accessibilityLabel(Text(loc: "Filter affirmations"))
                     .accessibilityValue(Text(loc: filter.title))
@@ -94,14 +94,7 @@ struct AffirmationReaderScreen: View {
 
                 } else {
                     Spacer()
-                    SunMark(size: 60).padding(.bottom, 24)
-                    Text(loc: emptyTitle)
-                        .font(Fonts.display(25, .bold)).foregroundStyle(Palette.ink)
-                        .multilineTextAlignment(.center)
-                    Text(loc: emptyMessage)
-                        .font(Fonts.ui(14, .semibold)).foregroundStyle(Palette.inkSoft)
-                        .multilineTextAlignment(.center).padding(.top, 8)
-                        .padding(.horizontal, 30)
+                    EmptyState(title: emptyTitle, message: emptyMessage)
                     Spacer()
                 }
             }

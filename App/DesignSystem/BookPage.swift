@@ -28,7 +28,7 @@ struct BookPageStack: View {
             var x: CGFloat = 1.5
             while x < size.width {
                 ctx.fill(Path(CGRect(x: x, y: 0, width: 0.7, height: size.height)),
-                         with: .color(Color(hex: "D8CBB6")))
+                         with: .color(Palette.hairline))
                 x += 2.2
             }
         }
@@ -245,7 +245,7 @@ struct CoachMarkCard<Extra: View>: View {
     }
 
     var body: some View {
-        let shape = RoundedRectangle(cornerRadius: 18, style: .continuous)
+        let shape = RoundedRectangle(cornerRadius: Radius.panel, style: .continuous)
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .top, spacing: 8) {
                 Text(loc: title).font(Fonts.ui(15, .heavy)).foregroundStyle(Palette.ink)
@@ -273,8 +273,8 @@ struct CoachMarkCard<Extra: View>: View {
                     Text(loc: step == steps ? "Got it" : "Next")
                         .font(Fonts.ui(13, .heavy)).foregroundStyle(Palette.ink)
                         .padding(.horizontal, 16).frame(minHeight: 36)
-                        .background(Palette.amber, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Palette.ink, lineWidth: 2))
+                        .background(Palette.amber, in: RoundedRectangle(cornerRadius: Radius.chip, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: Radius.chip, style: .continuous).strokeBorder(Palette.ink, lineWidth: 2))
                 }
                 .buttonStyle(PressableStyle())
             }
@@ -283,7 +283,7 @@ struct CoachMarkCard<Extra: View>: View {
         .padding(EdgeInsets(top: 14, leading: 16, bottom: 12, trailing: 14))
         .background(Palette.cream, in: shape)
         .overlay(shape.strokeBorder(Palette.ink, lineWidth: 2))
-        .tactile(4, cornerRadius: 18)
+        .tactile(4, cornerRadius: Radius.panel)
         .overlay(alignment: .topLeading) {
             // The arrow: a rotated square whose top half pokes out above the card.
             Rectangle()

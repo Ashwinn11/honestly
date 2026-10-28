@@ -81,8 +81,7 @@ struct LibraryWriteRow: View {
                 .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
         }
         .padding(12)
-        .background(Palette.cream, in: RoundedRectangle(cornerRadius: 14))
-        .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Palette.outlineSoft, lineWidth: 1.5))
+        .outlinedSurface()
         .onChange(of: resetToken) { _, _ in focused = true }
     }
 }
@@ -107,7 +106,7 @@ struct LibraryEntryRow: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
                 .padding(14)
-                .background(selected ? Palette.iconTile : .clear, in: RoundedRectangle(cornerRadius: 12))
+                .background(selected ? Palette.iconTile : .clear, in: RoundedRectangle(cornerRadius: Radius.chip))
                 .contentShape(Rectangle())
             }
             .buttonStyle(PressableStyle())

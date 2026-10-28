@@ -204,8 +204,8 @@ struct EntryDetailView: View {
             modeButton(.calendar, icon: "calendar", label: Text("Calendar"))
         }
         .frame(height: 40)
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Palette.ink, lineWidth: 2))
+        .clipShape(RoundedRectangle(cornerRadius: Radius.chip, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: Radius.chip, style: .continuous).strokeBorder(Palette.ink, lineWidth: 2))
     }
 
     private func modeButton(_ mode: GridMode, icon: String, label: Text) -> some View {
@@ -271,12 +271,12 @@ struct EntryDetailView: View {
         let now = Calendar.current.dateComponents([.year, .month], from: Date())
         let isThisMonth = book.map { $0.year == now.year && $0.month == now.month } ?? false
         if isThisMonth && !store.ritualDoneToday {
-            EmptyPagesState(title: "This book is empty",
+            EmptyState(title: "This book is empty",
                             message: "Today's page can be the first in it.",
                             actionTitle: "Write today's page",
                             action: { flow.startRitual() })
         } else {
-            EmptyPagesState(title: "This book is empty",
+            EmptyState(title: "This book is empty",
                             message: "There are no pages left from this month.")
         }
     }
@@ -288,7 +288,7 @@ struct EntryDetailView: View {
                 .padding(.horizontal, 20)
                 .padding(.top, 8)
                 .capWidth(Metrics.maxContentWidth)
-            EmptyPagesState(title: "This page has drifted off.")
+            EmptyState(title: "This page has drifted off.")
                 .padding(.top, 70)
             Spacer(minLength: 0)
         }
