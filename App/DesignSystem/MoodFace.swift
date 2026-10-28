@@ -84,6 +84,9 @@ struct MoodFace: View {
                 stroke({ $0.move(to: pt(34, 79)); $0.addQuadCurve(to: pt(66, 79), control: pt(50, 66)) })
             }
         }
-        .frame(width: size, height: size)
+        // Whole points only: a fractional size (a small cover's w × 0.085, or anything scaled by
+        // DesignScale) leaves the canvas's pixel buffer a fraction short of the drawing, which
+        // shaves the bottom of the face's outline off.
+        .frame(width: max(1, size.rounded()), height: max(1, size.rounded()))
     }
 }
