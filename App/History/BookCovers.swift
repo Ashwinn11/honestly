@@ -162,22 +162,21 @@ extension MonthBook {
 
 // MARK: - Cover editor
 
-/// Pick a month's cover — every option on one screen: automatic, a photo (the month's own or
-/// one from the camera roll), or a page theme's cloth. The book previews the choice live; the
-/// tick saves it, the cross leaves the cover as it was.
+/// Pick a month's cover — every option on one screen: a photo (the month's own or one from the
+/// camera roll) or a page theme's cloth. A month that was never customized opens on whichever of
+/// those its cover already shows. The book previews the choice live; the tick saves it, the cross
+/// leaves the cover as it was.
 struct CoverEditorSheet: View {
     let book: MonthBook
     @Environment(CoverStore.self) private var covers
     @Environment(\.dismiss) private var dismiss
 
     private enum Choice: Equatable {
-        case auto
         case photo(UIImage)
         case theme(PageTheme)
 
         static func == (a: Choice, b: Choice) -> Bool {
             switch (a, b) {
-            case (.auto, .auto): return true
             case (.photo(let x), .photo(let y)): return x === y
             case (.theme(let x), .theme(let y)): return x == y
             default: return false
@@ -185,7 +184,7 @@ struct CoverEditorSheet: View {
         }
     }
 
-    @State private var choice: Choice = .auto
+    @State private var choice: Choice = .theme(.paper)
     @State private var photos: [UIImage] = []
     @State private var pickerItem: PhotosPickerItem?
 
@@ -195,8 +194,6 @@ struct CoverEditorSheet: View {
 
     private var previewLook: CoverLook {
         switch choice {
-        case .auto:
-            return CoverStore.autoLook(for: book)
         case .photo(let image):
             return CoverLook(photo: image, color: Palette.ink, ink: .white)
         case .theme(let theme):
@@ -214,8 +211,6 @@ struct CoverEditorSheet: View {
                         .frame(maxWidth: .infinity)
                         .padding(.top, 6)
                         .animation(Motion.snappy, value: choice)
-
-                    autoOption.padding(.top, 24)
 
                     Eyebrow(text: "Photo", color: Palette.inkSoft).padding(.top, 24)
                     LazyVGrid(columns: columns, spacing: 12) {
@@ -260,35 +255,6 @@ struct CoverEditorSheet: View {
         .padding(.horizontal, 20)
         .padding(.top, 14)
         .padding(.bottom, 12)
-    }
-
-    // Automatic — a card, coral with an ink outline when chosen.
-    private var autoOption: some View {
-        let selected = choice == .auto
-        return Button { pick(.auto) } label: {
-            HStack(spacing: 12) {
-                Image(systemName: "sparkles")
-                    .font(.system(size: 16, weight: .bold)).foregroundStyle(Palette.ink)
-                    .frame(width: 40, height: 40)
-                    .background(selected ? Palette.onAmber : Palette.iconTile,
-                                in: RoundedRectangle(cornerRadius: 11, style: .continuous))
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("Auto").font(Fonts.ui(14.5, .heavy)).foregroundStyle(Palette.ink)
-                    Text("Made from your month: its newest photo, or the page theme you used most.")
-                        .font(Fonts.ui(12.5, .semibold))
-                        .foregroundStyle(selected ? Palette.ink : Palette.inkSoft)
-                        .multilineTextAlignment(.leading)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                Spacer(minLength: 0)
-            }
-            .padding(12)
-            .background(selected ? Palette.amber : Palette.paper,
-                        in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .strokeBorder(selected ? Palette.ink : Palette.outlineSoft, lineWidth: selected ? 2 : 1.5))
-        }
-        .buttonStyle(PressableStyle(scale: 0.98))
     }
 
     private var cameraRollTile: some View {
@@ -346,7 +312,13 @@ struct CoverEditorSheet: View {
         var found = book.photos()
         switch covers.choice(year: book.year, month: book.month) {
         case .auto:
-            choice = .auto
+            // Never customized: start on what the cover shows now — its newest photo, else the
+            // theme the month used most.
+            if book.coverPhoto != nil, let newest = found.first {
+                choice = .photo(newest)
+            } else {
+                choice = .theme(book.theme)
+            }
         case .theme(let id):
             choice = .theme(PageTheme.from(id))
         case .photo:
@@ -360,7 +332,6 @@ struct CoverEditorSheet: View {
 
     private func save() {
         switch choice {
-        case .auto: covers.setAuto(year: book.year, month: book.month)
         case .theme(let theme): covers.setTheme(theme, year: book.year, month: book.month)
         case .photo(let image): covers.setPhoto(image, year: book.year, month: book.month)
         }
