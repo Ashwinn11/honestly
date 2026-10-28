@@ -375,12 +375,9 @@ private struct MoodPickerSheet: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            HStack {
-                Text(loc: "How are you, really?")
-                    .font(Fonts.display(19, .bold)).foregroundStyle(Palette.ink)
-                Spacer()
-                IconTileButton(icon: "xmark", size: 38, iconSize: 13) { dismiss() }
-            }
+            ScreenHeader(Text(loc: "How are you, really?"), trailing: {
+                IconTileButton.close { dismiss() }
+            })
             .padding(EdgeInsets(top: 18, leading: 20, bottom: 6, trailing: 20))
 
             HStack(spacing: 4) {

@@ -60,7 +60,7 @@ struct LegalView: View {
             PaperBackground()
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
-                    LibraryHeader(title: doc.title) { dismiss() }
+                    ScreenHeader(Text(loc: doc.title), back: { dismiss() })
                         .padding(.bottom, 16)
 
                     Eyebrow(text: doc.effective, color: Palette.inkSofter, tracking: 1.2, size: 11)

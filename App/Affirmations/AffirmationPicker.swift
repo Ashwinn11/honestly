@@ -111,7 +111,7 @@ struct AffirmationsScreen: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            LibraryHeader(title: "Manage affirmations", onBack: { dismiss() })
+            ScreenHeader(Text(loc: "Manage affirmations"), back: { dismiss() })
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
                     LibrarySectionTitle(title: "Your own")

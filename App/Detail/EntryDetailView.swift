@@ -167,12 +167,9 @@ struct EntryDetailView: View {
     // MARK: The grid — all the month's pages, or its calendar. Not a page, so it has a header.
     private var gridScreen: some View {
         VStack(spacing: 0) {
-            HStack(spacing: 12) {
-                IconTileButton(icon: "chevron.backward", size: 38, iconSize: 15) { dismiss() }
-                Text(verbatim: book.map { HDate.monthName($0.firstOfMonth) } ?? "")
-                    .font(Fonts.display(21, .bold)).foregroundStyle(Palette.ink)
-                    .lineLimit(1)
-                Spacer(minLength: 0)
+            ScreenHeader(Text(verbatim: book.map { HDate.monthName($0.firstOfMonth) } ?? ""), size: .screen) {
+                IconTileButton.back { dismiss() }
+            } trailing: {
                 if !entries.isEmpty { gridModeSwitch }
             }
             .padding(.horizontal, 20)
@@ -286,7 +283,7 @@ struct EntryDetailView: View {
 
     private var missing: some View {
         VStack(spacing: 0) {
-            IconTileButton(icon: "chevron.backward", size: 38, iconSize: 15) { dismiss() }
+            IconTileButton.back { dismiss() }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 20)
                 .padding(.top, 8)

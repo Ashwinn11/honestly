@@ -1,19 +1,6 @@
 import SwiftUI
 import UIKit
 
-struct LibraryHeader: View {
-    let title: String
-    let onBack: () -> Void
-
-    var body: some View {
-        HStack(spacing: 12) {
-            IconTileButton(icon: "chevron.backward", size: 38, iconSize: 15, action: onBack)
-            Text(loc: title).font(Fonts.display(26, .bold)).foregroundStyle(Palette.ink)
-                .fixedSize(horizontal: false, vertical: true)
-        }
-    }
-}
-
 /// Installs one non-blocking tap recognizer on each app window. A tap anywhere except a text
 /// input ends editing, while the recognizer allows the touched button or view to keep handling it.
 struct KeyboardDismissalInstaller: UIViewRepresentable {

@@ -24,7 +24,7 @@ struct AffirmationDeliverySettingsScreen: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            LibraryHeader(title: "Affirmation delivery", onBack: { dismiss() })
+            ScreenHeader(Text(loc: "Affirmation delivery"), back: { dismiss() })
                 .padding(.bottom, 18)
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
@@ -310,7 +310,7 @@ private struct WidgetColorPickerSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            LibraryHeader(title: title, onBack: { dismiss() })
+            ScreenHeader(Text(loc: title), back: { dismiss() })
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
                     InlineJournalColorPicker(color: UIColor(Color(hex: hex)), onChange: { hex = Self.hex($0) })
@@ -361,7 +361,7 @@ private struct WidgetFontPickerSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            LibraryHeader(title: "Font", onBack: { dismiss() })
+            ScreenHeader(Text(loc: "Font"), back: { dismiss() })
             ScrollView {
                 LazyVGrid(columns: columns, spacing: 10) {
                     ForEach(FontChoice.allCases) { choice in

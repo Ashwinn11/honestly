@@ -45,15 +45,10 @@ struct DoodleSheet: View {
     }
 
     private var topBar: some View {
-        HStack(spacing: 12) {
-            IconTileButton(icon: "xmark", size: 38, iconSize: 13) { dismiss() }
-            Text(loc: "Doodle")
-                .font(Fonts.display(19, .bold)).foregroundStyle(Palette.ink)
-            Spacer(minLength: 0)
-            IconTileButton(icon: "checkmark", size: 38, iconSize: 14,
-                           iconColor: strokeCount > 0 ? Palette.ink : Palette.inkSofter) {
-                finish()
-            }
+        ScreenHeader(Text(loc: "Doodle")) {
+            IconTileButton.close { dismiss() }
+        } trailing: {
+            IconTileButton.confirm(enabled: strokeCount > 0) { finish() }
         }
         .padding(.horizontal, 20)
         .padding(.top, 10)

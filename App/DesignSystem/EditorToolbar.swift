@@ -289,12 +289,9 @@ struct TextFormattingSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            HStack {
-                Text("Text Formatting")
-                    .font(Fonts.display(20, .bold)).foregroundStyle(Palette.ink)
-                Spacer()
-                IconTileButton(icon: "xmark", size: 38, iconSize: 13) { dismiss() }
-            }
+            ScreenHeader(Text("Text Formatting"), trailing: {
+                IconTileButton.close { dismiss() }
+            })
             HStack(spacing: 4) {
                 ForEach(Panel.allCases, id: \.self) { item in
                     Button { panel = item } label: {

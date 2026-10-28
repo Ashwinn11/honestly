@@ -10,7 +10,7 @@ struct PromptLibraryScreen: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            LibraryHeader(title: "Choose a prompt", onBack: { dismiss() })
+            ScreenHeader(Text(loc: "Choose a prompt"), back: { dismiss() })
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 10) {
                     LibrarySectionTitle(title: "Your own")

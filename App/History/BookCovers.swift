@@ -246,11 +246,10 @@ struct CoverEditorSheet: View {
     }
 
     private var topBar: some View {
-        HStack(spacing: 12) {
-            IconTileButton(icon: "xmark", size: 38, iconSize: 13) { dismiss() }
-            Text("Cover").font(Fonts.display(19, .bold)).foregroundStyle(Palette.ink)
-            Spacer(minLength: 0)
-            IconTileButton(icon: "checkmark", size: 38, iconSize: 14) { save() }
+        ScreenHeader(Text("Cover")) {
+            IconTileButton.close { dismiss() }
+        } trailing: {
+            IconTileButton.confirm { save() }
         }
         .padding(.horizontal, 20)
         .padding(.top, 14)

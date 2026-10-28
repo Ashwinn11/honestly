@@ -18,7 +18,7 @@ struct AffirmationReaderScreen: View {
             PaperBackground()
             VStack(spacing: 0) {
                 HStack(spacing: 12) {
-                    IconTileButton(icon: "chevron.backward", size: 38, iconSize: 15) { dismiss() }
+                    IconTileButton.back { dismiss() }
                     Text(loc: "Affirmations")
                         .font(Fonts.ui(15, .bold)).foregroundStyle(Palette.ink)
                         .frame(maxWidth: .infinity, alignment: .leading)

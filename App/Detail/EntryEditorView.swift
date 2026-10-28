@@ -43,8 +43,7 @@ struct EntryEditorView: View {
         VStack(spacing: 0) {
             // The same header as writing and reading; its one control is ✓, which saves and closes.
             PageHeader(date: entry.createdAt, mood: entry.moodRaw) {
-                IconTileButton(icon: "checkmark", size: 38, iconSize: 14) { save() }
-                    .accessibilityLabel(Text("Save"))
+                IconTileButton.confirm { save() }
             }
             .padding(EdgeInsets(top: 4, leading: Metrics.pageHorizontalInset,
                                 bottom: 0, trailing: Metrics.pageHorizontalInset - 3))

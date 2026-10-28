@@ -46,7 +46,7 @@ struct PaywallView: View {
 
     // MARK: Close
     private var closeButton: some View {
-        IconTileButton(icon: "xmark", size: 38, iconSize: 13) { onClose() }
+        IconTileButton.close { onClose() }
             .padding(.horizontal, 20)
             .padding(.top, 8)
     }

@@ -15,13 +15,11 @@ struct TagEditorSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            HStack(spacing: 12) {
-                Text(loc: "Tags").font(Fonts.display(24, .bold)).foregroundStyle(Palette.ink)
+            ScreenHeader(Text(loc: "Tags"), trailing: {
                 (Text(tags.count, format: .number) + Text(verbatim: " / ") + Text(TagEditing.maxTags, format: .number))
                     .font(Fonts.ui(13, .semibold)).foregroundStyle(Palette.inkSofter)
-                Spacer()
-                IconTileButton(icon: "xmark", size: 38, iconSize: 13) { commit(); dismiss() }
-            }
+                IconTileButton.close { commit(); dismiss() }
+            })
             HStack(spacing: 10) {
                 TextField(LocalizedStringKey("Add tag"), text: $draft)
                     .font(Fonts.ui(16, .semibold)).foregroundStyle(Palette.ink)

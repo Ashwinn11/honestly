@@ -128,14 +128,16 @@ struct IconTile<Content: View>: View {
     }
 }
 
-/// Tappable icon tile (close / back / share / month arrows).
+/// Tappable icon tile (close / back / share / month arrows). Use the standard ones — `.back`,
+/// `.close`, `.confirm` — rather than spelling out icons and sizes.
 struct IconTileButton: View {
     let icon: String
     var size: CGFloat = 38
     var iconSize: CGFloat = 14
     var iconColor: Color = Palette.ink
     var fill: Color = Palette.cream
-    var radius: CGFloat = 11
+    var radius: CGFloat = Radius.tile
+    var label: LocalizedStringKey? = nil
     var action: () -> Void
     var body: some View {
         Button { Haptics.tap(); action() } label: {
@@ -148,6 +150,84 @@ struct IconTileButton: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(PressableStyle())
+        .modifier(TileLabel(label: label))
+    }
+
+    /// ‹ — back out of a pushed screen.
+    static func back(_ action: @escaping () -> Void) -> IconTileButton {
+        IconTileButton(icon: "chevron.backward", size: 38, iconSize: 15, label: "Back", action: action)
+    }
+
+    /// ✕ — close a sheet, a page, or a cover without saving.
+    static func close(_ action: @escaping () -> Void) -> IconTileButton {
+        IconTileButton(icon: "xmark", size: 38, iconSize: 13, label: "Close", action: action)
+    }
+
+    /// ✓ — keep what was chosen. `highlighted` makes it coral (there's a change to keep);
+    /// `enabled: false` greys the tick when there's nothing to keep yet.
+    static func confirm(highlighted: Bool = false, enabled: Bool = true,
+                        _ action: @escaping () -> Void) -> IconTileButton {
+        IconTileButton(icon: "checkmark", size: 38, iconSize: 14,
+                       iconColor: enabled ? Palette.ink : Palette.inkSofter,
+                       fill: highlighted ? Palette.amber : Palette.cream,
+                       label: "Done", action: action)
+    }
+}
+
+/// Names a tile for VoiceOver when it has a name; otherwise the symbol's own name stays.
+private struct TileLabel: ViewModifier {
+    let label: LocalizedStringKey?
+    @ViewBuilder func body(content: Content) -> some View {
+        if let label { content.accessibilityLabel(Text(label)) } else { content }
+    }
+}
+
+// MARK: - Screen header — the one header for screens and sheets
+
+/// An optional back/close tile, the title, then trailing controls (a ✓, a switch, a sheet's ✕).
+/// `.screen` titles head pushed screens; `.sheet` titles head sheets and covers.
+struct ScreenHeader<Leading: View, Trailing: View>: View {
+    enum Size { case screen, sheet }
+
+    let title: Text
+    var size: Size
+    var leading: Leading
+    var trailing: Trailing
+
+    init(_ title: Text, size: Size = .sheet,
+         @ViewBuilder leading: () -> Leading, @ViewBuilder trailing: () -> Trailing) {
+        self.title = title
+        self.size = size
+        self.leading = leading()
+        self.trailing = trailing()
+    }
+
+    var body: some View {
+        HStack(spacing: 12) {
+            leading
+            title
+                .font(Fonts.display(size == .screen ? 24 : 19, .bold))
+                .foregroundStyle(Palette.ink)
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityAddTraits(.isHeader)
+            Spacer(minLength: 0)
+            trailing
+        }
+    }
+}
+
+extension ScreenHeader where Leading == EmptyView {
+    /// A sheet's header: title, then its controls (usually ✕). Call with `trailing:` spelled out.
+    init(_ title: Text, size: Size = .sheet, @ViewBuilder trailing: () -> Trailing) {
+        self.init(title, size: size, leading: { EmptyView() }, trailing: trailing)
+    }
+}
+
+extension ScreenHeader where Leading == IconTileButton, Trailing == EmptyView {
+    /// A pushed screen's header: ‹ and the title.
+    init(_ title: Text, size: Size = .screen, back: @escaping () -> Void) {
+        self.init(title, size: size, leading: { IconTileButton.back(back) }, trailing: { EmptyView() })
     }
 }
 

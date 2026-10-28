@@ -118,8 +118,7 @@ struct PageCloseButton: View {
     init(action: @escaping () -> Void) { self.action = action }
 
     var body: some View {
-        IconTileButton(icon: "xmark", size: 38, iconSize: 13, action: action)
-            .accessibilityLabel(Text("Close"))
+        IconTileButton.close(action)
     }
 }
 
