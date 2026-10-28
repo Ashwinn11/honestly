@@ -35,6 +35,8 @@ struct EntryEditorView: View {
             initialText = NSAttributedString(string: entry.content, attributes: RichTextEditor.defaultAttributes)
         }
         _richText = State(initialValue: initialText)
+        // The caret waits at the end of what's written, ready to carry on.
+        _selectedRange = State(initialValue: NSRange(location: initialText.length, length: 0))
     }
 
     var body: some View {
@@ -110,6 +112,11 @@ struct EntryEditorView: View {
             .animation(Motion.snappy, value: journalFocused)
             .padding(.top, 8)
             .padding(.bottom, 14)
+        }
+        // Opening a page to edit it is opening it to write: the keyboard comes up straight away.
+        .task {
+            try? await Task.sleep(for: .milliseconds(350))     // let the cover finish presenting
+            journalFocused = true
         }
         .onChange(of: editorSheetPresented) { _, presented in
             if presented { journalFocused = false }
