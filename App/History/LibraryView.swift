@@ -161,12 +161,6 @@ struct LibraryView: View {
         if let current = all.first(where: \.isCurrent) {
             featured(current).padding(.top, 26)
         }
-        if !premium.isPremium && all.contains(where: { !$0.isCurrent }) {
-            PremiumUnlockCard(title: "Unlock your full history",
-                              subtitle: "Every morning you've written, always here to revisit.",
-                              action: { flow.showPaywall() })
-                .padding(.top, 28)
-        }
         let earlier = all.filter { !$0.isCurrent }
         let years = Dictionary(grouping: earlier, by: \.year).sorted { $0.key > $1.key }
         ForEach(years, id: \.key) { group in
