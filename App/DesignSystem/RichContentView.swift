@@ -30,20 +30,33 @@ struct RichContentView: UIViewRepresentable {
         let contentWidth = uiView.bounds.width > 0
             ? uiView.bounds.width
             : Metrics.maxContentWidth - Metrics.pageHorizontalInset * 2
-        let prepared = RichTextFormatting.scaleAttachments(in: attributedText, toFitWidth: contentWidth)
-        guard uiView.attributedText != prepared else { return }
-        uiView.attributedText = prepared
+        context.coordinator.show(attributedText, width: contentWidth, in: uiView)
     }
 
     // Self-size to the proposed width — without this the text view reports zero/intrinsic sizes
     // that fight the SwiftUI layout inside the reader's scroll view.
     func sizeThatFits(_ proposal: ProposedViewSize, uiView: UITextView, context: Context) -> CGSize? {
         guard let width = proposal.width, width.isFinite, width > 0 else { return nil }
-        let prepared = RichTextFormatting.scaleAttachments(in: attributedText, toFitWidth: width)
-        if uiView.attributedText != prepared {
-            uiView.attributedText = prepared
-        }
+        context.coordinator.show(attributedText, width: width, in: uiView)
         let fitted = uiView.sizeThatFits(CGSize(width: width, height: .greatestFiniteMagnitude))
         return CGSize(width: width, height: fitted.height)
+    }
+
+    func makeCoordinator() -> Coordinator { Coordinator() }
+
+    /// Sets the text view's content once per (page, width). Fitting attachments to a width builds
+    /// fresh attachment objects every time, so the result never compares equal to what's already
+    /// shown — re-setting it on every layout pass invalidated layout again and again, which hung
+    /// the app (on a white screen) wherever a page was drawn narrower than it was written.
+    final class Coordinator {
+        private var source: NSAttributedString?
+        private var width: CGFloat = -1
+
+        func show(_ text: NSAttributedString, width: CGFloat, in view: UITextView) {
+            guard text !== source || abs(width - self.width) > 0.5 else { return }
+            source = text
+            self.width = width
+            view.attributedText = RichTextFormatting.scaleAttachments(in: text, toFitWidth: width)
+        }
     }
 }

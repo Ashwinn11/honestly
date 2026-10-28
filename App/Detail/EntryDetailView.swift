@@ -104,6 +104,9 @@ struct EntryDetailView: View {
         .fullScreenCover(isPresented: $showEditor) {
             if premium.isPremium, let entry = store.entry(for: editKey ?? selectedKey) {
                 EntryEditorView(entry: entry)
+            } else {
+                // The page is gone (or Premium lapsed) — never leave an empty white cover up.
+                Color.clear.onAppear { showEditor = false }
             }
         }
         .confirmationDialog(Text(verbatim: pageTitle), isPresented: $showPageActions, titleVisibility: .visible) {

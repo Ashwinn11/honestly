@@ -22,8 +22,9 @@ struct MiniPage: View {
         "\(entry.id.uuidString)-\(entry.richContent?.count ?? 0)-\(entry.wordCount)" as NSString
     }
 
-    /// The width the page is laid out at before it's shrunk — a phone's page.
-    private var pageWidth: CGFloat { DesignScale.s(300) }
+    /// The width the page is laid out at before it's shrunk: the reading page's own width, so
+    /// photos and doodles sit exactly as they were placed instead of being refitted.
+    private var pageWidth: CGFloat { min(UIScreen.main.bounds.width, Metrics.maxContentWidth) }
 
     private var searching: Bool {
         !(highlight?.trimmingCharacters(in: .whitespaces).isEmpty ?? true)
@@ -58,7 +59,8 @@ struct MiniPage: View {
             }
             words.padding(.top, entry.prompt.isEmpty ? 14 : 0)
         }
-        .padding(EdgeInsets(top: 16, leading: 18, bottom: 0, trailing: 18))
+        .padding(EdgeInsets(top: 16, leading: Metrics.pageHorizontalInset,
+                            bottom: 0, trailing: Metrics.pageHorizontalInset))
         .allowsHitTesting(false)
         .accessibilityHidden(true)
     }
