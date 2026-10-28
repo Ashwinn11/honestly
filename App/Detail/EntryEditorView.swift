@@ -41,9 +41,8 @@ struct EntryEditorView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // The same header as writing and reading, with ✓ to keep the changes beside the ✕.
+            // The same header as writing and reading; its one control is ✓, which saves and closes.
             PageHeader(date: entry.createdAt, mood: entry.moodRaw) {
-                PageCloseButton { dismiss() }
                 IconTileButton(icon: "checkmark", size: 38, iconSize: 14) { save() }
                     .accessibilityLabel(Text("Save"))
             }
