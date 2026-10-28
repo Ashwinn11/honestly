@@ -67,13 +67,16 @@ struct BigWinsProvider: TimelineProvider {
     }
 
     private func makeEntry(date: Date, affirmation: String?, needsSetup: Bool = false) -> BigWinsEntry {
-        BigWinsEntry(date: date,
-                     affirmation: affirmation,
-                     needsSetup: needsSetup,
-                     themeID: SharedState.affirmationWidgetTheme,
-                     backgroundHex: SharedState.affirmationWidgetBackgroundColor,
-                     textHex: SharedState.affirmationWidgetTextColor,
-                     fontName: SharedState.affirmationWidgetFont)
+        // "Get started" and "unlock" aren't the user's widget yet: they wear the default theme,
+        // not whatever colours were chosen for the affirmation.
+        let styled = affirmation != nil
+        return BigWinsEntry(date: date,
+                            affirmation: affirmation,
+                            needsSetup: needsSetup,
+                            themeID: styled ? SharedState.affirmationWidgetTheme : SharedState.defaultWidgetTheme,
+                            backgroundHex: styled ? SharedState.affirmationWidgetBackgroundColor : nil,
+                            textHex: styled ? SharedState.affirmationWidgetTextColor : "33261A",
+                            fontName: SharedState.affirmationWidgetFont)
     }
 
     private func widgetLine(on date: Date) -> String {

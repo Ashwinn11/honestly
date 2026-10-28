@@ -8,7 +8,7 @@ struct AffirmationDeliverySettingsScreen: View {
     @Environment(AppFlow.self) private var flow
     @Environment(\.dismiss) private var dismiss
     @AppStorage("affirmationNudgeOn", store: SharedState.defaults) private var enabled = false
-    @AppStorage(SharedState.Key.affirmationWidgetTheme, store: SharedState.defaults) private var widgetThemeID = "paper"
+    @AppStorage(SharedState.Key.affirmationWidgetTheme, store: SharedState.defaults) private var widgetThemeID = SharedState.defaultWidgetTheme
     @AppStorage(SharedState.Key.affirmationWidgetBackgroundColor, store: SharedState.defaults) private var widgetBackgroundHex = ""
     @AppStorage(SharedState.Key.affirmationWidgetTextColor, store: SharedState.defaults) private var widgetTextHex = "33261A"
     @AppStorage(SharedState.Key.affirmationWidgetFont, store: SharedState.defaults) private var widgetFontName = "Manrope"

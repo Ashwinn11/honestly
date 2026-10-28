@@ -128,9 +128,13 @@ enum SharedState {
         set { defaults.set(newValue, forKey: Key.weeklyGoal) }
     }
 
+    /// The widget's look until someone picks one — and always for its "get started" and "unlock"
+    /// states, which no custom colours apply to. Warm and sunny rather than plain paper.
+    static let defaultWidgetTheme = "sunshine"
+
     /// Last editor theme, mirrored so affirmation widgets can share the journal's look.
     static var affirmationWidgetTheme: String {
-        get { defaults.string(forKey: Key.affirmationWidgetTheme) ?? "paper" }
+        get { defaults.string(forKey: Key.affirmationWidgetTheme) ?? defaultWidgetTheme }
         set { defaults.set(newValue, forKey: Key.affirmationWidgetTheme) }
     }
 
