@@ -119,9 +119,9 @@ struct AffirmationReaderScreen: View {
     private func refresh(preserving line: String?) {
         switch filter {
         case .allTopics:
-            lines = Affirmations.feedRotation(focusTitles: [], premium: premium.isPremium)
+            lines = Affirmations.feedRotation(focusTitles: [], premium: premium.allows(.fullAffirmations))
         case .topic(let title):
-            lines = Affirmations.feedRotation(focusTitles: [title], premium: premium.isPremium)
+            lines = Affirmations.feedRotation(focusTitles: [title], premium: premium.allows(.fullAffirmations))
         case .favorites:
             lines = list.favorites
         case .recentlyRead:
@@ -155,7 +155,7 @@ struct AffirmationReaderScreen: View {
     }
 
     private var filterTopics: [String] {
-        list.availableLibrary.map(\.title) + (premium.isPremium && !list.savedCustom.isEmpty ? ["Your own"] : [])
+        list.availableLibrary.map(\.title) + (premium.allows(.ownAffirmations) && !list.savedCustom.isEmpty ? ["Your own"] : [])
     }
 
     private func filterMenuItem(_ title: String, value: AffirmationReaderFilter) -> some View {

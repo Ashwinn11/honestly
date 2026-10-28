@@ -66,7 +66,7 @@ struct StickerPicker: View {
                                 .frame(width: 56, height: 56)
                                 .padding(6)
                                 .overlay(alignment: .topTrailing) {
-                                    if categoryLocked { lockBadge }
+                                    if categoryLocked { PremiumLockBadge() }
                                 }
                         }
                         .buttonStyle(PressableStyle(scale: 0.85))
@@ -110,7 +110,9 @@ struct StickerPicker: View {
                         .overlay(Capsule().strokeBorder(active ? Palette.ink : Palette.outlineSoft,
                                                   lineWidth: active ? 1.8 : 1.2))
                         .overlay(alignment: .topTrailing) {
-                            if index > 0 && !premium.isPremium { lockBadge.scaleEffect(0.8).offset(x: 4, y: -4) }
+                            if index >= PremiumFeature.freeStickerPacks && !premium.allows(.allStickers) {
+                                PremiumLockBadge(size: 13).offset(x: 4, y: -4)
+                            }
                         }
                     }
                     .buttonStyle(PressableStyle(scale: 0.94))
@@ -122,17 +124,11 @@ struct StickerPicker: View {
         .animation(Motion.snappy, value: categoryIndex)
     }
 
-    /// First category ("Moods") is free; every other category needs premium.
-    private var categoryLocked: Bool { categoryIndex > 0 && !premium.isPremium }
-
-    private var lockBadge: some View {
-        Image(systemName: "lock.fill")
-            .font(.system(size: 8, weight: .bold))
-            .foregroundStyle(.white)
-            .frame(width: 16, height: 16)
-            .background(Palette.amber, in: Circle())
-            .overlay(Circle().strokeBorder(.white, lineWidth: 1))
+    /// The first pack ("Moods") is free; the rest need Premium.
+    private var categoryLocked: Bool {
+        categoryIndex >= PremiumFeature.freeStickerPacks && !premium.allows(.allStickers)
     }
+
 }
 
 private struct StickerCategory {

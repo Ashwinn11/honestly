@@ -372,7 +372,7 @@ struct ThemePickerSheet: View {
         // Browsing the grid is free; picking a theme you don't already have is the premium
         // action — the theme you're already on never shows a lock, since re-selecting it is a
         // no-op either way.
-        let locked = !premium.isPremium && !selected
+        let locked = !premium.allows(.pageThemes) && !selected
         return Button {
             if locked {
                 flow.showPaywall()
@@ -400,7 +400,7 @@ struct ThemePickerSheet: View {
                                 .foregroundStyle(.white, Palette.amber)
                                 .padding(6)
                         } else if locked {
-                            lockBadge.padding(6)
+                            PremiumLockBadge(size: 17).padding(6)
                         }
                     }
                 Text(loc: theme.label)
@@ -411,12 +411,4 @@ struct ThemePickerSheet: View {
         .buttonStyle(PressableStyle(scale: 0.96))
     }
 
-    private var lockBadge: some View {
-        Image(systemName: "lock.fill")
-            .font(.system(size: 9, weight: .bold))
-            .foregroundStyle(.white)
-            .frame(width: 17, height: 17)
-            .background(Palette.amber, in: Circle())
-            .overlay(Circle().strokeBorder(.white, lineWidth: 1))
-    }
 }

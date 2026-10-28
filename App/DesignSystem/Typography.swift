@@ -28,6 +28,17 @@ enum Metrics {
     static let pageHorizontalInset: CGFloat = 22
 }
 
+/// Corner radii — the only ones the app uses. Pick by what the shape is, not by eye.
+enum Radius {
+    static let badge: CGFloat = 7       // ticks and tiny badges
+    static let tile: CGFloat = 11       // icon tiles and compact controls
+    static let chip: CGFloat = 12       // segmented switches, small buttons
+    static let control: CGFloat = 14    // rows, inputs, tiles in a grid, primary buttons
+    static let panel: CGFloat = 18      // cards inside sheets, tips
+    static let card: CGFloat = 22       // cards on a screen
+    static let hero: CGFloat = 24       // the large feature card on a screen
+}
+
 extension View {
     func capWidth(_ max: CGFloat) -> some View {
         frame(maxWidth: max).frame(maxWidth: .infinity)

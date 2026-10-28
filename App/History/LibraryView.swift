@@ -78,11 +78,11 @@ struct LibraryView: View {
     }
 
     /// Free accounts read this month's book; every earlier month is Premium.
-    private func canOpen(_ book: MonthBook) -> Bool { premium.isPremium || book.isCurrent }
+    private func canOpen(_ book: MonthBook) -> Bool { premium.allows(.fullHistory) || book.isCurrent }
 
     /// What search and the mood filter look through — every page, or this month's for free accounts.
     private var searchable: [JournalEntry] {
-        if premium.isPremium { return store.entries }
+        if premium.allows(.fullHistory) { return store.entries }
         let cal = Calendar.current
         return store.entries.filter { cal.isDate($0.date, equalTo: Date(), toGranularity: .month) }
     }
@@ -273,7 +273,7 @@ struct LibraryView: View {
                         Button {
                             // Editing a page is Premium, like everywhere else.
                             afterMenuCloses {
-                                if premium.isPremium { editing = e } else { flow.showPaywall() }
+                                flow.requiring(.editPages, premium: premium) { editing = e }
                             }
                         } label: { Label("Edit page", systemImage: "pencil") }
                         Button(role: .destructive) {
@@ -431,11 +431,7 @@ struct MonthBookCover: View {
             }
 
             if locked {
-                Image(systemName: "lock.fill")
-                    .font(.system(size: w * 0.11, weight: .bold)).foregroundStyle(Palette.amberDeep)
-                    .frame(width: w * 0.26, height: w * 0.26)
-                    .background(Palette.iconTile, in: Circle())
-                    .overlay(Circle().strokeBorder(Palette.ink, lineWidth: 2))
+                PremiumLockBadge(size: w * 0.26)
                     .offset(x: w * 0.66, y: w * 0.08)
             }
         }

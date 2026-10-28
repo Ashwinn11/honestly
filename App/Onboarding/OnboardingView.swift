@@ -183,7 +183,7 @@ struct OnboardingView: View {
     }
 
     private var sampleAffirmation: String {
-        if sampleAffirmationTopic == "Your own", premium.isPremium {
+        if sampleAffirmationTopic == "Your own", premium.allows(.ownAffirmations) {
             return affirmations.savedCustom.first ?? "You deserve care and kindness."
         }
         let topic = sampleAffirmationTopic
@@ -199,7 +199,7 @@ struct OnboardingView: View {
     private var reminderSamples: [String] {
         let topic = sampleAffirmationTopic
         let lines: [String]
-        if topic == "Your own", premium.isPremium {
+        if topic == "Your own", premium.allows(.ownAffirmations) {
             lines = affirmations.savedCustom
         } else {
             lines = affirmations.availableLibrary.first(where: { $0.title == topic })?.lines

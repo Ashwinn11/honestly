@@ -126,3 +126,44 @@ final class PremiumManager {
         }
     }
 }
+
+// MARK: - What Premium unlocks
+
+/// Every Premium feature — the one place the free/Premium line is drawn. Screens ask
+/// `premium.allows(_:)` (or gate an action with `flow.requiring(_:premium:_:)`) instead of
+/// checking `isPremium` themselves, so moving a feature across the line is a one-line change here.
+enum PremiumFeature {
+    case appBlocking          // Screen Time: apps stay asleep until the page is written
+    case fullHistory          // months before this one: reading, search, covers
+    case editPages            // editing a page after it's written
+    case iCloudBackup
+    case ownPrompts           // writing your own prompts (picking from the list is free)
+    case ownAffirmations      // writing your own affirmations
+    case fullAffirmations     // the whole affirmation library, not the free rotation
+    case widget
+    case pageThemes           // switching to a theme you're not already on
+    case allStickers          // sticker packs beyond the first
+    case morePhotos           // more photos/doodles on a page than the free allowance
+
+    /// Photos and doodles a page can hold without Premium.
+    static let freePhotosPerPage = 1
+    /// Sticker packs open without Premium (the first ones in the picker).
+    static let freeStickerPacks = 1
+}
+
+extension PremiumManager {
+    func allows(_ feature: PremiumFeature) -> Bool {
+        switch feature {
+        case .appBlocking, .fullHistory, .editPages, .iCloudBackup, .ownPrompts, .ownAffirmations,
+             .fullAffirmations, .widget, .pageThemes, .allStickers, .morePhotos:
+            return isPremium
+        }
+    }
+}
+
+extension AppFlow {
+    /// Runs `action` when `feature` is unlocked; otherwise opens the paywall.
+    func requiring(_ feature: PremiumFeature, premium: PremiumManager, _ action: () -> Void) {
+        if premium.allows(feature) { action() } else { showPaywall() }
+    }
+}

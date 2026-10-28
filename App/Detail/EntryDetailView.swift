@@ -48,7 +48,7 @@ struct EntryDetailView: View {
 
     /// Free accounts can read the current month's book; every other page is Premium.
     private var canRead: Bool {
-        if premium.isPremium { return true }
+        if premium.allows(.fullHistory) { return true }
         guard let book else { return false }
         let now = Calendar.current.dateComponents([.year, .month], from: Date())
         return now.year == book.year && now.month == book.month
@@ -161,7 +161,7 @@ struct EntryDetailView: View {
         // Capture the selected page before presenting; do not re-fetch it in the cover body.
         guard let entry = store.entry(for: key) else { return }
         // Reading this month is free; editing a page stays Premium.
-        if premium.isPremium { editingEntry = entry } else { flow.showPaywall() }
+        flow.requiring(.editPages, premium: premium) { editingEntry = entry }
     }
 
     // MARK: The grid — all the month's pages, or its calendar. Not a page, so it has a header.

@@ -208,15 +208,17 @@ struct EditorToolbar: View {
         return count
     }
 
-    /// The first photo/doodle is free; a second (or more) needs premium.
-    private var photoInsertLocked: Bool { !premium.isPremium && photoAttachmentCount >= 1 }
+    /// A page's first photos/doodles are free; more need Premium.
+    private var photoInsertLocked: Bool {
+        !premium.allows(.morePhotos) && photoAttachmentCount >= PremiumFeature.freePhotosPerPage
+    }
 
     private func mediaButton(icon: String, isLocked: Bool, action: @escaping () -> Void) -> some View {
         Button {
             if isLocked { flow.showPaywall() } else { action() }
         } label: {
             toolbarIcon(icon)
-                .overlay(alignment: .topTrailing) { if isLocked { lockBadge } }
+                .overlay(alignment: .topTrailing) { if isLocked { PremiumLockBadge(size: 14).offset(x: 4, y: -4) } }
         }
         .buttonStyle(PressableStyle())
     }
@@ -230,15 +232,6 @@ struct EditorToolbar: View {
         CompactIconFace(icon: systemName)
     }
 
-    private var lockBadge: some View {
-        Image(systemName: "lock.fill")
-            .font(.system(size: 7, weight: .bold))
-            .foregroundStyle(.white)
-            .frame(width: 14, height: 14)
-            .background(Palette.amber, in: Circle())
-            .overlay(Circle().strokeBorder(Palette.ink, lineWidth: 1))
-            .offset(x: 4, y: -4)
-    }
 
     static let textColors: [String] = [
         "33261A", "5D4E3E", "8A7A67", "41465C", "9E2B25", "D3574A",

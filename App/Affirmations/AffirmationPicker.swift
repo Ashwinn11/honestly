@@ -12,7 +12,7 @@ struct AffirmationTopicPicker: View {
     @State private var expanded = false
 
     private var topics: [String] {
-        list.availableLibrary.map(\.title) + (premium.isPremium && !list.savedCustom.isEmpty ? ["Your own"] : [])
+        list.availableLibrary.map(\.title) + (premium.allows(.ownAffirmations) && !list.savedCustom.isEmpty ? ["Your own"] : [])
     }
 
     private var canCollapse: Bool {
@@ -115,12 +115,12 @@ struct AffirmationsScreen: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 12) {
                     LibrarySectionTitle(title: "Your own")
-                    if premium.isPremium {
+                    if premium.allows(.ownAffirmations) {
                         LibraryWriteRow(placeholder: "Write your own…", addLabel: "Add", draft: $draft,
                                         resetToken: inputResetToken, onAdd: addDraft)
                         ForEach(custom, id: \.self) { line in managedRow(line) }
                     } else {
-                        LibraryLockedWriteRow { flow.showPaywall() }
+                        PremiumLockedRow(title: "Write your own with Premium") { flow.showPaywall() }
                     }
 
                     VStack(alignment: .leading, spacing: 7) {
@@ -177,7 +177,7 @@ struct AffirmationsScreen: View {
     }
 
     private func addDraft() {
-        guard premium.isPremium else { flow.showPaywall(); return }
+        guard premium.allows(.ownAffirmations) else { flow.showPaywall(); return }
         let text = draft.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty, list.saveCustom(text) else { Haptics.rigid(); return }
         draft = ""

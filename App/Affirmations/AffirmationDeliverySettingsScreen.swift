@@ -83,7 +83,7 @@ struct AffirmationDeliverySettingsScreen: View {
 
                     VStack(alignment: .leading, spacing: 12) {
                         sectionTitle("Affirmation widgets")
-                        if premium.isPremium {
+                        if premium.allows(.widget) {
                             card {
                                 VStack(spacing: 12) {
                                     Button { showingWidgetTheme = true } label: {
@@ -137,14 +137,7 @@ struct AffirmationDeliverySettingsScreen: View {
                                 }
                             }
                         } else {
-                            card {
-                                Button { flow.showPaywall() } label: {
-                                    Label("Unlock this widget with Premium", systemImage: "lock.fill")
-                                        .font(Fonts.ui(14, .semibold)).foregroundStyle(Palette.inkSofter)
-                                        .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-                                }
-                                .buttonStyle(.plain)
-                            }
+                            PremiumLockedRow(title: "Unlock this widget with Premium") { flow.showPaywall() }
                         }
                     }
                 }

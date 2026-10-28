@@ -78,10 +78,11 @@ struct HomeView: View {
                     .padding(.top, 12)
                 if !screenTime.authorized || !screenTime.hasSelection {
                     Button {
-                        if !premium.isPremium { flow.showPaywall(); return }
-                        Task {
-                            if await screenTime.ensureAuthorizedForPicker() { showBlockingPicker = true }
-                            else { showAccessHelp = true }
+                        flow.requiring(.appBlocking, premium: premium) {
+                            Task {
+                                if await screenTime.ensureAuthorizedForPicker() { showBlockingPicker = true }
+                                else { showAccessHelp = true }
+                            }
                         }
                     } label: {
                         HStack(spacing: 6) {
@@ -201,7 +202,7 @@ struct HomeView: View {
             .padding(.bottom, 13)
 
             NavigationLink {
-                AffirmationReaderScreen(startingLine: affirmations.today(premium: premium.isPremium))
+                AffirmationReaderScreen(startingLine: affirmations.today(premium: premium.allows(.fullAffirmations)))
                     .toolbar(.hidden, for: .navigationBar)
             } label: {
                 HStack(spacing: 12) {
@@ -210,7 +211,7 @@ struct HomeView: View {
                         .foregroundStyle(Palette.amberDeep)
                         .frame(width: 22)
                         .accessibilityHidden(true)
-                    Affirmations.text(affirmations.today(premium: premium.isPremium))
+                    Affirmations.text(affirmations.today(premium: premium.allows(.fullAffirmations)))
                         .font(Fonts.ui(14.5, .semibold)).foregroundStyle(Palette.ink)
                         .fixedSize(horizontal: false, vertical: true)
                         .frame(maxWidth: .infinity, alignment: .leading)

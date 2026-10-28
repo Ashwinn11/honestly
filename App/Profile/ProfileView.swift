@@ -204,9 +204,7 @@ struct ProfileView: View {
             divider
             Button {
                 Haptics.tap()
-                if !premium.isPremium {
-                    flow.showPaywall()
-                } else {
+                flow.requiring(.appBlocking, premium: premium) {
                     Task { if await screenTime.ensureAuthorizedForPicker() { showPicker = true } }
                 }
             } label: {
@@ -235,16 +233,13 @@ struct ProfileView: View {
         VStack(spacing: 0) {
             Button {
                 Haptics.tap()
-                if premium.isPremium { showICloud = true } else { flow.showPaywall() }
+                flow.requiring(.iCloudBackup, premium: premium) { showICloud = true }
             } label: {
                 settingRow {
                     rowText("iCloud backup", "Manually back up or restore your pages")
                 } trailing: {
                     HStack(spacing: 9) {
-                        if !premium.isPremium {
-                            Image(systemName: "lock.fill").font(.system(size: 11, weight: .bold))
-                                .foregroundStyle(Palette.inkSofter)
-                        }
+                        if !premium.allows(.iCloudBackup) { PremiumLockBadge() }
                         chevron
                     }
                 }

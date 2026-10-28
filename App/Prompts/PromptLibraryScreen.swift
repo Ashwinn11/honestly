@@ -16,11 +16,11 @@ struct PromptLibraryScreen: View {
                     LibrarySectionTitle(title: "Your own")
                     // Writing your own is Premium: free accounts see the same locked row as
                     // affirmations instead of a box that only asks for Premium on +.
-                    if premium.isPremium {
+                    if premium.allows(.ownPrompts) {
                         LibraryWriteRow(placeholder: "Write your own prompt…", addLabel: "Add prompt",
                                         draft: $draft, onAdd: add)
                     } else {
-                        LibraryLockedWriteRow { flow.showPaywall() }
+                        PremiumLockedRow(title: "Write your own with Premium") { flow.showPaywall() }
                     }
 
                     ForEach(prompts.custom, id: \.self) { row($0, builtIn: false) }
@@ -59,7 +59,7 @@ struct PromptLibraryScreen: View {
 
     /// Choosing from the list is free; writing your own prompt is Premium.
     private func add() {
-        guard premium.isPremium else { flow.showPaywall(); return }
+        guard premium.allows(.ownPrompts) else { flow.showPaywall(); return }
         guard prompts.add(draft) else { Haptics.rigid(); return }
         draft = ""
         Haptics.select()
