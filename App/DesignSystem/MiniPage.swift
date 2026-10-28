@@ -1,40 +1,87 @@
 import SwiftUI
 
-/// A page shown small — its own theme paper, date, mood and opening lines. The one card for a
-/// page anywhere pages are listed: a book's "all pages" grid and the Library's search results.
-/// With a search term, the lines shown start near the first match and the match is highlighted.
+/// A page shown small — the real page in miniature: the same header (the day over its month and
+/// year, the mood), the question it answered, and its words with their photos, doodles and
+/// stickers, laid out as on a phone and shrunk to the card. The one card for a page anywhere pages
+/// are listed: a book's grid, the Library's search results, the book closing on a finished page.
+/// With a search term it shows the words from near the first match instead, the match highlighted.
 struct MiniPage: View {
     let entry: JournalEntry
     var highlight: String? = nil
+    @State private var rich: NSAttributedString?
 
     init(entry: JournalEntry, highlight: String? = nil) {
         self.entry = entry
         self.highlight = highlight
+        _rich = State(initialValue: Self.decoded.object(forKey: Self.key(for: entry)))
+    }
+
+    /// Decoding a page's formatting reads its photos back from disk, so each page is decoded once.
+    private static let decoded = NSCache<NSString, NSAttributedString>()
+    private static func key(for entry: JournalEntry) -> NSString {
+        "\(entry.id.uuidString)-\(entry.richContent?.count ?? 0)-\(entry.wordCount)" as NSString
+    }
+
+    /// The width the page is laid out at before it's shrunk — a phone's page.
+    private var pageWidth: CGFloat { DesignScale.s(300) }
+
+    private var searching: Bool {
+        !(highlight?.trimmingCharacters(in: .whitespaces).isEmpty ?? true)
     }
 
     var body: some View {
         let shape = UnevenRoundedRectangle(topLeadingRadius: 3, bottomLeadingRadius: 3,
                                            bottomTrailingRadius: 9, topTrailingRadius: 9, style: .continuous)
-        VStack(alignment: .leading, spacing: 6) {
-            HStack(spacing: 4) {
-                Text(verbatim: HDate.monthDay(entry.date))
-                    .font(Fonts.ui(11, .heavy)).foregroundStyle(Palette.ink)
-                    .lineLimit(1).minimumScaleFactor(0.8)
-                Spacer(minLength: 0)
-                MoodFace(mood: entry.moodRaw, size: 14)
+        Color.clear
+            .aspectRatio(3 / 4.4, contentMode: .fit)
+            .overlay(alignment: .topLeading) {
+                GeometryReader { geo in
+                    page
+                        .frame(width: pageWidth, alignment: .topLeading)
+                        .scaleEffect(geo.size.width / pageWidth, anchor: .topLeading)
+                        .frame(width: geo.size.width, height: geo.size.height, alignment: .topLeading)
+                }
             }
-            Text(lines)
-                .font(Fonts.ui(9.5, .semibold)).foregroundStyle(Palette.inkBody)
-                .lineSpacing(2)
-                .multilineTextAlignment(.leading)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+            .background(PageThemeBackground(theme: PageTheme.from(entry.themeID)))
+            .clipShape(shape)
+            .overlay(shape.strokeBorder(Palette.ink, lineWidth: 1.5))
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(Text(verbatim: HDate.dayMonthYear(entry.date) + ". " + String(entry.journal.prefix(140))))
+            .task(id: Self.key(for: entry)) { await decode() }
+    }
+
+    private var page: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            PageHeader(date: entry.date, mood: entry.moodRaw) { EmptyView() }
+            if !entry.prompt.isEmpty {
+                PageAnsweredPrompt(text: entry.prompt).padding(.top, 14)
+            }
+            words.padding(.top, entry.prompt.isEmpty ? 14 : 0)
         }
-        .padding(9)
-        .aspectRatio(3 / 4.4, contentMode: .fit)
-        .background(PageThemeBackground(theme: PageTheme.from(entry.themeID)))
-        .clipShape(shape)
-        .overlay(shape.strokeBorder(Palette.ink, lineWidth: 1.5))
-        .accessibilityElement(children: .combine)
+        .padding(EdgeInsets(top: 16, leading: 18, bottom: 0, trailing: 18))
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+
+    @ViewBuilder private var words: some View {
+        if !searching, let rich, rich.length > 0 {
+            RichContentView(attributedText: rich)
+        } else {
+            Text(lines)
+                .font(Fonts.ui(16, .medium)).foregroundStyle(Palette.inkBody)
+                .lineSpacing(4)
+                .multilineTextAlignment(.leading)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+    }
+
+    private func decode() async {
+        guard let data = entry.richContent, !data.isEmpty else { rich = nil; return }
+        let key = Self.key(for: entry)
+        if let cached = Self.decoded.object(forKey: key) { rich = cached; return }
+        let result = await Task.detached(priority: .userInitiated) { NSAttributedString.from(rtfdData: data) }.value
+        if let result { Self.decoded.setObject(result, forKey: key) }
+        rich = result
     }
 
     /// The page's text — from a little before the first match when searching, so the match shows.
