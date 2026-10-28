@@ -275,23 +275,34 @@ struct RitualView: View {
         }
     }
 
+    /// The page opens ready to write — keyboard up, caret blinking — unless the first-time tips
+    /// are about to show; then it's ready the moment they're done.
     private func startTipsIfNeeded() {
-        guard !tipsSeen, ScreenshotPreview.screen == nil, coachStep == nil else { return }
+        guard ScreenshotPreview.screen == nil, coachStep == nil else { return }
         Task {
-            try? await Task.sleep(for: .seconds(0.5))
-            journalFocused = false
-            withAnimation(Motion.gentle) { coachStep = .mood }
+            try? await Task.sleep(for: .seconds(tipsSeen ? 0.35 : 0.5))   // let the cover finish presenting
+            if tipsSeen {
+                journalFocused = true
+            } else {
+                journalFocused = false
+                withAnimation(Motion.gentle) { coachStep = .mood }
+            }
         }
     }
 
     private func advanceTips() {
         withAnimation(Motion.gentle) { coachStep = coachStep == .mood ? .prompt : nil }
-        if coachStep == nil { tipsSeen = true }
+        if coachStep == nil { finishTips() }
     }
 
     private func endTips() {
-        tipsSeen = true
         withAnimation(Motion.gentle) { coachStep = nil }
+        finishTips()
+    }
+
+    private func finishTips() {
+        tipsSeen = true
+        journalFocused = true
     }
 
     // MARK: Footer CTA — pinned at the bottom, floats above the keyboard
