@@ -162,62 +162,34 @@ struct PageDateStamp: View {
 
 // MARK: - The day's prompt, faint, where the writing goes
 
-/// Today's question, printed faintly where the first words will go and gone once they do — with
-/// ↻ at its very end for another one. Tapping the question itself starts writing.
+/// Today's question, printed faintly where the first words will go and gone once they do. A small
+/// list mark at its very end says it can be changed: tapping the question opens the prompt list,
+/// to pick another or write one's own.
 struct PagePromptHint: View {
     let text: String
-    var onAnother: () -> Void
     var onChoose: () -> Void
-    var onWrite: () -> Void
 
-    @State private var justSwapped = false
-
-    init(text: String, onAnother: @escaping () -> Void, onChoose: @escaping () -> Void,
-         onWrite: @escaping () -> Void) {
+    init(text: String, onChoose: @escaping () -> Void) {
         self.text = text
-        self.onAnother = onAnother
         self.onChoose = onChoose
-        self.onWrite = onWrite
     }
 
-    private static let anotherURL = URL(string: "honestly-prompt://another")!
-
     var body: some View {
-        var question = AttributedString(text + "\u{00A0}\u{00A0}")
-        question.swiftUI.foregroundColor = Palette.ink.opacity(0.34)
-        var swap = AttributedString("↻")
-        swap.link = Self.anotherURL
-        swap.swiftUI.foregroundColor = Palette.inkSoft
-        swap.swiftUI.font = Font.system(size: DesignScale.s(20), weight: .bold)
-
-        return Text(question + swap)
-            .font(Fonts.display(21, .heavy))
-            .lineSpacing(2)
-            .tint(Palette.inkSoft)
-            .fixedSize(horizontal: false, vertical: true)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .environment(\.openURL, OpenURLAction { url in
-                guard url == Self.anotherURL else { return .systemAction }
-                justSwapped = true
-                Haptics.select()
-                onAnother()
-                return .handled
-            })
-            .contentShape(Rectangle())
-            .onTapGesture {
-                // A tap on ↻ reaches here too; let it swap the question without opening the keyboard.
-                DispatchQueue.main.async {
-                    if justSwapped { justSwapped = false } else { onWrite() }
-                }
-            }
-            .contextMenu {
-                Button { onChoose() } label: { Label("Choose a prompt", systemImage: "list.bullet") }
-            }
-            .anchorPreference(key: CoachAnchorKey.self, value: .bounds) { anchor in [CoachAnchor.prompt: anchor] }
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel(Text(verbatim: text))
-            .accessibilityAction(named: Text("Another prompt")) { onAnother() }
-            .accessibilityAction(named: Text("Choose a prompt")) { onChoose() }
+        Button { Haptics.tap(); onChoose() } label: {
+            (Text(verbatim: text + "\u{00A0}\u{00A0}").foregroundStyle(Palette.ink.opacity(0.34))
+             + Text(Image(systemName: "list.bullet")).font(.system(size: DesignScale.s(16), weight: .bold))
+                .foregroundStyle(Palette.inkSoft))
+                .font(Fonts.display(21, .heavy))
+                .lineSpacing(2)
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(PressableStyle(scale: 0.98))
+        .anchorPreference(key: CoachAnchorKey.self, value: .bounds) { anchor in [CoachAnchor.prompt: anchor] }
+        .accessibilityLabel(Text(verbatim: text))
+        .accessibilityHint(Text("Choose a prompt"))
     }
 }
 

@@ -237,7 +237,7 @@ struct RitualView: View {
                         }
                     } else {
                         CoachMarkCard(title: "This page is yours",
-                                      message: "The faint question is just a nudge. Answer it, tap ↻ for another, or write anything at all — a few honest lines are enough.",
+                                      message: "The faint question is just a nudge. Tap it to pick another or write your own — or simply write anything at all.",
                                       step: 2, steps: 2, arrowX: min(target.minX + 34, target.maxX) - x,
                                       onNext: { endTips() }, onDismiss: { endTips() }) {
                             EmptyView()
@@ -329,10 +329,7 @@ struct RitualView: View {
                 // The day's question waits where the first words go, and leaves when they arrive.
                 .overlay(alignment: .topLeading) {
                     if richText.length == 0 {
-                        PagePromptHint(text: promptText,
-                                       onAnother: { if premium.isPremium { prompts.another() } else { flow.showPaywall() } },
-                                       onChoose: choosePrompt,
-                                       onWrite: { journalFocused = true })
+                        PagePromptHint(text: promptText, onChoose: choosePrompt)
                             .padding(.leading, 6)          // the editor's own text inset
                             .transition(.opacity)
                     }
