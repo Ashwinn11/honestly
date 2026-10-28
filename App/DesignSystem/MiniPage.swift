@@ -1,8 +1,7 @@
 import SwiftUI
 
 /// A page shown small — the real page in miniature: the same header (the day over its month and
-/// year, the mood), the question it answered, and its words with their photos, doodles and
-/// stickers, laid out as on a phone and shrunk to the card. The one card for a page anywhere pages
+/// year, the mood) and its words with their photos, doodles and stickers, laid out as on a phone and shrunk to the card. The one card for a page anywhere pages
 /// are listed: a book's grid, the Library's search results, the book closing on a finished page.
 /// With a search term it shows the words from near the first match instead, the match highlighted.
 struct MiniPage: View {
@@ -55,11 +54,9 @@ struct MiniPage: View {
 
     private var page: some View {
         VStack(alignment: .leading, spacing: 0) {
+            // Just the header and the words — at card size the faint prompt only crowds them out.
             PageHeader(date: entry.date, mood: entry.moodRaw) { EmptyView() }
-            if !entry.prompt.isEmpty {
-                PageAnsweredPrompt(text: entry.prompt).padding(.top, 14)
-            }
-            words.padding(.top, entry.prompt.isEmpty ? 14 : 0)
+            words.padding(.top, 14)
         }
         .padding(EdgeInsets(top: 16, leading: Metrics.pageHorizontalInset,
                             bottom: 0, trailing: Metrics.pageHorizontalInset))
