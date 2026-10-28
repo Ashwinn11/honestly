@@ -237,7 +237,7 @@ struct RitualView: View {
                         }
                     } else {
                         CoachMarkCard(title: "This page is yours",
-                                      message: "Tap the question to choose another.",
+                                      message: "Tap the prompt to pick from the list.",
                                       step: 2, steps: 2, arrowX: min(target.minX + 34, target.maxX) - x,
                                       onNext: { endTips() }, onDismiss: { endTips() }) {
                             EmptyView()

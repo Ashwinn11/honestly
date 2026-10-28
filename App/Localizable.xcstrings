@@ -266398,79 +266398,79 @@
         }
       }
     },
-    "Tap the question to choose another." : {
+    "Tap the prompt to pick from the list." : {
       "extractionState" : "manual",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "اضغط على السؤال لاختيار سؤال آخر."
+            "value" : "اضغط على السؤال لتختار من القائمة."
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tippe auf die Frage, um eine andere zu wählen."
+            "value" : "Tippe auf die Frage, um aus der Liste zu wählen."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Toca la pregunta para elegir otra."
+            "value" : "Toca la pregunta para elegir de la lista."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Touche la question pour en choisir une autre."
+            "value" : "Touche la question pour choisir dans la liste."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tocca la domanda per sceglierne un’altra."
+            "value" : "Tocca la domanda per scegliere dall’elenco."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "問いをタップすると別の問いを選べます。"
+            "value" : "問いをタップしてリストから選べます。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "질문을 눌러 다른 질문을 골라 보세요."
+            "value" : "질문을 눌러 목록에서 골라 보세요."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tik op de vraag om een andere te kiezen."
+            "value" : "Tik op de vraag om uit de lijst te kiezen."
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Toque na pergunta para escolher outra."
+            "value" : "Toque na pergunta para escolher da lista."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Нажми на вопрос, чтобы выбрать другой."
+            "value" : "Нажми на вопрос, чтобы выбрать из списка."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "点一下问题，换一个。"
+            "value" : "点一下问题，从列表中挑选。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "點一下問題，換一個。"
+            "value" : "點一下問題，從列表中挑選。"
           }
         }
       }
