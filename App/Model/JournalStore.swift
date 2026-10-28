@@ -195,10 +195,9 @@ final class JournalStore {
     }
 
     #if DEBUG
-    /// Debug only: fills the last three months (before today) with sample pages — most days, a
-    /// few skipped — in mixed moods, themes and tags, so the Library, books, grid, calendar,
-    /// search and streaks can be tried with real volume. Days that already have a page are kept.
-    func seedSampleMonths(_ months: Int = 3) {
+    /// Debug only: ensures each of the last 12 complete calendar months has 10 sample pages,
+    /// spread across the month. Existing pages are kept and count toward the 10-page target.
+    func seedSampleYear() {
         let samples = [
             "Slept with the window open and woke up before the alarm. Lay there for a bit just listening.\n\nOne thing today: finish the draft. That's it.",
             "A little more present today. I took a walk without my headphones and noticed how quiet the street can be.",
@@ -217,24 +216,56 @@ final class JournalStore {
         let themes = PageTheme.allCases
         let prompts = AppContent.journalPrompts.map(\.text)
         let cal = Calendar.current
-        let today = cal.startOfDay(for: Date())
-        guard let start = cal.date(byAdding: .month, value: -months, to: today) else { return }
-        let taken = Set(entries.map(\.dayKey))
+        let currentMonth = cal.dateInterval(of: .month, for: Date())?.start ?? cal.startOfDay(for: Date())
+        guard let start = cal.date(byAdding: .month, value: -12, to: currentMonth) else { return }
+        var taken = Set(entries.map(\.dayKey))
         var rng = SystemRandomNumberGenerator()
-        var day = start
         var n = 0
-        while day < today {
-            defer { day = cal.date(byAdding: .day, value: 1, to: day) ?? today }
-            guard !taken.contains(SharedState.dayKey(for: day)), Int.random(in: 0..<10, using: &rng) < 8 else { continue }
-            let text = samples[n % samples.count]
-            let at = cal.date(bySettingHour: Int.random(in: 6...9), minute: Int.random(in: 0...59), second: 0, of: day) ?? day
-            context.insert(JournalEntry(content: text, affirmationsRaw: "",
-                                        mood: (Mood(rawValue: Int.random(in: 0...4)) ?? .happy).storageKey,
-                                        wordCount: JournalEntry.wordCount(of: text), createdAt: at,
-                                        tags: tagSets[n % tagSets.count],
-                                        themeID: n % 3 == 0 ? themes[(n / 3) % themes.count].rawValue : "",
-                                        prompt: n % 4 == 3 || prompts.isEmpty ? "" : L10n.localized(prompts[n % prompts.count])))
-            n += 1
+        for monthOffset in 0..<12 {
+            guard let monthStart = cal.date(byAdding: .month, value: monthOffset, to: start),
+                  let month = cal.dateInterval(of: .month, for: monthStart),
+                  let dayRange = cal.range(of: .day, in: .month, for: monthStart) else { continue }
+
+            let existingCount = entries.filter { entry in
+                entry.createdAt >= month.start && entry.createdAt < month.end
+            }.count
+            let pagesToAdd = max(0, 10 - existingCount)
+            guard pagesToAdd > 0 else { continue }
+
+            let days = Array(dayRange)
+            let preferredDays = (0..<10).map { slot in
+                days[(slot * (days.count - 1)) / 9]
+            }
+            var selectedDays: [Int] = []
+            for dayNumber in preferredDays where selectedDays.count < pagesToAdd {
+                let date = cal.date(byAdding: .day, value: dayNumber - 1, to: monthStart) ?? monthStart
+                if !taken.contains(SharedState.dayKey(for: date)) {
+                    selectedDays.append(dayNumber)
+                    taken.insert(SharedState.dayKey(for: date))
+                }
+            }
+            if selectedDays.count < pagesToAdd {
+                for dayNumber in days where selectedDays.count < pagesToAdd {
+                    let date = cal.date(byAdding: .day, value: dayNumber - 1, to: monthStart) ?? monthStart
+                    if !taken.contains(SharedState.dayKey(for: date)) {
+                        selectedDays.append(dayNumber)
+                        taken.insert(SharedState.dayKey(for: date))
+                    }
+                }
+            }
+
+            for dayNumber in selectedDays {
+                let day = cal.date(byAdding: .day, value: dayNumber - 1, to: monthStart) ?? monthStart
+                let text = samples[n % samples.count]
+                let at = cal.date(bySettingHour: Int.random(in: 6...9), minute: Int.random(in: 0...59), second: 0, of: day) ?? day
+                context.insert(JournalEntry(content: text, affirmationsRaw: "",
+                                            mood: (Mood(rawValue: Int.random(in: 0...4)) ?? .happy).storageKey,
+                                            wordCount: JournalEntry.wordCount(of: text), createdAt: at,
+                                            tags: tagSets[n % tagSets.count],
+                                            themeID: n % 3 == 0 ? themes[(n / 3) % themes.count].rawValue : "",
+                                            prompt: n % 4 == 3 || prompts.isEmpty ? "" : L10n.localized(prompts[n % prompts.count])))
+                n += 1
+            }
         }
         try? context.save()
         reload()

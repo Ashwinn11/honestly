@@ -114,10 +114,10 @@ struct ProfileView: View {
     private var debugCard: some View {
         Button {
             Haptics.success()
-            store.seedSampleMonths()
+            store.seedSampleYear()
         } label: {
             settingRow {
-                rowText("Debug: add 3 months of pages", "Sample pages on most days before today")
+                rowText("Debug: add 12 months of pages", "Add up to 10 sample pages per month")
             } trailing: {
                 Image(systemName: "hammer.fill").foregroundStyle(Palette.inkSofter)
             }

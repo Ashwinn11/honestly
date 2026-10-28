@@ -54,10 +54,6 @@ struct EntryEditorView: View {
             ScrollView {
                 JournalPageSurface(cornerRadius: 0, showsBinderHoles: false, bordered: false) {
                     VStack(alignment: .leading, spacing: 0) {
-                        if !entry.prompt.isEmpty {
-                            PageAnsweredPrompt(text: entry.prompt)
-                        }
-
                         RichTextEditor(attributedText: $richText,
                                        selectedRange: $selectedRange, placeholder: "Start writing…",
                            keyboardAllowed: !editorSheetPresented)

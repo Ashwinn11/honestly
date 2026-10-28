@@ -459,10 +459,6 @@ private struct JournalReaderPage: View {
                                    showsBinderHoles: false,
                                    bordered: false) {
                     VStack(alignment: .leading, spacing: 0) {
-                        if !entry.prompt.isEmpty {
-                            PageAnsweredPrompt(text: entry.prompt)
-                        }
-
                         journalContent
 
                         if !entry.tags.isEmpty {
