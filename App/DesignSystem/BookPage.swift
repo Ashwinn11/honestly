@@ -86,9 +86,18 @@ struct PageHeader<Controls: View>: View {
 
     @ViewBuilder private var moodFace: some View {
         let shown = mood ?? 0
-        let label = Text(loc: Mood(rawValue: shown)?.label ?? "")
-        let face = MoodFace(mood: shown, size: DesignScale.s(34))
-            .frame(width: 44, height: 44)
+        let name = Mood(rawValue: shown)?.label ?? ""
+        let label = Text(loc: name)
+        // The face with its name beneath, so the mood reads at a glance.
+        let face = VStack(spacing: 2) {
+            MoodFace(mood: shown, size: DesignScale.s(30))
+            Text(loc: name)
+                .font(Fonts.ui(10, .bold))
+                .foregroundStyle(Palette.inkSoft)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+        }
+            .frame(minWidth: 44, minHeight: 44)
             .contentShape(Rectangle())
             .anchorPreference(key: CoachAnchorKey.self, value: .bounds) { anchor in [CoachAnchor.mood: anchor] }
         if let onMood {
