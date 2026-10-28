@@ -266321,83 +266321,6 @@
         }
       }
     },
-    "The faint question is just a nudge. Tap it to pick another or write your own — or simply write anything at all." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "السؤال الباهت مجرد تلميح. اضغط عليه لاختيار سؤال آخر أو كتابة سؤالك — أو اكتب أي شيء ببساطة."
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Die blasse Frage ist nur ein Anstoß. Tippe darauf, um eine andere zu wählen oder deine eigene zu schreiben – oder schreib einfach irgendetwas."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "La pregunta tenue es solo un empujoncito. Tócala para elegir otra o escribir la tuya, o simplemente escribe lo que quieras."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "La question en filigrane n’est qu’un coup de pouce. Touche-la pour en choisir une autre ou écrire la tienne — ou écris simplement ce que tu veux."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "La domanda in trasparenza è solo uno spunto. Toccala per sceglierne un’altra o scrivere la tua, oppure scrivi semplicemente quello che vuoi."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "うっすら見える問いはただのきっかけ。タップして別の問いを選んだり自分で書いたり。もちろん自由に書いてもOK。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "흐릿한 질문은 그저 작은 계기예요. 눌러서 다른 질문을 고르거나 직접 써 보세요. 아니면 그냥 무엇이든 써도 돼요."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "De vage vraag is maar een duwtje. Tik erop om een andere te kiezen of je eigen te schrijven — of schrijf gewoon wat je wilt."
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "A pergunta clarinha é só um empurrãozinho. Toque nela para escolher outra ou escrever a sua — ou simplesmente escreva o que quiser."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Бледный вопрос — лишь подсказка. Нажми на него, чтобы выбрать другой или написать свой, — или просто пиши о чём угодно."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "淡淡的问题只是个引子。点一下可以换一个或写下你自己的问题——也可以随便写点什么。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "淡淡的問題只是個引子。點一下可以換一個或寫下你自己的問題——也可以隨便寫點什麼。"
-          }
-        }
-      }
-    },
     "Write your own prompts" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -266471,6 +266394,83 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "寫下你自己的提問"
+          }
+        }
+      }
+    },
+    "Tap the question to choose another." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "اضغط على السؤال لاختيار سؤال آخر."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tippe auf die Frage, um eine andere zu wählen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toca la pregunta para elegir otra."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Touche la question pour en choisir une autre."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tocca la domanda per sceglierne un’altra."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "問いをタップすると別の問いを選べます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "질문을 눌러 다른 질문을 골라 보세요."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tik op de vraag om een andere te kiezen."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Toque na pergunta para escolher outra."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Нажми на вопрос, чтобы выбрать другой."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "点一下问题，换一个。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "點一下問題，換一個。"
           }
         }
       }

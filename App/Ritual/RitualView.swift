@@ -237,7 +237,7 @@ struct RitualView: View {
                         }
                     } else {
                         CoachMarkCard(title: "This page is yours",
-                                      message: "The faint question is just a nudge. Tap it to pick another or write your own — or simply write anything at all.",
+                                      message: "Tap the question to choose another.",
                                       step: 2, steps: 2, arrowX: min(target.minX + 34, target.maxX) - x,
                                       onNext: { endTips() }, onDismiss: { endTips() }) {
                             EmptyView()
