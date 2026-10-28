@@ -196,6 +196,19 @@ struct CompactIconFace: View {
     }
 }
 
+// MARK: - After a context menu closes
+
+/// Runs `action` once a long-press menu has finished closing. Presenting a full-screen cover
+/// while the menu is still animating away leaves it blank or stuck; deleting the pressed page
+/// while its preview is still on screen lets the preview read a deleted page and crash.
+@MainActor
+func afterMenuCloses(_ action: @escaping @MainActor () -> Void) {
+    Task { @MainActor in
+        try? await Task.sleep(for: .milliseconds(450))
+        action()
+    }
+}
+
 // MARK: - Empty pages — the one empty state wherever pages are listed
 
 /// A sun, a line saying what's missing, and an optional next step. Used by the Library's search

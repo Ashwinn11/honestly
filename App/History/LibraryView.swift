@@ -278,10 +278,12 @@ struct LibraryView: View {
                     .contextMenu {
                         Button {
                             // Editing a page is Premium, like everywhere else.
-                            if premium.isPremium { editing = e } else { flow.showPaywall() }
+                            afterMenuCloses {
+                                if premium.isPremium { editing = e } else { flow.showPaywall() }
+                            }
                         } label: { Label("Edit page", systemImage: "pencil") }
                         Button(role: .destructive) {
-                            withAnimation(Motion.snappy) { store.delete(e) }
+                            afterMenuCloses { withAnimation(Motion.snappy) { store.delete(e) } }
                         } label: { Label("Delete page", systemImage: "trash") }
                     }
                 }

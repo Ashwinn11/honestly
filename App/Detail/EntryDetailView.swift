@@ -238,10 +238,11 @@ struct EntryDetailView: View {
                 Button { open(entry.dayKey) } label: { MiniPage(entry: entry) }
                     .buttonStyle(PressableStyle())
                     .contextMenu {
-                        Button { edit(entry.dayKey) } label: {
+                        // Both wait for the menu to finish closing (see `afterMenuCloses`).
+                        Button { afterMenuCloses { edit(entry.dayKey) } } label: {
                             Label("Edit page", systemImage: "pencil")
                         }
-                        Button(role: .destructive) { delete(entry) } label: {
+                        Button(role: .destructive) { afterMenuCloses { delete(entry) } } label: {
                             Label("Delete page", systemImage: "trash")
                         }
                     }
