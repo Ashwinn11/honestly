@@ -24,6 +24,13 @@ final class PromptLibrary {
         reload()
         return added
     }
+    /// Swaps today's prompt for the next one in the library.
+    func another() {
+        let list = storage.available
+        guard !list.isEmpty else { return }
+        let current = selected.flatMap { list.firstIndex(of: $0) } ?? -1
+        select(list[(current + 1) % list.count])
+    }
     func delete(_ line: String) { storage.delete(line); reload() }
     func clear() { storage.clear(); reload() }
 

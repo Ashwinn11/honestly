@@ -23,10 +23,11 @@ final class JournalEntry {
     var tags: [String] = []
     var themeID: String = ""                                    // PageTheme raw value; "" → .paper
     @Attribute(.externalStorage) var thumbnail: Data? = nil     // small JPEG of the first photo — History rows
+    var prompt: String = ""                                      // the question the page answered, as it read then
 
     init(content: String, affirmationsRaw: String, mood: String, wordCount: Int,
          createdAt: Date = Date(), id: UUID = UUID(), richContent: Data? = nil, tags: [String] = [],
-         themeID: String = "", thumbnail: Data? = nil) {
+         themeID: String = "", thumbnail: Data? = nil, prompt: String = "") {
         self.content = content
         self.affirmationsRaw = affirmationsRaw
         self.mood = mood
@@ -37,6 +38,7 @@ final class JournalEntry {
         self.tags = tags
         self.themeID = themeID
         self.thumbnail = thumbnail
+        self.prompt = prompt
     }
 
     // MARK: - UI bridges (keep the screens reading the same shape)

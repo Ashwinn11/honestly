@@ -39,15 +39,24 @@ struct EntryEditorView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            topBar.capWidth(Metrics.maxContentWidth)
+            // The same header as writing and reading, with ✓ to keep the changes beside the ✕.
+            PageHeader(date: entry.createdAt, mood: entry.moodRaw) {
+                PageCloseButton { dismiss() }
+                IconTileButton(icon: "checkmark", size: 38, iconSize: 14) { save() }
+                    .accessibilityLabel(Text("Save"))
+            }
+            .padding(EdgeInsets(top: 4, leading: Metrics.pageHorizontalInset,
+                                bottom: 0, trailing: Metrics.pageHorizontalInset - 3))
+            .capWidth(Metrics.maxContentWidth)
 
             // One scroll, not two: `RichTextEditor` grows to its actual content height (like
             // `RichContentView`, the read-only reader). This outer ScrollView is the only scrolling region.
             ScrollView {
                 JournalPageSurface(cornerRadius: 0, showsBinderHoles: false, bordered: false) {
                     VStack(alignment: .leading, spacing: 0) {
-                        PageDateRow(date: entry.createdAt, mood: entry.moodRaw)
-                            .padding(.bottom, 16)
+                        if !entry.prompt.isEmpty {
+                            PageAnsweredPrompt(text: entry.prompt)
+                        }
 
                         RichTextEditor(attributedText: $richText,
                                        selectedRange: $selectedRange, placeholder: "Start writing…",
@@ -62,7 +71,6 @@ struct EntryEditorView: View {
                             // snaps up. `alignment: .top` is what a text editor's box should do
                             // regardless of how much (or little) it's holding.
                             .frame(minHeight: 200, alignment: .top)
-                            .padding(.top, 16)
                     }
                     .padding(EdgeInsets(top: 14, leading: Metrics.pageHorizontalInset,
                                         bottom: 24, trailing: Metrics.pageHorizontalInset))
@@ -140,23 +148,6 @@ struct EntryEditorView: View {
         .sheet(isPresented: $showThemeSheet) {
             ThemePickerSheet(selection: $theme)
         }
-    }
-
-    private var topBar: some View {
-        HStack(spacing: 12) {
-            IconTileButton(icon: "xmark", size: 38, iconSize: 13) {
-                dismiss()
-            }
-            Text("Edit Entry")
-                .font(Fonts.display(19, .bold)).foregroundStyle(Palette.ink)
-            Spacer(minLength: 0)
-            IconTileButton(icon: "checkmark", size: 38, iconSize: 14) {
-                save()
-            }
-        }
-        .padding(.horizontal, 20)
-        .padding(.top, 14)
-        .padding(.bottom, 12)
     }
 
     private func insertPickedImage(_ image: UIImage) {

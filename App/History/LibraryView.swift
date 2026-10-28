@@ -69,6 +69,9 @@ struct LibraryView: View {
     @State private var query = ""
     @State private var coverBook: MonthBook?
     @State private var editing: JournalEntry?
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    /// Three across on a phone, four on an iPad's wider column.
+    private var columnCount: Int { sizeClass == .regular ? 4 : 3 }
 
     private var isSearching: Bool {
         filter != nil || !query.trimmingCharacters(in: .whitespaces).isEmpty
@@ -213,7 +216,7 @@ struct LibraryView: View {
                 Spacer()
                 pageCount(total).font(Fonts.ui(12, .bold)).foregroundStyle(Palette.inkSoft)
             }
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10, alignment: .bottom), count: 3),
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 10, alignment: .bottom), count: columnCount),
                       spacing: 26) {
                 ForEach(books) { book in
                     VStack(spacing: 8) {
@@ -266,7 +269,7 @@ struct LibraryView: View {
         return ForEach(Array(groups.enumerated()), id: \.element.label) { _, group in
             Text(group.label).font(Fonts.display(18, .bold)).foregroundStyle(Color(hex: "A0917C"))
                 .padding(.top, 18).padding(.bottom, 10)
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 3), spacing: 14) {
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: columnCount), spacing: 14) {
                 ForEach(group.items, id: \.dayKey) { e in
                     NavigationLink(value: MonthBookRoute(entry: e)) {
                         MiniPage(entry: e, highlight: highlight)

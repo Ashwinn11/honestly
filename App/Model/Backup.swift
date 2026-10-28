@@ -18,16 +18,17 @@ struct EntrySnapshot: Codable {
     // backup format — the legacy single-blob production format never carried this, so it decodes
     // to nil there, same as a missing `tags` key on an old backup.
     var richContent: Data? = nil
+    var prompt: String = ""      // the question the page answered; missing on older backups
 
     // Manual init(from:) so older backups (written before `tags`/`richContent`/`themeID` existed)
     // still decode — a plain default value on the property doesn't help here, since synthesized
     // Codable would otherwise require the key to be present. Older backups carrying
     // now-unrecognized keys (e.g. a legacy affirmations field) decode fine too — Codable silently
     // ignores keys a struct doesn't declare.
-    enum CodingKeys: String, CodingKey { case id, content, mood, wordCount, createdAt, tags, themeID, richContent }
+    enum CodingKeys: String, CodingKey { case id, content, mood, wordCount, createdAt, tags, themeID, richContent, prompt }
 
     init(id: UUID, content: String, mood: String, wordCount: Int, createdAt: Date, tags: [String] = [],
-         themeID: String = "", richContent: Data? = nil) {
+         themeID: String = "", richContent: Data? = nil, prompt: String = "") {
         self.id = id
         self.content = content
         self.mood = mood
@@ -36,6 +37,7 @@ struct EntrySnapshot: Codable {
         self.tags = tags
         self.themeID = themeID
         self.richContent = richContent
+        self.prompt = prompt
     }
 
     init(from decoder: Decoder) throws {
@@ -48,6 +50,7 @@ struct EntrySnapshot: Codable {
         tags = try c.decodeIfPresent([String].self, forKey: .tags) ?? []
         themeID = try c.decodeIfPresent(String.self, forKey: .themeID) ?? ""
         richContent = try c.decodeIfPresent(Data.self, forKey: .richContent)
+        prompt = try c.decodeIfPresent(String.self, forKey: .prompt) ?? ""
     }
 }
 

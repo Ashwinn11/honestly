@@ -57,25 +57,269 @@ struct BookEdges: View {
     }
 }
 
-// MARK: - Closing a page
+// MARK: - The page's header
 
-/// The one control a page carries: a small ink ✕ in its top corner — a mark on the paper, not a
-/// button in a bar. Pulling the page down from its top closes it too (`closesOnPullDown`).
-struct PageCloseMark: View {
+/// The top of every page — writing, editing and reading alike: the day, big, over its month and
+/// year; the mood; then the page's controls in the app's icon tiles. It's printed on the page,
+/// not a bar above it.
+struct PageHeader<Controls: View>: View {
+    let date: Date
+    let mood: Int?                       // nil while writing and not yet picked: shows the first face
+    var onMood: (() -> Void)?            // nil: the mood is read-only
+    var controls: Controls
+
+    init(date: Date, mood: Int?, onMood: (() -> Void)? = nil, @ViewBuilder controls: () -> Controls) {
+        self.date = date
+        self.mood = mood
+        self.onMood = onMood
+        self.controls = controls()
+    }
+
+    var body: some View {
+        HStack(alignment: .center, spacing: 6) {
+            PageDateStamp(date: date)
+            Spacer(minLength: 8)
+            moodFace
+            controls
+        }
+    }
+
+    @ViewBuilder private var moodFace: some View {
+        let shown = mood ?? 0
+        let label = Text(loc: Mood(rawValue: shown)?.label ?? "")
+        let face = MoodFace(mood: shown, size: DesignScale.s(34))
+            .frame(width: 44, height: 44)
+            .contentShape(Rectangle())
+            .anchorPreference(key: CoachAnchorKey.self, value: .bounds) { anchor in [CoachAnchor.mood: anchor] }
+        if let onMood {
+            Button { Haptics.select(); onMood() } label: { face }
+                .buttonStyle(PressableStyle(scale: 0.88))
+                .accessibilityLabel(label)
+                .accessibilityHint(Text(loc: "How are you feeling?"))
+        } else {
+            face.accessibilityElement(children: .ignore).accessibilityLabel(label)
+        }
+    }
+}
+
+/// The page's close control, in the app's icon tile.
+struct PageCloseButton: View {
     var action: () -> Void
 
     init(action: @escaping () -> Void) { self.action = action }
 
     var body: some View {
-        Button { Haptics.tap(); action() } label: {
-            Image(systemName: "xmark")
-                .font(.system(size: DesignScale.s(14), weight: .bold))
-                .foregroundStyle(Palette.ink.opacity(0.7))
-                .frame(width: 44, height: 44)
-                .contentShape(Rectangle())
+        IconTileButton(icon: "xmark", size: 38, iconSize: 13, action: action)
+            .accessibilityLabel(Text("Close"))
+    }
+}
+
+/// The date as a journal stamps it: the day, big, and the month and year beneath it stretched to
+/// exactly the day's width.
+struct PageDateStamp: View {
+    let date: Date
+
+    var body: some View {
+        let gap = DesignScale.s(7)
+        let small = DesignScale.s(12)
+        Text(verbatim: HDate.dayNumber(date))
+            .font(Fonts.display(58, .heavy))
+            .tracking(-2)
+            .foregroundStyle(Palette.ink)
+            .fixedSize()
+            .padding(.bottom, small + gap)
+            .overlay(alignment: .bottom) {
+                HStack(spacing: 0) {
+                    Text(verbatim: monthPart)
+                    Spacer(minLength: 3)
+                    Text(verbatim: HDate.year(date))
+                }
+                .font(Fonts.ui(12, .heavy))
+                .foregroundStyle(Palette.inkSoft)
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
+            }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(Text(verbatim: HDate.dayMonthYear(date)))
+    }
+
+    /// "Oct," — the comma reads naturally after a Latin month, not after 10月 or 10월.
+    private var monthPart: String {
+        let month = HDate.monthShort(date)
+        let noComma = ["ja", "ko", "zh"].contains { SharedState.language.hasPrefix($0) }
+        return noComma ? month : month + ","
+    }
+}
+
+// MARK: - The day's prompt, faint, where the writing goes
+
+/// Today's question, printed faintly where the first words will go and gone once they do — with
+/// ↻ at its very end for another one. Tapping the question itself starts writing.
+struct PagePromptHint: View {
+    let text: String
+    var onAnother: () -> Void
+    var onChoose: () -> Void
+    var onWrite: () -> Void
+
+    @State private var justSwapped = false
+
+    init(text: String, onAnother: @escaping () -> Void, onChoose: @escaping () -> Void,
+         onWrite: @escaping () -> Void) {
+        self.text = text
+        self.onAnother = onAnother
+        self.onChoose = onChoose
+        self.onWrite = onWrite
+    }
+
+    private static let anotherURL = URL(string: "honestly-prompt://another")!
+
+    var body: some View {
+        var question = AttributedString(text + "\u{00A0}\u{00A0}")
+        question.swiftUI.foregroundColor = Palette.ink.opacity(0.34)
+        var swap = AttributedString("↻")
+        swap.link = Self.anotherURL
+        swap.swiftUI.foregroundColor = Palette.inkSoft
+        swap.swiftUI.font = Font.system(size: DesignScale.s(20), weight: .bold)
+
+        return Text(question + swap)
+            .font(Fonts.display(21, .heavy))
+            .lineSpacing(2)
+            .tint(Palette.inkSoft)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .environment(\.openURL, OpenURLAction { url in
+                guard url == Self.anotherURL else { return .systemAction }
+                justSwapped = true
+                Haptics.select()
+                onAnother()
+                return .handled
+            })
+            .contentShape(Rectangle())
+            .onTapGesture {
+                // A tap on ↻ reaches here too; let it swap the question without opening the keyboard.
+                DispatchQueue.main.async {
+                    if justSwapped { justSwapped = false } else { onWrite() }
+                }
+            }
+            .contextMenu {
+                Button { onChoose() } label: { Label("Choose a prompt", systemImage: "list.bullet") }
+            }
+            .anchorPreference(key: CoachAnchorKey.self, value: .bounds) { anchor in [CoachAnchor.prompt: anchor] }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(Text(verbatim: text))
+            .accessibilityAction(named: Text("Another prompt")) { onAnother() }
+            .accessibilityAction(named: Text("Choose a prompt")) { onChoose() }
+    }
+}
+
+/// On a written page, the question it answered: small and faint above the words.
+struct PageAnsweredPrompt: View {
+    let text: String
+
+    var body: some View {
+        Text(verbatim: text)
+            .font(Fonts.ui(15, .heavy))
+            .foregroundStyle(Palette.ink.opacity(0.42))
+            .lineSpacing(2)
+            .fixedSize(horizontal: false, vertical: true)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.bottom, 14)
+    }
+}
+
+// MARK: - First-time tips
+
+enum CoachAnchor: Hashable { case mood, prompt }
+
+/// Where the things a tip points at sit on screen.
+struct CoachAnchorKey: PreferenceKey {
+    static let defaultValue: [CoachAnchor: Anchor<CGRect>] = [:]
+    static func reduce(value: inout [CoachAnchor: Anchor<CGRect>], nextValue: () -> [CoachAnchor: Anchor<CGRect>]) {
+        value.merge(nextValue()) { $1 }
+    }
+}
+
+/// A tip card hanging from what it explains, with a small arrow pointing up at it. One at a time:
+/// "Next"/"Got it" moves on, ✕ ends the tips for good.
+struct CoachMarkCard<Extra: View>: View {
+    let title: String                    // String Catalog keys
+    let message: String
+    let step: Int
+    let steps: Int
+    let arrowX: CGFloat                  // from the card's leading edge
+    var onNext: () -> Void
+    var onDismiss: () -> Void
+    var extra: Extra
+
+    init(title: String, message: String, step: Int, steps: Int, arrowX: CGFloat,
+         onNext: @escaping () -> Void, onDismiss: @escaping () -> Void,
+         @ViewBuilder extra: () -> Extra) {
+        self.title = title
+        self.message = message
+        self.step = step
+        self.steps = steps
+        self.arrowX = arrowX
+        self.onNext = onNext
+        self.onDismiss = onDismiss
+        self.extra = extra()
+    }
+
+    var body: some View {
+        let shape = RoundedRectangle(cornerRadius: 18, style: .continuous)
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(alignment: .top, spacing: 8) {
+                Text(loc: title).font(Fonts.ui(15, .heavy)).foregroundStyle(Palette.ink)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 0)
+                Button { Haptics.tap(); onDismiss() } label: {
+                    Image(systemName: "xmark").font(.system(size: 11, weight: .heavy))
+                        .foregroundStyle(Palette.inkSoft)
+                        .frame(width: 32, height: 32).contentShape(Rectangle())
+                }
+                .buttonStyle(PressableStyle(scale: 0.88))
+                .padding(.top, -8).padding(.trailing, -8)
+                .accessibilityLabel(Text("Dismiss tips"))
+            }
+            Text(loc: message)
+                .font(Fonts.ui(13, .semibold)).foregroundStyle(Palette.inkSoft)
+                .lineSpacing(2)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, 4)
+            extra.padding(.top, 10)
+            HStack {
+                Text("\(step) of \(steps)").font(Fonts.ui(11, .heavy)).foregroundStyle(Palette.inkMuted)
+                Spacer()
+                Button { Haptics.tap(); onNext() } label: {
+                    Text(loc: step == steps ? "Got it" : "Next")
+                        .font(Fonts.ui(13, .heavy)).foregroundStyle(Palette.ink)
+                        .padding(.horizontal, 16).frame(minHeight: 36)
+                        .background(Palette.amber, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Palette.ink, lineWidth: 2))
+                }
+                .buttonStyle(PressableStyle())
+            }
+            .padding(.top, 12)
         }
-        .buttonStyle(PressableStyle(scale: 0.88))
-        .accessibilityLabel(Text("Close"))
+        .padding(EdgeInsets(top: 14, leading: 16, bottom: 12, trailing: 14))
+        .background(Palette.cream, in: shape)
+        .overlay(shape.strokeBorder(Palette.ink, lineWidth: 2))
+        .tactile(4, cornerRadius: 18)
+        .overlay(alignment: .topLeading) {
+            // The arrow: a rotated square whose top half pokes out above the card.
+            Rectangle()
+                .fill(Palette.cream)
+                .frame(width: 14, height: 14)
+                .overlay(alignment: .topLeading) {
+                    Path { p in
+                        p.move(to: CGPoint(x: 0, y: 14)); p.addLine(to: .zero); p.addLine(to: CGPoint(x: 14, y: 0))
+                    }
+                    .stroke(Palette.ink, lineWidth: 2)
+                }
+                .rotationEffect(.degrees(45))
+                .offset(x: arrowX - 7, y: -7)
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityAddTraits(.isModal)
     }
 }
 

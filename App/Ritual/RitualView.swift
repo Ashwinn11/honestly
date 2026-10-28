@@ -32,6 +32,9 @@ struct RitualView: View {
     @State private var theme: PageTheme = .paper
     // The month's book opens as the page appears — skipped for Reduce Motion and screenshots.
     @State private var showBook = false
+    /// First-time tips on the writing page: which one is showing; nil once they're done.
+    @State private var coachStep: CoachAnchor?
+    @AppStorage("tips.writingPage.seen") private var tipsSeen = false
 
     private var editorSheetPresented: Bool {
         showFormattingSheet || showTagsSheet || showImagePicker || showDoodleSheet || showStickerSheet || showThemeSheet || showPromptPicker || showMoodSheet || showBook || flow.paywallPresented
@@ -97,6 +100,8 @@ struct RitualView: View {
                 }
                 // The whole screen is the page: its edges run top to bottom, past the toolbar.
                 .overlay { BookEdges() }
+                .overlayPreferenceValue(CoachAnchorKey.self) { coachOverlay($0) }
+                .onAppear { startTipsIfNeeded() }
             }
         }
         // RitualView is itself a fullScreenCover off RootView, which also owns a fullScreenCover
@@ -163,62 +168,23 @@ struct RitualView: View {
     }
 
 
-    // MARK: Top bar — close icon and tappable prompt library
-    // it doesn't compete with the writing area below, and it's real page content, unlike a title
-    // would be. No progress dots, no mood badge here — the date/mood live on the page itself, below.
-    // The day's prompt, printed at the top of the page like a guided journal's question. Tapping it
-    // still opens the prompt list.
-    private var promptHeading: some View {
-        Button {
-            journalFocused = false
-            if premium.isPremium { showPromptPicker = true } else { flow.showPaywall() }
-        } label: {
-            HStack(spacing: 10) {
-                Group {
-                    if premium.isPremium, let line = prompts.selected {
-                        if prompts.builtIn.contains(line) { Text(loc: line) }
-                        else { Text(verbatim: line) }
-                    } else {
-                        Text(loc: premium.isPremium ? "Choose a prompt" : "Unlock writing prompts")
-                    }
-                }
-                .font(Fonts.display(19, .bold))
-                .lineLimit(3)
-                .foregroundStyle(premium.isPremium ? Palette.ink : Palette.inkSofter)
-                .lineSpacing(2)
-                .multilineTextAlignment(.leading)
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity, minHeight: 44, alignment: .leading)
-            }
-        }
-        .buttonStyle(.plain)
-        .accessibilityHint(Text(loc: "Choose a prompt"))
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
     // MARK: The book page — today's page, set inside the month's book
     private func bookPage(height: CGFloat) -> some View {
         // The same margin as the reader, so the text column is exactly as wide in both.
         let inset = Metrics.pageHorizontalInset
         return VStack(alignment: .leading, spacing: 0) {
-            // The prompt and the date head the page and stay put; only the writing scrolls beneath.
-            // The page's one control is the small close mark beside the prompt.
-            HStack(alignment: .top, spacing: 4) {
-                promptHeading
-                PageCloseMark { onClose() }
-                    .padding(.trailing, -12)
-            }
-            .padding(EdgeInsets(top: 6, leading: inset, bottom: 0, trailing: inset))
-
-            PageDateRow(date: Date(), mood: mood) {
-                Haptics.select()
+            // The date heads the page and stays put; only the writing scrolls beneath.
+            PageHeader(date: Date(), mood: mood, onMood: {
+                journalFocused = false
                 showMoodSheet = true
+            }) {
+                PageCloseButton { onClose() }
             }
-            .padding(EdgeInsets(top: 14, leading: inset, bottom: 0, trailing: inset))
+            .padding(EdgeInsets(top: 4, leading: inset, bottom: 0, trailing: inset - 3))
 
             ScrollView {
                 journalBody(minHeight: height)
-                    .padding(EdgeInsets(top: 16, leading: inset, bottom: 24, trailing: inset))
+                    .padding(EdgeInsets(top: 14, leading: inset, bottom: 24, trailing: inset))
             }
             .scrollDismissesKeyboard(.interactively)
         }
@@ -232,7 +198,7 @@ struct RitualView: View {
                 openEarlierPages()
             }
         )
-        // Pull the page down from its top to close it, as with the close mark.
+        // Pull the page down from its top to close it, as with the ✕ in its header.
         .closesOnPullDown { onClose() }
     }
 
@@ -240,6 +206,92 @@ struct RitualView: View {
         journalFocused = false
         Haptics.tap()
         showBook = true
+    }
+
+    /// Today's question as the page shows it — the library's turn for the day, or the user's swap.
+    private var promptText: String {
+        prompts.pageText ?? L10n.localized("Start writing…")
+    }
+
+    private func choosePrompt() {
+        journalFocused = false
+        if premium.isPremium { showPromptPicker = true } else { flow.showPaywall() }
+    }
+
+    // MARK: First-time tips — the mood, then the page; one at a time, never again once done
+    private func coachOverlay(_ anchors: [CoachAnchor: Anchor<CGRect>]) -> some View {
+        GeometryReader { geo in
+            if let step = coachStep, let anchor = anchors[step] {
+                let target = geo[anchor]
+                let width = min(DesignScale.s(step == .mood ? 268 : 280), geo.size.width - 32)
+                // The mood tip hangs left from the face at the right; the page tip starts under the question.
+                let preferred = step == .mood ? target.midX - width * 0.78 : target.minX - 6
+                let x = min(max(16, preferred), geo.size.width - width - 16)
+                Group {
+                    if step == .mood {
+                        CoachMarkCard(title: "How are you feeling?",
+                                      message: "Pick one for today. Tap the face anytime to change it.",
+                                      step: 1, steps: 2, arrowX: target.midX - x,
+                                      onNext: { advanceTips() }, onDismiss: { endTips() }) {
+                            moodChoices
+                        }
+                    } else {
+                        CoachMarkCard(title: "This page is yours",
+                                      message: "The faint question is just a nudge. Answer it, tap ↻ for another, or write anything at all — a few honest lines are enough.",
+                                      step: 2, steps: 2, arrowX: min(target.minX + 34, target.maxX) - x,
+                                      onNext: { endTips() }, onDismiss: { endTips() }) {
+                            EmptyView()
+                        }
+                    }
+                }
+                .frame(width: width)
+                .offset(x: x, y: target.maxY + 12)
+                .transition(.opacity.combined(with: .offset(y: -6)))
+            }
+        }
+    }
+
+    private var moodChoices: some View {
+        HStack(spacing: 0) {
+            ForEach(Mood.allCases) { m in
+                let picked = (mood ?? -1) == m.rawValue
+                Button {
+                    Haptics.select()
+                    withAnimation(Motion.pop) { mood = m.rawValue }
+                    advanceTips()
+                } label: {
+                    VStack(spacing: 3) {
+                        MoodFace(mood: m.rawValue, size: DesignScale.s(picked ? 36 : 30))
+                        Text(loc: m.label).font(Fonts.ui(10, .bold)).foregroundStyle(Palette.inkSoft)
+                            .lineLimit(1).minimumScaleFactor(0.7)
+                    }
+                    .frame(maxWidth: .infinity, minHeight: 52)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(PressableStyle(scale: 0.9))
+                .accessibilityLabel(Text(loc: m.label))
+                .accessibilityAddTraits(picked ? .isSelected : [])
+            }
+        }
+    }
+
+    private func startTipsIfNeeded() {
+        guard !tipsSeen, ScreenshotPreview.screen == nil, coachStep == nil else { return }
+        Task {
+            try? await Task.sleep(for: .seconds(0.5))
+            journalFocused = false
+            withAnimation(Motion.gentle) { coachStep = .mood }
+        }
+    }
+
+    private func advanceTips() {
+        withAnimation(Motion.gentle) { coachStep = coachStep == .mood ? .prompt : nil }
+        if coachStep == nil { tipsSeen = true }
+    }
+
+    private func endTips() {
+        tipsSeen = true
+        withAnimation(Motion.gentle) { coachStep = nil }
     }
 
     // MARK: Footer CTA — pinned at the bottom, floats above the keyboard
@@ -251,20 +303,30 @@ struct RitualView: View {
         }
     }
 
-    // MARK: Step 0 — journal (the prompt is printed at the top of the page — see promptHeading — so it
-    // never competes with the writing area for space). Mood is set via the tappable icon on the
-    // date row, which opens `MoodPickerSheet` — no longer a separate blocking step.
+    // MARK: Step 0 — journal. The day's question sits faintly where the writing starts (see
+    // `PagePromptHint`). Mood is set from the face in the header, which opens `MoodPickerSheet`.
     private func journalBody(minHeight: CGFloat) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             RichTextEditor(attributedText: $richText,
-                           selectedRange: $selectedRange, placeholder: "Start writing…",
+                           selectedRange: $selectedRange, placeholder: "",
                            keyboardAllowed: !editorSheetPresented)
                 .focused($journalFocused)
                 // See the matching comment in EntryEditorView.swift — `.frame(minHeight:)`
-                // defaults to center alignment, which is why the empty placeholder sat mid-box
-                // instead of at its top until typed content grew past the floor. The floor fills
-                // the page, so its rules run to the bottom like a notebook's.
+                // defaults to center alignment, which would sit the first line mid-box. The floor
+                // fills the page, so a tap anywhere below the words still lands in the editor.
                 .frame(minHeight: max(220, minHeight - 110), alignment: .top)
+                // The day's question waits where the first words go, and leaves when they arrive.
+                .overlay(alignment: .topLeading) {
+                    if richText.length == 0 {
+                        PagePromptHint(text: promptText,
+                                       onAnother: { if premium.isPremium { prompts.another() } else { flow.showPaywall() } },
+                                       onChoose: choosePrompt,
+                                       onWrite: { journalFocused = true })
+                            .padding(.leading, 6)          // the editor's own text inset
+                            .transition(.opacity)
+                    }
+                }
+                .animation(.easeOut(duration: 0.15), value: richText.length == 0)
         }
 
     }
@@ -274,7 +336,8 @@ struct RitualView: View {
         let thumbnail = richText.firstPhotoThumbnail()
         let entry = store.saveRitual(mood: mood ?? 0, journal: journalText,
                                      richContent: richText.rtfdData(), tags: tags,
-                                     themeID: theme.rawValue, thumbnail: thumbnail)
+                                     themeID: theme.rawValue, thumbnail: thumbnail,
+                                     prompt: prompts.pageText ?? "")
         // Without this, History's page-curl reader keeps whatever `PageHost` it already cached for
         // today (see `EntryDetailView.swift`'s `PageCurlReader.Coordinator`) — stale content, and a
         // stale layout frame for any image/sticker resized since that page was cached, which shows

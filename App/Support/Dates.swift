@@ -24,6 +24,8 @@ enum HDate {
     }
     static func monthShort(_ d: Date) -> String { fmt("MMM").string(from: d) }                // Jul
     static func weekdayShort(_ d: Date) -> String { fmt("EEE").string(from: d) }              // Sat
+    static func dayNumber(_ d: Date) -> String { fmt("dd").string(from: d) }                 // 04
+    static func year(_ d: Date) -> String { fmt("yyyy").string(from: d) }                    // 2026
 
     static func isToday(_ d: Date) -> Bool { Calendar.current.isDateInToday(d) }
 

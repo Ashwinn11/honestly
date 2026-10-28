@@ -9,6 +9,7 @@ struct EntryDetailView: View {
     @Environment(PremiumManager.self) private var premium
     @Environment(AppFlow.self) private var flow
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.horizontalSizeClass) private var sizeClass
     @State private var selectedKey: String
     @State private var showEditor = false
     @State private var editKey: String?             // the page the editor opens on
@@ -116,13 +117,14 @@ struct EntryDetailView: View {
         }
     }
 
-    // MARK: The page — the whole screen, nothing on it but a small close mark
+    // MARK: The page — the whole screen; its header carries the ✕
     private var reader: some View {
         ZStack(alignment: .top) {
             PageCurlReader(entries: entries,
                            titlePage: book.map { $0.firstOfMonth },
                            selectedKey: $selectedKey,
-                           curlJumps: curlJumps)
+                           curlJumps: curlJumps,
+                           onClose: { closePage() })
                 .ignoresSafeArea()
                 // Long-press a page for what you can do with it — nothing sits on the page itself.
                 .simultaneousGesture(
@@ -135,10 +137,6 @@ struct EntryDetailView: View {
                 .closesOnPullDown { closePage() }
 
             BookEdges()
-
-            PageCloseMark { closePage() }
-                .frame(maxWidth: .infinity, alignment: .trailing)
-                .padding(.trailing, 14)
 
             if showGrid {
                 gridScreen.transition(.opacity)
@@ -226,7 +224,9 @@ struct EntryDetailView: View {
     }
 
     private var pagesGrid: some View {
-        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: 3), spacing: 14) {
+        // Three across on a phone, four on an iPad's wider column.
+        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 12), count: sizeClass == .regular ? 4 : 3),
+                  spacing: 14) {
             ForEach(entries, id: \.dayKey) { entry in
                 Button { open(entry.dayKey) } label: { MiniPage(entry: entry) }
                     .buttonStyle(PressableStyle())
@@ -288,6 +288,8 @@ private struct PageCurlReader: UIViewControllerRepresentable {
     @Binding var selectedKey: String
     /// Whether a jump made from outside the reader curls; false lands on the page in place.
     var curlJumps = true
+    /// The ✕ in each page's header.
+    var onClose: () -> Void = {}
 
     var keys: [String] { (titlePage != nil ? [MonthBookRoute.gridKey] : []) + entries.map(\.dayKey) }
 
@@ -376,7 +378,7 @@ private struct PageCurlReader: UIViewControllerRepresentable {
             } else if let entry = parent.entries.first(where: { $0.dayKey == key }) ?? parent.entries.first {
                 if let cached = hosts[entry.dayKey] { return cached }
                 fresh = PageHost(key: entry.dayKey, color: PageTheme.from(entry.themeID).baseUIColor,
-                                 content: AnyView(JournalReaderPage(entry: entry)))
+                                 content: AnyView(JournalReaderPage(entry: entry, onClose: parent.onClose)))
             } else {
                 return nil
             }
@@ -418,36 +420,48 @@ private struct PageCurlReader: UIViewControllerRepresentable {
 
 private struct JournalReaderPage: View {
     let entry: JournalEntry
+    var onClose: () -> Void
 
     var body: some View {
-        ScrollView {
-            // Full-bleed, no card border/shadow — same continuous-page treatment as RitualView, so
-            // writing and reading feel like the same physical object. Sized to its actual content,
-            // not forced to fill the screen — see RitualView's body for why (forcing it left a
-            // large dead gap below short entries instead of the barely-visible seam it avoided).
-            JournalPageSurface(cornerRadius: 0,
-                               showsBinderHoles: false,
-                               bordered: false) {
-                VStack(alignment: .leading, spacing: 0) {
-                    PageDateRow(date: entry.date, mood: entry.moodRaw)
-                        .padding(.bottom, 20)
-
-                    journalContent
-
-                    if !entry.tags.isEmpty {
-                        TagRow(tags: entry.tags)
-                            .padding(.top, 18)
-                    }
-
-
-                }
-                // The same margin as the writing page, so the text column matches it exactly.
-                .padding(EdgeInsets(top: 48, leading: Metrics.pageHorizontalInset,
-                                    bottom: 24, trailing: Metrics.pageHorizontalInset))
+        VStack(spacing: 0) {
+            // The same header as the writing page; it stays put while the words scroll.
+            PageHeader(date: entry.date, mood: entry.moodRaw) {
+                PageCloseButton { onClose() }
             }
+            .padding(EdgeInsets(top: 4, leading: Metrics.pageHorizontalInset,
+                                bottom: 0, trailing: Metrics.pageHorizontalInset - 3))
             .capWidth(Metrics.maxContentWidth)
+
+            ScrollView {
+                // Full-bleed, no card border/shadow — same continuous-page treatment as RitualView, so
+                // writing and reading feel like the same physical object. Sized to its actual content,
+                // not forced to fill the screen — see RitualView's body for why (forcing it left a
+                // large dead gap below short entries instead of the barely-visible seam it avoided).
+                JournalPageSurface(cornerRadius: 0,
+                                   showsBinderHoles: false,
+                                   bordered: false) {
+                    VStack(alignment: .leading, spacing: 0) {
+                        if !entry.prompt.isEmpty {
+                            PageAnsweredPrompt(text: entry.prompt)
+                        }
+
+                        journalContent
+
+                        if !entry.tags.isEmpty {
+                            TagRow(tags: entry.tags)
+                                .padding(.top, 18)
+                        }
+
+
+                    }
+                    // The same margin as the writing page, so the text column matches it exactly.
+                    .padding(EdgeInsets(top: 14, leading: Metrics.pageHorizontalInset,
+                                        bottom: 24, trailing: Metrics.pageHorizontalInset))
+                }
+                .capWidth(Metrics.maxContentWidth)
+            }
+            .scrollIndicators(.hidden)
         }
-        .scrollIndicators(.hidden)
         .background(PageThemeBackground(theme: PageTheme.from(entry.themeID)))
     }
 

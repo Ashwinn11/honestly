@@ -127,7 +127,7 @@ final class JournalStore {
     @discardableResult
     func saveRitual(mood: Int, journal: String,
                      richContent: Data? = nil, tags: [String] = [],
-                     themeID: String = "", thumbnail: Data? = nil) -> JournalEntry {
+                     themeID: String = "", thumbnail: Data? = nil, prompt: String = "") -> JournalEntry {
         let face = Mood(rawValue: mood) ?? .sad
         let trimmed = journal.trimmingCharacters(in: .whitespacesAndNewlines)
         let content = trimmed.isEmpty ? AppContent.emptyJournalFallback : trimmed
@@ -147,6 +147,7 @@ final class JournalStore {
         entry.tags = tags
         entry.themeID = themeID
         entry.thumbnail = thumbnail
+        entry.prompt = prompt
 
         try? context.save()
         reload()
@@ -214,6 +215,7 @@ final class JournalStore {
         ]
         let tagSets: [[String]] = [["morning thoughts"], ["small joys"], ["work"], ["family"], [], ["rest", "small joys"]]
         let themes = PageTheme.allCases
+        let prompts = AppContent.journalPrompts.map(\.text)
         let cal = Calendar.current
         let today = cal.startOfDay(for: Date())
         guard let start = cal.date(byAdding: .month, value: -months, to: today) else { return }
@@ -230,7 +232,8 @@ final class JournalStore {
                                         mood: (Mood(rawValue: Int.random(in: 0...4)) ?? .happy).storageKey,
                                         wordCount: JournalEntry.wordCount(of: text), createdAt: at,
                                         tags: tagSets[n % tagSets.count],
-                                        themeID: n % 3 == 0 ? themes[(n / 3) % themes.count].rawValue : ""))
+                                        themeID: n % 3 == 0 ? themes[(n / 3) % themes.count].rawValue : "",
+                                        prompt: n % 4 == 3 || prompts.isEmpty ? "" : L10n.localized(prompts[n % prompts.count])))
             n += 1
         }
         try? context.save()
@@ -258,7 +261,7 @@ final class JournalStore {
         entries.map {
             EntrySnapshot(id: $0.id, content: $0.content, mood: $0.mood, wordCount: $0.wordCount,
                           createdAt: $0.createdAt, tags: $0.tags, themeID: $0.themeID,
-                          richContent: $0.richContent)
+                          richContent: $0.richContent, prompt: $0.prompt)
         }
     }
 
@@ -297,7 +300,7 @@ final class JournalStore {
             context.insert(JournalEntry(content: snap.content, affirmationsRaw: "", mood: snap.mood,
                                         wordCount: snap.wordCount, createdAt: snap.createdAt, id: snap.id,
                                         richContent: rich, tags: snap.tags,
-                                        themeID: snap.themeID, thumbnail: thumbnail))
+                                        themeID: snap.themeID, thumbnail: thumbnail, prompt: snap.prompt))
             filledDays.insert(day)
             added += 1
         }
