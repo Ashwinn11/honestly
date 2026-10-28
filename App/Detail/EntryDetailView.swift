@@ -11,8 +11,7 @@ struct EntryDetailView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.horizontalSizeClass) private var sizeClass
     @State private var selectedKey: String
-    @State private var showEditor = false
-    @State private var editKey: String?             // the page the editor opens on
+    @State private var editingEntry: JournalEntry?
     /// The book's grid of all pages (or its calendar). Not a page: it has the only header.
     @State private var showGrid: Bool
     @State private var gridMode: GridMode = .pages
@@ -90,9 +89,6 @@ struct EntryDetailView: View {
                 selectedKey = pageKeys.contains(dayKey) ? dayKey : (pageKeys.first ?? dayKey)
             }
         }
-        .onChange(of: premium.isPremium) { _, active in
-            if !active { showEditor = false }
-        }
         .onChange(of: selectedKey) { _, key in
             Haptics.select()
             curlJumps = true
@@ -101,16 +97,15 @@ struct EntryDetailView: View {
                 withAnimation(Motion.snappy) { showGrid = true }
             }
         }
-        .fullScreenCover(isPresented: $showEditor) {
-            if premium.isPremium, let entry = store.entry(for: editKey ?? selectedKey) {
-                EntryEditorView(entry: entry)
-            } else {
-                // The page is gone (or Premium lapsed) — never leave an empty white cover up.
-                Color.clear.onAppear { showEditor = false }
-            }
+        .fullScreenCover(item: $editingEntry) { entry in
+            EntryEditorView(entry: entry)
         }
         .confirmationDialog(Text(verbatim: pageTitle), isPresented: $showPageActions, titleVisibility: .visible) {
-            Button { edit(selectedKey) } label: { Text("Edit page") }
+            Button {
+                let key = selectedKey
+                // Let the dialog finish dismissing before presenting a full-screen editor.
+                afterMenuCloses { edit(key) }
+            } label: { Text("Edit page") }
             Button(role: .destructive) { confirmDelete = true } label: { Text("Delete page") }
             Button(role: .cancel) {} label: { Text("Cancel") }
         }
@@ -163,9 +158,10 @@ struct EntryDetailView: View {
     }
 
     private func edit(_ key: String) {
+        // Capture the selected page before presenting; do not re-fetch it in the cover body.
+        guard let entry = store.entry(for: key) else { return }
         // Reading this month is free; editing a page stays Premium.
-        editKey = key
-        if premium.isPremium { showEditor = true } else { flow.showPaywall() }
+        if premium.isPremium { editingEntry = entry } else { flow.showPaywall() }
     }
 
     // MARK: The grid — all the month's pages, or its calendar. Not a page, so it has a header.
