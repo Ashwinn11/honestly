@@ -366,11 +366,18 @@ struct ClosingBookView: View {
     var body: some View {
         let w = DesignScale.s(width)
         ZStack(alignment: .topLeading) {
-            // The page just written, lying open until the cover comes down over it.
-            PageThemeBackground(theme: .paper)
+            // The page just written — its date, mood and first lines — lying open until the cover
+            // comes down over it.
+            Group {
+                if let page = book.entries.last {
+                    MiniPage(entry: page)
+                } else {
+                    PageThemeBackground(theme: .paper)
+                        .clipShape(UnevenRoundedRectangle(topLeadingRadius: 3, bottomLeadingRadius: 3,
+                                                          bottomTrailingRadius: 10, topTrailingRadius: 10, style: .continuous))
+                }
+            }
                 .frame(width: w, height: w * 1.42)
-                .clipShape(UnevenRoundedRectangle(topLeadingRadius: 3, bottomLeadingRadius: 3,
-                                                  bottomTrailingRadius: 10, topTrailingRadius: 10, style: .continuous))
                 .overlay(alignment: .leading) { BookGutterShade() }
                 .opacity(closed ? 0 : 1)
 
@@ -382,7 +389,7 @@ struct ClosingBookView: View {
         .frame(width: w * 1.15, height: w * 1.42, alignment: .topLeading)
         .rotationEffect(.degrees(closed ? -3 : 0))
         .task {
-            try? await Task.sleep(for: .seconds(0.35))
+            try? await Task.sleep(for: .seconds(1.1))          // long enough to see your words on it
             withAnimation(.spring(response: 0.7, dampingFraction: 0.78)) { closed = true }
             try? await Task.sleep(for: .seconds(0.45))
             Haptics.success()
