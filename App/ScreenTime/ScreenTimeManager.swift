@@ -27,7 +27,7 @@ final class ScreenTimeManager {
     init() {
         let loaded = BlockingCodec.load()
         selection = loaded
-        authorized = !ScreenshotPreview.enabled && AuthorizationCenter.shared.authorizationStatus == .approved
+        authorized = AuthorizationCenter.shared.authorizationStatus == .approved
     }
 
     var selectedCount: Int {

@@ -4,19 +4,13 @@ struct RootView: View {
     @Environment(AppFlow.self) private var flow
     @AppStorage(SharedState.Key.onboardingComplete, store: SharedState.defaults)
     private var onboarded = false
-    @State private var showSplash = !ScreenshotPreview.enabled
+    @State private var showSplash = true
 
     var body: some View {
         @Bindable var flow = flow
         ZStack {
             Group {
-                if ScreenshotPreview.screen == "write" {
-                    RitualView(onClose: {})
-                } else if ScreenshotPreview.screen == "affirmations" {
-                    NavigationStack { AffirmationReaderScreen() }
-                } else if ScreenshotPreview.screen == "affirmation-reader" {
-                    NavigationStack { AffirmationReaderScreen() }
-                } else if !onboarded && !ScreenshotPreview.enabled {
+                if !onboarded {
                     OnboardingView(onFinish: { onboarded = true })
                 } else {
                     MainTabView()

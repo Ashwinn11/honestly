@@ -76,6 +76,7 @@ struct EditorToolbar: View {
             toolbarButton(icon: "keyboard.chevron.compact.down") { onDismissKeyboard() }
                 .padding(.trailing, 12)
         }
+        .capWidth(Metrics.maxContentWidth)
         .sheet(isPresented: $showTextSheet, onDismiss: onFormattingClosed) {
             TextFormattingSheet(
                 text: $text,
@@ -225,6 +226,7 @@ struct EditorToolbar: View {
 
     private func toolbarButton(icon: String, action: @escaping () -> Void) -> some View {
         Button(action: action) { toolbarIcon(icon) }
+            .accessibilityIdentifier("editor.toolbar.\(icon)")
             .buttonStyle(PressableStyle())
     }
 

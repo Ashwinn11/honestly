@@ -13,12 +13,9 @@ struct RitualView: View {
     // sheet, opened by tapping the mood icon on the journal page itself. Affirmations aren't
     // written here anymore either: the celebration shows the day's line from the picked rotation.
     @State private var step = 0
-    @State private var mood: Int? = ScreenshotPreview.screen == "write" ? 0 : nil
+    @State private var mood: Int? = nil
     @State private var showMoodSheet = false
-    @State private var richText = ScreenshotPreview.screen == "write"
-        ? NSAttributedString(string: ScreenshotPreview.journal,
-                             attributes: [.font: UIFont(name: "Manrope-Medium", size: 17) ?? .systemFont(ofSize: 17)])
-        : NSAttributedString()
+    @State private var richText = NSAttributedString()
     @State private var selectedRange = NSRange(location: 0, length: 0)
     @State private var tags: [String] = []
     @State private var showTagsSheet = false
@@ -69,8 +66,7 @@ struct RitualView: View {
                 .safeAreaInset(edge: .bottom) {
                     // While the editor has focus, the footer becomes the formatting toolbar instead
                     // of the step CTA — same slot, same pattern as the rest of the ritual's chrome.
-                    // The toolbar itself runs edge-to-edge (no horizontal margin) so its scrollable
-                    // row gets full width; the CTA button keeps the page's usual side margin.
+                    // The toolbar follows the page width; the CTA keeps the usual side margin.
                     VStack(spacing: 0) {
                         if journalFocused || showFormattingSheet {
                             EditorToolbar(
@@ -278,7 +274,7 @@ struct RitualView: View {
     /// The page opens ready to write — keyboard up, caret blinking — unless the first-time tips
     /// are about to show; then it's ready the moment they're done.
     private func startTipsIfNeeded() {
-        guard ScreenshotPreview.screen == nil, coachStep == nil else { return }
+        guard coachStep == nil else { return }
         Task {
             try? await Task.sleep(for: .seconds(tipsSeen ? 0.35 : 0.5))   // let the cover finish presenting
             if tipsSeen {
@@ -320,7 +316,8 @@ struct RitualView: View {
         VStack(alignment: .leading, spacing: 0) {
             RichTextEditor(attributedText: $richText,
                            selectedRange: $selectedRange, placeholder: "",
-                           keyboardAllowed: !editorSheetPresented)
+                           keyboardAllowed: !editorSheetPresented,
+                           minimumHeight: max(220, minHeight - 110))
                 .focused($journalFocused)
                 // See the matching comment in EntryEditorView.swift — `.frame(minHeight:)`
                 // defaults to center alignment, which would sit the first line mid-box. The floor

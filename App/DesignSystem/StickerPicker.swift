@@ -66,6 +66,7 @@ struct StickerPicker: View {
                                     if categoryLocked { PremiumLockBadge() }
                                 }
                         }
+                        .accessibilityIdentifier("sticker.\(code)")
                         .buttonStyle(PressableStyle(scale: 0.85))
                     }
                 }

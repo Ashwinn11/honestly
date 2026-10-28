@@ -9,6 +9,7 @@ struct BigWinsWidgetView: View {
         switch family {
         case .systemSmall: return 15
         case .systemLarge: return 26
+        case .systemExtraLarge: return 34
         default: return 19
         }
     }
@@ -17,6 +18,7 @@ struct BigWinsWidgetView: View {
         switch family {
         case .systemSmall: return 6
         case .systemLarge: return 8
+        case .systemExtraLarge: return 8
         default: return 4
         }
     }
@@ -25,6 +27,7 @@ struct BigWinsWidgetView: View {
         switch family {
         case .systemSmall: return 14
         case .systemLarge: return 24
+        case .systemExtraLarge: return 30
         default: return 18
         }
     }
@@ -33,6 +36,7 @@ struct BigWinsWidgetView: View {
         switch family {
         case .systemSmall: return 4
         case .systemLarge: return 2
+        case .systemExtraLarge: return 6
         default: return 5
         }
     }
@@ -41,6 +45,7 @@ struct BigWinsWidgetView: View {
         switch family {
         case .systemSmall: return 34
         case .systemLarge: return 60
+        case .systemExtraLarge: return 72
         default: return 46
         }
     }
@@ -317,6 +322,6 @@ struct BigWinsWidget: Widget {
         }
         .configurationDisplayName("Today's affirmation")
         .description("See today's affirmation right on your Home Screen.")
-        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
+        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge, .systemExtraLarge])
     }
 }

@@ -3,8 +3,31 @@ import UIKit
 import UniformTypeIdentifiers
 
 /// Prevent UIKit menu focus restoration from reopening the journal keyboard behind a sheet.
-private final class JournalTextView: UITextView {
+final class JournalTextView: UITextView {
     var keyboardAllowed = true
+    weak var attachmentTap: UITapGestureRecognizer?
+    var attachmentAtPoint: ((CGPoint) -> Bool)?
+    var windowChanged: ((UIWindow?) -> Void)?
+    override func didMoveToWindow() {
+        super.didMoveToWindow()
+        windowChanged?(window)
+    }
+
+    // UIKit's selection recognizers must not compete with attachment controls. Keep native
+    // selection everywhere else, including text on either side of a floating attachment.
+    override func gestureRecognizerShouldBegin(_ gestureRecognizer: UIGestureRecognizer) -> Bool {
+        if gestureRecognizer !== attachmentTap, !(gestureRecognizer is UIPanGestureRecognizer) {
+            let point = gestureRecognizer.location(in: self)
+            if attachmentAtPoint?(point) == true { return false }
+            var hit = hitTest(point, with: nil)
+            while let view = hit, view !== self {
+                if view is AttachmentEditBar { return false }
+                hit = view.superview
+            }
+        }
+        return super.gestureRecognizerShouldBegin(gestureRecognizer)
+    }
+
     override var canBecomeFirstResponder: Bool { keyboardAllowed && super.canBecomeFirstResponder }
 }
 
@@ -25,6 +48,7 @@ struct RichTextEditor: UIViewRepresentable {
     @Binding var selectedRange: NSRange
     var placeholder: String = ""
     var keyboardAllowed = true
+    var minimumHeight: CGFloat = 0
 
     static let defaultFont: UIFont =
         UIFont(name: "Manrope-Regular", size: DesignScale.s(16)) ?? .systemFont(ofSize: DesignScale.s(16))
@@ -44,7 +68,7 @@ struct RichTextEditor: UIViewRepresentable {
     }
 
     func makeUIView(context: Context) -> UITextView {
-        let tv = JournalTextView()
+        let tv = JournalTextView(usingTextLayoutManager: false)
         tv.keyboardAllowed = keyboardAllowed
         tv.backgroundColor = .clear
         tv.isOpaque = false
@@ -63,16 +87,23 @@ struct RichTextEditor: UIViewRepresentable {
         // everything below it to the bottom of the screen regardless of how much was written.
         tv.isScrollEnabled = false
 
-        // Attachment tap-to-edit (✕ / resize bar) — fires alongside the text view's own tap
-        // handling (caret placement), so it must not cancel or exclude it.
+        // Attachment taps own the gesture; normal text taps retain UIKit selection behavior.
         tv.delaysContentTouches = false  // UITextView is a scroll view — without this it delays
         // touches to subviews, causing the attachment edit bar's UIButtons to fire unreliably.
 
         let tap = UITapGestureRecognizer(target: context.coordinator,
                                          action: #selector(Coordinator.handleAttachmentTap(_:)))
-        tap.cancelsTouchesInView = false
+        tap.cancelsTouchesInView = true
         tap.delegate = context.coordinator
         tv.addGestureRecognizer(tap)
+        tv.attachmentTap = tap
+        tv.windowChanged = { [weak coordinator = context.coordinator] window in
+            coordinator?.installDismissObserver(in: window)
+        }
+        tv.attachmentAtPoint = { [weak coordinator = context.coordinator, weak tv] point in
+            guard let coordinator, let tv else { return false }
+            return coordinator.attachmentFlow.attachmentIndex(at: point, in: tv) != nil
+        }
 
         let label = UILabel()
         // Not SwiftUI here, so `Text(loc:)` doesn't apply — do the String Catalog lookup directly
@@ -115,8 +146,12 @@ struct RichTextEditor: UIViewRepresentable {
         // directly with an equality guard preserves the undo stack and avoids the re-layout flash
         // that causes line-overlap visual artefacts.
         let contentWidth = uiView.bounds.width - uiView.textContainerInset.left - uiView.textContainerInset.right
-        let prepared = RichTextFormatting.scaleAttachments(in: attributedText, toFitWidth: contentWidth)
-        if uiView.attributedText != prepared {
+        let prepared = context.coordinator.attachmentFlow.presentationText(from: attributedText,
+                                                                            width: max(1, contentWidth))
+        let preservesActiveTyping = context.coordinator.preserveLiveTextStorageForNextUpdate
+            && uiView.text == prepared.string
+        context.coordinator.preserveLiveTextStorageForNextUpdate = false
+        if !preservesActiveTyping && uiView.attributedText != prepared {
             uiView.textStorage.beginEditing()
             uiView.textStorage.setAttributedString(prepared)
             uiView.textStorage.endEditing()
@@ -136,6 +171,7 @@ struct RichTextEditor: UIViewRepresentable {
 
         context.coordinator.textView = uiView
         context.coordinator.updateTypingAttributes(in: uiView, selection: uiView.selectedRange)
+        context.coordinator.attachmentFlow.update(in: uiView, contentWidth: max(1, contentWidth))
 
         context.coordinator.textDidChangeExternally(uiView)
     }
@@ -157,7 +193,8 @@ struct RichTextEditor: UIViewRepresentable {
     func sizeThatFits(_ proposal: ProposedViewSize, uiView: UITextView, context: Context) -> CGSize? {
         guard let width = proposal.width, width.isFinite, width > 0 else { return nil }
         let contentWidth = width - uiView.textContainerInset.left - uiView.textContainerInset.right
-        let prepared = RichTextFormatting.scaleAttachments(in: attributedText, toFitWidth: contentWidth)
+        let prepared = context.coordinator.attachmentFlow.presentationText(from: attributedText,
+                                                                            width: contentWidth)
         if uiView.attributedText != prepared {
             // Suppress the delegate's binding write-back — mutating `@Binding attributedText`
             // synchronously from inside a layout/measurement callback is undefined behavior in
@@ -174,8 +211,9 @@ struct RichTextEditor: UIViewRepresentable {
             uiView.selectedRange = NSRange(location: clampedLocation, length: clampedLength)
             context.coordinator.isApplyingSwiftUIUpdate = false
         }
+        context.coordinator.attachmentFlow.update(in: uiView, contentWidth: contentWidth)
         let fitted = uiView.sizeThatFits(CGSize(width: width, height: .greatestFiniteMagnitude))
-        return CGSize(width: width, height: fitted.height)
+        return CGSize(width: width, height: max(minimumHeight, fitted.height, context.coordinator.attachmentFlow.requiredHeight(in: uiView)))
     }
 
     func makeCoordinator() -> Coordinator { Coordinator(self) }
@@ -183,10 +221,33 @@ struct RichTextEditor: UIViewRepresentable {
     final class Coordinator: NSObject, UITextViewDelegate, UIGestureRecognizerDelegate {
         var parent: RichTextEditor
         var isApplyingSwiftUIUpdate = false
+        var preserveLiveTextStorageForNextUpdate = false
         weak var placeholderLabel: UILabel?
         weak var textView: UITextView?
         var defaultAttributes: [NSAttributedString.Key: Any] = RichTextEditor.defaultAttributes
         private let attachmentEditor = AttachmentEditController()
+        private var isApplyingAttachmentEdit = false
+        private var dismissObserver: UITapGestureRecognizer?
+
+        func installDismissObserver(in window: UIWindow?) {
+            guard dismissObserver?.view !== window else { return }
+            dismissObserver?.view?.removeGestureRecognizer(dismissObserver!)
+            dismissObserver = nil
+            guard let window else { return }
+            let observer = UITapGestureRecognizer(target: self, action: #selector(dismissAttachmentControls))
+            observer.cancelsTouchesInView = false
+            observer.delegate = self
+            window.addGestureRecognizer(observer)
+            dismissObserver = observer
+        }
+
+        @objc private func dismissAttachmentControls() { attachmentEditor.dismiss() }
+
+        deinit {
+            if let dismissObserver { dismissObserver.view?.removeGestureRecognizer(dismissObserver) }
+            NotificationCenter.default.removeObserver(self)
+        }
+        let attachmentFlow = FloatingAttachmentFlow()
         
         init(_ parent: RichTextEditor) {
             self.parent = parent
@@ -201,14 +262,44 @@ struct RichTextEditor: UIViewRepresentable {
         /// Applies `newText` via textStorage directly (not the SwiftUI binding) — preserves the
         /// caret/selection and avoids the full re-layout flash that comes from resetting
         /// `attributedText` through its property setter.
-        func applyToStorage(_ newText: NSAttributedString) {
+        func applyToStorage(_ newText: NSAttributedString, restoringSelection: NSRange? = nil) {
             guard let tv = textView else { return }
             let old = NSAttributedString(attributedString: tv.textStorage)
-            guard newText != old else { return }
+            let width = max(1, tv.bounds.width - tv.textContainerInset.left - tv.textContainerInset.right)
+            let prepared = attachmentFlow.presentationText(from: newText, width: width)
+            guard prepared != old else { return }
+            let oldSelection = tv.selectedRange
+            let saved = attachmentFlow.persistedText(from: old)
+            let history = tv.undoManager
+            let selection = restoringSelection ?? Self.selectionAfterReplacing(old.string, with: prepared.string, selection: oldSelection)
             tv.textStorage.beginEditing()
-            tv.textStorage.setAttributedString(newText)
+            tv.textStorage.setAttributedString(prepared)
             tv.textStorage.endEditing()
+            tv.selectedRange = selection
+            parent.selectedRange = selection
+            attachmentFlow.update(in: tv, contentWidth: width)
             textViewDidChange(tv)
+            history?.registerUndo(withTarget: self) { coordinator in
+                coordinator.applyToStorage(saved, restoringSelection: oldSelection)
+            }
+        }
+
+        /// Keep the caret attached to its text when an attachment before it is deleted.
+        static func selectionAfterReplacing(_ old: String, with new: String, selection: NSRange) -> NSRange {
+            let before = Array(old.utf16), after = Array(new.utf16)
+            var prefix = 0
+            while prefix < min(before.count, after.count), before[prefix] == after[prefix] { prefix += 1 }
+            var suffix = 0
+            while suffix < min(before.count, after.count) - prefix,
+                  before[before.count - suffix - 1] == after[after.count - suffix - 1] { suffix += 1 }
+            let oldEnd = before.count - suffix, newEnd = after.count - suffix
+            func mapped(_ offset: Int) -> Int {
+                if offset <= prefix { return min(offset, after.count) }
+                if offset >= oldEnd { return min(after.count, max(0, offset + after.count - before.count)) }
+                return newEnd
+            }
+            let start = mapped(selection.location), end = mapped(NSMaxRange(selection))
+            return NSRange(location: start, length: max(0, end - start))
         }
 
         @objc private func handleFormatToStorage(_ notification: Notification) {
@@ -268,16 +359,24 @@ struct RichTextEditor: UIViewRepresentable {
         }
 
         func textViewDidChange(_ textView: UITextView) {
-            attachmentEditor.dismiss()   // any text mutation can shift attachment indexes
+            if !isApplyingAttachmentEdit { attachmentEditor.dismiss() }
             placeholderLabel?.isHidden = !(textView.text ?? "").isEmpty
+            attachmentFlow.update(in: textView)
             guard !isApplyingSwiftUIUpdate else { return }
-            let attributedText = NSAttributedString(attributedString: textView.attributedText ?? NSAttributedString())
+            preserveLiveTextStorageForNextUpdate = true
+            // Text and selection can change in the same UIKit edit. Publish the live caret with
+            // the text so SwiftUI's next updateUIView pass cannot restore a stale range midway
+            // through a rapid multi-character input sequence.
+            let liveSelection = textView.selectedRange
+            if parent.selectedRange != liveSelection { parent.selectedRange = liveSelection }
+            let attributedText = attachmentFlow.persistedText(from: textView.attributedText ?? NSAttributedString())
             guard parent.attributedText != attributedText else { return }
             parent.attributedText = attributedText
         }
 
         func textViewDidChangeSelection(_ textView: UITextView) {
             guard !isApplyingSwiftUIUpdate else { return }
+            if !isApplyingAttachmentEdit { attachmentEditor.dismiss() }
             let selectedRange = textView.selectedRange
             updateTypingAttributes(in: textView, selection: selectedRange)
             guard parent.selectedRange != selectedRange else { return }
@@ -295,26 +394,39 @@ struct RichTextEditor: UIViewRepresentable {
         // notes-style editor.
         func textView(_ textView: UITextView, shouldChangeTextIn range: NSRange,
                       replacementText text: String) -> Bool {
-            // Typing (or pasting) with the caret touching an attachment on either side — right
-            // after one, or right before one: UIKit derives *this* keystroke's attributes itself
-            // (from whichever neighboring run it picks, which can be the attachment) rather than
-            // from `typingAttributes`, so the fix in `updateTypingAttributes` never gets a chance
-            // to apply — the attachment has no font/color, and the character lands in the system
-            // default. Insert it ourselves with the walked-back attributes instead; every
-            // character after this one lands on real text and self-corrects normally.
-            let storage = textView.textStorage
-            let touchesAttachment = (range.location > 0
-                && storage.attribute(.attachment, at: range.location - 1, effectiveRange: nil) != nil)
-                || (range.location < storage.length
-                && storage.attribute(.attachment, at: range.location, effectiveRange: nil) != nil)
-            if !text.isEmpty, touchesAttachment {
-                let attributes = attributesSkippingAttachments(before: range.location, in: textView)
-                let insertion = NSAttributedString(string: text, attributes: attributes)
-                textView.textStorage.replaceCharacters(in: range, with: insertion)
-                textView.selectedRange = NSRange(location: range.location + insertion.length, length: 0)
-                textView.typingAttributes = attributes
-                textViewDidChange(textView)
-                return false
+            // Let UIKit handle ordinary typing, spaces, return, paste, and marked text near
+            // attachments. The selection callback already removes attachment attributes from
+            // typingAttributes, so native input can preserve its normal caret and undo behavior.
+            // TextKit collapses ordinary whitespace at the beginning of a wrapped line beside
+            // a floating attachment. Keep typed spaces visible there using nonbreaking spaces, and sync
+            // the selection binding in the same update so consecutive taps advance the caret.
+            if text == " ", range.length == 0, range.location > 0,
+               range.location < textView.textStorage.length,
+               !textView.textContainer.exclusionPaths.isEmpty {
+                let string = textView.textStorage.string as NSString
+                var whitespaceStart = range.location
+                while whitespaceStart > 0 {
+                    let previous = string.substring(with: NSRange(location: whitespaceStart - 1, length: 1))
+                    guard previous == " " || previous == "\u{00A0}" || previous == "\u{2002}" else { break }
+                    whitespaceStart -= 1
+                }
+                if whitespaceStart > 0 {
+                    let layoutManager = textView.layoutManager
+                    let previousGlyph = layoutManager.glyphIndexForCharacter(at: whitespaceStart - 1)
+                    let currentGlyph = layoutManager.glyphIndexForCharacter(at: range.location)
+                    if previousGlyph < layoutManager.numberOfGlyphs, currentGlyph < layoutManager.numberOfGlyphs {
+                        let previousLine = layoutManager.lineFragmentRect(forGlyphAt: previousGlyph, effectiveRange: nil)
+                        let currentLine = layoutManager.lineFragmentRect(forGlyphAt: currentGlyph, effectiveRange: nil)
+                        if abs(previousLine.minY - currentLine.minY) > 0.5 {
+                            textView.textStorage.replaceCharacters(in: range, with: "\u{00A0}")
+                            let caret = NSRange(location: range.location + 1, length: 0)
+                            textView.selectedRange = caret
+                            parent.selectedRange = caret
+                            textViewDidChange(textView)
+                            return false
+                        }
+                    }
+                }
             }
             guard text == "\n" else { return true }
             let ns = textView.text as NSString
@@ -342,14 +454,25 @@ struct RichTextEditor: UIViewRepresentable {
         // MARK: Attachment tap-to-edit
         @objc func handleAttachmentTap(_ gesture: UITapGestureRecognizer) {
             guard let tv = gesture.view as? UITextView else { return }
-            attachmentEditor.handleTap(at: gesture.location(in: tv), in: tv) { [weak self] newText in
+            for interaction in tv.interactions {
+                (interaction as? UIEditMenuInteraction)?.dismissMenu()
+            }
+            attachmentEditor.handleTap(at: gesture.location(in: tv), in: tv,
+                                       floatingFrameForAttachment: { [weak self] index in
+                self?.attachmentFlow.frame(forAttachmentAt: index)
+            }) { [weak self] newText in
                 guard let self else { return }
+                self.isApplyingAttachmentEdit = true
                 self.applyToStorage(newText)
+                self.isApplyingAttachmentEdit = false
+                if let tv = self.textView { self.attachmentEditor.textDidChangeExternally(in: tv) }
             }
         }
 
         func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
-                               shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool { true }
+                               shouldRecognizeSimultaneouslyWith other: UIGestureRecognizer) -> Bool {
+            gestureRecognizer === dismissObserver || other === dismissObserver
+        }
 
         func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer,
                                shouldReceive touch: UITouch) -> Bool {
@@ -360,7 +483,15 @@ struct RichTextEditor: UIViewRepresentable {
                 }
                 current = view.superview
             }
-            return true
+            guard let tv = textView else { return false }
+            let point = touch.location(in: tv)
+            let onAttachment = tv.bounds.contains(point) && attachmentFlow.attachmentIndex(at: point, in: tv) != nil
+            if gestureRecognizer === dismissObserver {
+                if !onAttachment { attachmentEditor.dismiss() }
+                return false
+            }
+            if !onAttachment { attachmentEditor.dismiss() }
+            return onAttachment
         }
     }
 }
@@ -572,10 +703,37 @@ enum RichTextFormatting {
 
     enum AttachmentKind { case photo, sticker }
 
+    enum AttachmentAlignment: String, CaseIterable { case left, center, right }
+
+    static func attachmentAlignment(_ attachment: NSTextAttachment) -> AttachmentAlignment {
+        let source = (attachment as? FloatingAttachmentProxy)?.source ?? attachment
+        let name = source.fileWrapper?.preferredFilename ?? ""
+        return AttachmentAlignment.allCases.first { name.contains("_\($0.rawValue).") } ?? .left
+    }
+
+    static func setAttachmentAlignment(_ alignment: AttachmentAlignment, at index: Int, in text: NSAttributedString) -> NSAttributedString {
+        guard let (attachment, _) = attachment(at: index, in: text), let data = attachmentData(attachment) else { return text }
+        let fresh = makeAttachment(data: data, type: kind(of: attachment) == .sticker ? .png : .jpeg,
+                                   bounds: CGRect(origin: .zero, size: displaySize(of: attachment)), alignment: alignment)
+        let mutable = NSMutableAttributedString(attributedString: text)
+        mutable.addAttribute(.attachment, value: fresh, range: NSRange(location: index, length: 1))
+        return mutable
+    }
+
     static let minimizedImageWidth: CGFloat = 120
     static let stickerSides: [CGFloat] = [56, 84, 112, 140]
 
+    static func displaySize(of attachment: NSTextAttachment) -> CGSize {
+        let attachment = (attachment as? FloatingAttachmentProxy)?.source ?? attachment
+        return attachment.bounds.width > 0 ? attachment.bounds.size : (recoveredSize(of: attachment) ?? attachmentImage(attachment)?.size ?? .zero)
+    }
+
+    static func isFloating(_ attachment: NSTextAttachment, containerWidth: CGFloat) -> Bool {
+        kind(of: attachment) == .sticker || displaySize(of: attachment).width <= DesignScale.s(150)
+    }
+
     static func kind(of attachment: NSTextAttachment) -> AttachmentKind {
+        let attachment = (attachment as? FloatingAttachmentProxy)?.source ?? attachment
         let isPNG: Bool = {
             guard let data = attachmentData(attachment), data.count > 1 else { return false }
             return data[data.startIndex] == 0x89 && data[data.startIndex + 1] == 0x50
@@ -585,12 +743,14 @@ enum RichTextFormatting {
     }
 
     static func attachmentData(_ attachment: NSTextAttachment) -> Data? {
-        attachment.fileWrapper?.regularFileContents ?? attachment.contents
+        let attachment = (attachment as? FloatingAttachmentProxy)?.source ?? attachment
+        return attachment.fileWrapper?.regularFileContents ?? attachment.contents
     }
 
     /// Extracts a `UIImage` regardless of whether the attachment was built in-memory or decoded
     /// from RTFD (image lives in the file wrapper).
     static func attachmentImage(_ attachment: NSTextAttachment) -> UIImage? {
+        let attachment = (attachment as? FloatingAttachmentProxy)?.source ?? attachment
         if let image = attachment.image { return image }
         return attachmentData(attachment).flatMap { UIImage(data: $0) }
     }
@@ -625,7 +785,7 @@ enum RichTextFormatting {
         guard let name = attachment.fileWrapper?.preferredFilename, name.hasPrefix("att_") else { return nil }
         let core = name.dropFirst("att_".count)
         let withoutExtension = core.split(separator: ".").first ?? core[...]
-        let parts = withoutExtension.split(separator: "x")
+        let parts = withoutExtension.split(separator: "_")[0].split(separator: "x")
         guard parts.count == 2, let w = Double(parts[0]), let h = Double(parts[1]) else { return nil }
         return CGSize(width: w, height: h)
     }
@@ -635,11 +795,11 @@ enum RichTextFormatting {
     /// RTFD writer auto-generates its own generically-named wrapper from those at encode time
     /// ("Attachment.png"), ignoring any rename attempted after the fact. Supplying the wrapper
     /// ourselves up front is what makes the writer preserve *our* filename.
-    private static func makeAttachment(data: Data, type: UTType, bounds: CGRect) -> NSTextAttachment {
+    private static func makeAttachment(data: Data, type: UTType, bounds: CGRect, alignment: AttachmentAlignment = .left) -> NSTextAttachment {
         let attachment = NSTextAttachment()
         attachment.fileType = type.identifier
         let wrapper = FileWrapper(regularFileWithContents: data)
-        wrapper.preferredFilename = sizedFilename(width: bounds.width, height: bounds.height, type: type)
+        wrapper.preferredFilename = sizedFilename(width: bounds.width, height: bounds.height, type: type).replacingOccurrences(of: ".", with: "_\(alignment.rawValue).")
         attachment.fileWrapper = wrapper
         attachment.bounds = bounds
         return attachment
@@ -722,7 +882,7 @@ enum RichTextFormatting {
     }
 
     static func isFullSize(_ attachment: NSTextAttachment, containerWidth: CGFloat) -> Bool {
-        attachment.bounds.width >= containerWidth - DesignScale.s(24)
+        displaySize(of: attachment).width > DesignScale.s(150)
     }
 
     /// The image's two display states: full (container width) ↔ minimized (small thumbnail that
@@ -741,7 +901,7 @@ enum RichTextFormatting {
     /// Sticker size button: steps up through the preset sides, wrapping back to the smallest.
     static func cycleStickerSize(at index: Int, in text: NSAttributedString) -> NSAttributedString {
         guard let (attachment, image) = attachment(at: index, in: text) else { return text }
-        let currentSide = max(attachment.bounds.width, attachment.bounds.height)
+        let currentSide = max(displaySize(of: attachment).width, displaySize(of: attachment).height)
         let scaled = stickerSides.map { DesignScale.s($0) }
         let nextIndex = (scaled.firstIndex { $0 > currentSide + 1 } ?? 0)
         return replacingAttachment(at: index, in: text,
@@ -788,10 +948,11 @@ enum RichTextFormatting {
               let attachment = text.attribute(.attachment, at: index, effectiveRange: nil) as? NSTextAttachment,
               let data = attachmentData(attachment) else { return text }
         let isSticker = kind(of: attachment) == .sticker
-        let fresh = makeAttachment(data: data, type: isSticker ? .png : .jpeg, bounds: bounds)
+        let fresh = makeAttachment(data: data, type: isSticker ? .png : .jpeg, bounds: bounds, alignment: attachmentAlignment(attachment))
         let mutable = NSMutableAttributedString(attributedString: text)
-        mutable.replaceCharacters(in: NSRange(location: index, length: 1),
-                                  with: NSAttributedString(attachment: fresh))
+        // Keep font/paragraph/color attributes when resizing, so subsequent typing and
+        // mixed-font line metrics remain identical to the surrounding text.
+        mutable.addAttribute(.attachment, value: fresh, range: NSRange(location: index, length: 1))
         return mutable
     }
 
@@ -828,19 +989,20 @@ enum RichTextFormatting {
 
                 let data = attachmentData(attachment) ?? Data()
                 let fresh = makeAttachment(data: data, type: .png,
-                                           bounds: CGRect(x: 0, y: 0, width: newWidth, height: newHeight))
+                                           bounds: CGRect(x: 0, y: 0, width: newWidth, height: newHeight), alignment: attachmentAlignment(attachment))
                 mutable.addAttribute(.attachment, value: fresh, range: range)
                 changed = true
-            } else if currentWidth > targetWidth - 4 {
-                // Scale overflowing photo/doodle/sticker to container width
-                let availableWidth = targetWidth - 4
+            } else if (!isSticker && currentWidth > DesignScale.s(150) && abs(currentWidth - targetWidth) > 0.5) || currentWidth > targetWidth {
+                // Full-size photos/doodles fill the writing column on every device, including
+                // when the source image is narrower. Small attachments retain their chosen size.
+                let availableWidth = targetWidth
                 let scale = availableWidth / currentWidth
                 let newWidth = availableWidth
                 let newHeight = currentHeight * scale
 
                 let data = attachmentData(attachment) ?? Data()
                 let fresh = makeAttachment(data: data, type: isSticker ? .png : .jpeg,
-                                           bounds: CGRect(x: 0, y: 0, width: newWidth, height: newHeight))
+                                           bounds: CGRect(x: 0, y: 0, width: newWidth, height: newHeight), alignment: attachmentAlignment(attachment))
                 mutable.addAttribute(.attachment, value: fresh, range: range)
                 changed = true
             } else if originalBounds.width == 0 || originalBounds.height == 0 {
@@ -849,7 +1011,7 @@ enum RichTextFormatting {
                 // keeps surviving future round-trips too.
                 let data = attachmentData(attachment) ?? Data()
                 let fresh = makeAttachment(data: data, type: isSticker ? .png : .jpeg,
-                                           bounds: CGRect(x: 0, y: 0, width: currentWidth, height: currentHeight))
+                                           bounds: CGRect(x: 0, y: 0, width: currentWidth, height: currentHeight), alignment: attachmentAlignment(attachment))
                 mutable.addAttribute(.attachment, value: fresh, range: range)
                 changed = true
             }

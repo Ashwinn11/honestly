@@ -6,7 +6,7 @@ enum AppConfig {
     static let appStoreID          = "6759817879"   // Honestly on the App Store — used for the review deep link
 
     // RevenueCat — replace with the real public SDK key before shipping.
-    static let revenueCatAPIKey    = "appl_zRRSBwyTqHGTNBJtwyKyrDifAdI"
+    static let revenueCatAPIKey    = "test_dKMMvIxKaUMZklmdVFugqpnknFW" // "appl_zRRSBwyTqHGTNBJtwyKyrDifAdI"
     static let entitlementID       = "premium"
     static let lifetimePackageID   = "$rc_lifetime"
     static let monthlyPackageID    = "$rc_monthly"

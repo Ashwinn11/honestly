@@ -6,7 +6,7 @@ import RevenueCat
 @MainActor
 @Observable
 final class PremiumManager {
-    private(set) var isPremium = ScreenshotPreview.enabled || SharedState.premiumActive
+    private(set) var isPremium = SharedState.premiumActive
     private(set) var isLifetime = SharedState.premiumLifetime
     private(set) var offerings: Offerings?
     var errorMessage: String?
@@ -18,7 +18,7 @@ final class PremiumManager {
     }
 
     func configure() {
-        guard !configured, !ScreenshotPreview.enabled else { return }
+        guard !configured else { return }
         configured = true
         Purchases.logLevel = .warn
         Purchases.configure(withAPIKey: AppConfig.revenueCatAPIKey)

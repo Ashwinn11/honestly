@@ -30,34 +30,15 @@ struct HonestlyApp: App {
         // `cloudKitDatabase` defaults to `.automatic` when omitted — it must be passed as `.none`
         // explicitly, or the store silently mirrors to CloudKit anyway.
         // Degrade gracefully: disk → in-memory. No force-try.
+        let disk = ModelConfiguration(groupContainer: .identifier(AppConfig.appGroupID), cloudKitDatabase: .none)
         let memory = ModelConfiguration(isStoredInMemoryOnly: true, groupContainer: .none, cloudKitDatabase: .none)
-        let disk = ScreenshotPreview.enabled ? memory
-            : ModelConfiguration(groupContainer: .identifier(AppConfig.appGroupID), cloudKitDatabase: .none)
-        let made = (try? ModelContainer(for: JournalEntry.self, configurations: ScreenshotPreview.enabled ? memory : disk))
+        let made = (try? ModelContainer(for: JournalEntry.self, configurations: disk))
             ?? (try? ModelContainer(for: JournalEntry.self, configurations: memory))
 
         guard let made else {
             // Unreachable in practice (an in-memory store cannot fail to initialize); a clear
             // message beats a bare `try!` if the impossible ever happens.
             fatalError("Honestly could not initialize any data store.")
-        }
-        if ScreenshotPreview.enabled {
-            let samples = [
-                "A little more present today. I took a walk without my headphones and noticed how quiet the street can be.",
-                "I don't have every answer yet, and that's okay. Today I can start with one small, kind thing.",
-                ScreenshotPreview.journal,
-                "A good conversation, a slow lunch, and a chapter before bed. There is a lot to be grateful for.",
-                "Some days ask for less. I'm learning to listen instead of pushing through."
-            ]
-            for offset in 1...18 {
-                let date = Calendar.current.date(byAdding: .day, value: -offset, to: Date())!
-                let text = samples[(offset - 1) % samples.count]
-                made.mainContext.insert(JournalEntry(content: text, affirmationsRaw: "",
-                    mood: Mood(rawValue: (offset - 1) % 5)!.storageKey,
-                    wordCount: JournalEntry.wordCount(of: text), createdAt: date,
-                    tags: offset % 2 == 0 ? ["small joys"] : ["morning thoughts"]))
-            }
-            try? made.mainContext.save()
         }
         container = made
         _store = State(initialValue: JournalStore(context: made.mainContext))
@@ -91,7 +72,6 @@ struct HonestlyApp: App {
                     flow.widgetAffirmationsPresented = true
                 }
                 .task {
-                    guard !ScreenshotPreview.enabled else { return }
                     premium.configure()
                     screenTime.refreshAuthStatus()
                     // `isPremium` starts from the cached entitlement — already correct at first frame,
@@ -126,7 +106,7 @@ struct HonestlyApp: App {
                     // foreground: `reload()` re-publishes `entries` (forcing date-computed views
                     // to re-evaluate) and `reconcile()` doubles as the fallback for the days iOS
                     // drops the 04:00 DeviceActivity callback entirely.
-                    guard phase == .active, !ScreenshotPreview.enabled else { return }
+                    guard phase == .active else { return }
                     Task { await premium.refresh() }
                     store.reload()
                     screenTime.refreshAuthStatus()

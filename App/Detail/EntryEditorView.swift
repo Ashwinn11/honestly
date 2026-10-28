@@ -56,7 +56,8 @@ struct EntryEditorView: View {
                     VStack(alignment: .leading, spacing: 0) {
                         RichTextEditor(attributedText: $richText,
                                        selectedRange: $selectedRange, placeholder: "Start writing…",
-                           keyboardAllowed: !editorSheetPresented)
+                           keyboardAllowed: !editorSheetPresented,
+                           minimumHeight: max(200, UIScreen.main.bounds.height * 0.6))
                             .focused($journalFocused)
                             // `.frame(minHeight:)` defaults to *center* alignment: when the editor
                             // is empty, `sizeThatFits` reports just the placeholder's one-line

@@ -44,10 +44,6 @@ struct ProfileView: View {
                 sectionEyebrow("About")
                 aboutCard
                 deleteCard.padding(.top, 16)
-                #if DEBUG
-                debugCard.padding(.top, 16)
-                #endif
-
                 // OpenMoji's CC BY-SA 4.0 license requires this credit to ship with the stickers.
                 Text("Stickers: OpenMoji.org · CC BY-SA 4.0")
                     .font(Fonts.ui(10.5, .semibold)).foregroundStyle(Palette.inkSofter)
@@ -108,24 +104,6 @@ struct ProfileView: View {
         }
         .softCard(padding: 0, radius: Radius.card)
     }
-
-    #if DEBUG
-    // MARK: Debug — not in release builds
-    private var debugCard: some View {
-        Button {
-            Haptics.success()
-            store.seedSampleYear()
-        } label: {
-            settingRow {
-                rowText("Debug: add 12 months of pages", "Add up to 10 sample pages per month")
-            } trailing: {
-                Image(systemName: "hammer.fill").foregroundStyle(Palette.inkSofter)
-            }
-        }
-        .buttonStyle(RowPressStyle())
-        .outlinedSurface(radius: Radius.card)
-    }
-    #endif
 
     // MARK: Hero
     private var heroCard: some View {

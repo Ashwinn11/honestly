@@ -71,10 +71,10 @@ struct PageDateStamp: View {
     let date: Date
 
     var body: some View {
-        let gap = DesignScale.s(7)
+        let gap = DesignScale.s(-5)
         let small = DesignScale.s(12)
         Text(verbatim: HDate.dayNumber(date))
-            .font(Fonts.display(58, .heavy))
+            .font(Fonts.display(44, .heavy))
             .tracking(-2)
             .foregroundStyle(Palette.ink)
             .fixedSize()

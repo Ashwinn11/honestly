@@ -14,11 +14,20 @@ final class AttachmentEditController {
     private weak var bar: UIView?
     private var attachmentIndex: Int?
     private var expectingRefresh = false
+    private weak var displayedAttachment: NSTextAttachment?
+    private var floatingFrameForAttachment: ((Int) -> CGRect?)?
     private var apply: ((NSAttributedString) -> Void)?
 
     func handleTap(at point: CGPoint, in textView: UITextView,
+                   floatingFrameForAttachment: @escaping (Int) -> CGRect? = { _ in nil },
                    apply: @escaping (NSAttributedString) -> Void) {
         self.apply = apply
+        self.floatingFrameForAttachment = floatingFrameForAttachment
+        var hit: Int?
+        textView.textStorage.enumerateAttribute(.attachment, in: NSRange(location: 0, length: textView.textStorage.length)) { value, range, _ in
+            if value is NSTextAttachment, floatingFrameForAttachment(range.location)?.contains(point) == true { hit = range.location }
+        }
+        if let hit { show(forAttachmentAt: hit, in: textView); return }
         var containerPoint = point
         containerPoint.x -= textView.textContainerInset.left
         containerPoint.y -= textView.textContainerInset.top
@@ -48,14 +57,16 @@ final class AttachmentEditController {
     /// invalidates the index, so the bar goes away.
     func textDidChangeExternally(in textView: UITextView) {
         guard bar != nil else { return }
-        guard expectingRefresh, let index = attachmentIndex else {
+        guard let index = attachmentIndex, index < textView.textStorage.length,
+              let current = textView.textStorage.attribute(.attachment, at: index, effectiveRange: nil) as? NSTextAttachment else {
             dismiss()
             return
         }
-        expectingRefresh = false
-        DispatchQueue.main.async { [weak self, weak textView] in
-            guard let self, let textView else { return }
-            self.show(forAttachmentAt: index, in: textView)
+        if expectingRefresh {
+            expectingRefresh = false
+            show(forAttachmentAt: index, in: textView)
+        } else if current !== displayedAttachment {
+            dismiss()
         }
     }
 
@@ -76,6 +87,11 @@ final class AttachmentEditController {
             resizeIcon: kind == .sticker
                 ? "arrow.up.left.and.arrow.down.right"
                 : (isFull ? "arrow.down.right.and.arrow.up.left" : "arrow.up.left.and.arrow.down.right"),
+            onAlign: { [weak self, weak textView] alignment in
+                guard let self, let textView else { return }
+                self.dismiss()
+                self.apply?(RichTextFormatting.setAttachmentAlignment(alignment, at: index, in: textView.attributedText))
+            },
             onDelete: { [weak self, weak textView] in
                 guard let self, let textView else { return }
                 Haptics.tap()
@@ -105,12 +121,15 @@ final class AttachmentEditController {
         if origin.y < 2 { origin.y = rect.minY + 6 }
         bar.frame = CGRect(origin: origin, size: size)
 
+        bar.layer.zPosition = 2
         textView.addSubview(bar)
         self.bar = bar
         self.attachmentIndex = index
+        self.displayedAttachment = attachment
     }
 
     private func attachmentRect(at index: Int, in textView: UITextView) -> CGRect {
+        if let frame = floatingFrameForAttachment?(index) { return frame }
         let layoutManager = textView.layoutManager
         let glyphRange = layoutManager.glyphRange(forCharacterRange: NSRange(location: index, length: 1),
                                                   actualCharacterRange: nil)
@@ -133,7 +152,7 @@ final class AttachmentEditBar: UIView {
     private static let spacing: CGFloat = 6
     private static let padding: CGFloat = 5
 
-    init(resizeIcon: String, onDelete: @escaping () -> Void, onResize: @escaping () -> Void) {
+    init(resizeIcon: String, onAlign: @escaping (RichTextFormatting.AttachmentAlignment) -> Void, onDelete: @escaping () -> Void, onResize: @escaping () -> Void) {
         super.init(frame: .zero)
         backgroundColor = UIColor(Palette.cream)
         layer.cornerRadius = 12
@@ -146,6 +165,9 @@ final class AttachmentEditBar: UIView {
         layer.shadowOffset = CGSize(width: 0, height: 4)
 
         let stack = UIStackView(arrangedSubviews: [
+            Self.tileButton(icon: "text.alignleft", action: { onAlign(.left) }),
+            Self.tileButton(icon: "text.aligncenter", action: { onAlign(.center) }),
+            Self.tileButton(icon: "text.alignright", action: { onAlign(.right) }),
             Self.tileButton(icon: resizeIcon, action: onResize),
             Self.tileButton(icon: "xmark", action: onDelete),
         ])
@@ -164,7 +186,7 @@ final class AttachmentEditBar: UIView {
     @available(*, unavailable) required init?(coder: NSCoder) { fatalError() }
 
     override var intrinsicContentSize: CGSize {
-        CGSize(width: Self.tile * 2 + Self.spacing + Self.padding * 2,
+        CGSize(width: Self.tile * 5 + Self.spacing * 4 + Self.padding * 2,
                height: Self.tile + Self.padding * 2)
     }
 
@@ -181,6 +203,7 @@ final class AttachmentEditBar: UIView {
         config.background.backgroundInsets = NSDirectionalEdgeInsets(top: inset, leading: inset,
                                                                      bottom: inset, trailing: inset)
         let button = UIButton(configuration: config, primaryAction: UIAction { _ in action() })
+        button.accessibilityIdentifier = "attachment.\(icon)"
         button.layer.cornerCurve = .continuous
         NSLayoutConstraint.activate([
             button.widthAnchor.constraint(equalToConstant: tile),

@@ -142,18 +142,22 @@ struct DoodleSheet: View {
     private func finish() {
         let drawing = canvasView.drawing
         guard !drawing.strokes.isEmpty else { return }
-        // Full canvas width (so the inserted block matches the page), cropped just below the
-        // lowest stroke so an almost-empty canvas doesn't insert a giant blank block.
-        let canvasBounds = canvasView.bounds
-        let height = min(canvasBounds.height, drawing.bounds.maxY + 32)
-        let rect = CGRect(x: 0, y: 0, width: canvasBounds.width, height: max(height, 120))
+        // PencilKit strokes can extend beyond the visible viewport after panning or zooming.
+        // Export every stroke rather than clipping the drawing to the current canvas height.
+        let bounds = drawing.bounds
+        let minX = min(0, bounds.minX - 16)
+        let minY = min(0, bounds.minY - 16)
+        let maxX = max(canvasView.bounds.width, bounds.maxX + 16)
+        let maxY = max(120, bounds.maxY + 32)
+        let rect = CGRect(x: minX, y: minY, width: maxX - minX, height: maxY - minY)
         let strokes = drawing.image(from: rect, scale: 2)
         let format = UIGraphicsImageRendererFormat.default()
         format.scale = 2
         let flattened = UIGraphicsImageRenderer(size: rect.size, format: format).image { context in
             UIColor(Palette.paper).setFill()
-            context.fill(rect)
-            strokes.draw(in: rect)
+            let outputRect = CGRect(origin: .zero, size: rect.size)
+            context.fill(outputRect)
+            strokes.draw(in: outputRect)
         }
         Haptics.success()
         onDone(flattened)

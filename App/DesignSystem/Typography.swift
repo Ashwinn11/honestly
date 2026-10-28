@@ -13,7 +13,7 @@ enum DesignScale {
 }
 
 enum Metrics {
-    static var maxContentWidth: CGFloat { DesignScale.s(430) }
+    static var maxContentWidth: CGFloat { UIDevice.current.userInterfaceIdiom == .pad ? 760 : DesignScale.s(430) }
     static let maxButtonWidth: CGFloat = 430
 
     /// The page's left/right margin — shared by every place that renders the journal "page"
