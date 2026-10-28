@@ -168,6 +168,15 @@ enum SharedState {
         set { defaults.set(newValue, forKey: "premium.lifetime") }
     }
 
+    /// Set once Premium is bought or restored on this install. RevenueCat also finds purchases
+    /// on the Apple ID by itself (a reinstall, a new phone); those don't unlock anything until
+    /// the person taps Restore purchases. The app group's defaults go with the app on delete, so
+    /// a fresh install always starts unclaimed.
+    static var premiumClaimed: Bool {
+        get { defaults.bool(forKey: "premium.claimed") }
+        set { defaults.set(newValue, forKey: "premium.claimed") }
+    }
+
     static var premiumActive: Bool {
         get {
             guard defaults.bool(forKey: Key.premiumActive) else { return false }

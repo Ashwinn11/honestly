@@ -12,6 +12,11 @@ final class PremiumManager {
     var errorMessage: String?
     private var configured = false
 
+    init() {
+        // Installs that were already Premium before claiming existed keep it without a restore.
+        if SharedState.premiumActive && !SharedState.premiumClaimed { SharedState.premiumClaimed = true }
+    }
+
     func configure() {
         guard !configured, !ScreenshotPreview.enabled else { return }
         configured = true
@@ -37,7 +42,9 @@ final class PremiumManager {
     }
 
     private func apply(_ info: CustomerInfo) {
-        isPremium = info.entitlements[AppConfig.entitlementID]?.isActive == true
+        // Only a purchase or restore made on this install unlocks Premium — an entitlement that
+        // RevenueCat merely finds on the Apple ID waits for Restore purchases (see `premiumClaimed`).
+        isPremium = SharedState.premiumClaimed && info.entitlements[AppConfig.entitlementID]?.isActive == true
         isLifetime = isPremium && info.entitlements[AppConfig.entitlementID]?.expirationDate == nil
         SharedState.premiumExpiration = info.entitlements[AppConfig.entitlementID]?.expirationDate
         SharedState.premiumLifetime = isLifetime
@@ -90,6 +97,7 @@ final class PremiumManager {
         do {
             let result = try await Purchases.shared.purchase(package: package)
             guard !result.userCancelled else { return false }
+            SharedState.premiumClaimed = true
             apply(result.customerInfo)
             if !isPremium {
                 errorMessage = L10n.localized("Your purchase hasn't unlocked Premium yet. Please try Restore purchases.")
@@ -105,7 +113,9 @@ final class PremiumManager {
     func restore() async -> Bool {
         errorMessage = nil
         do {
-            apply(try await Purchases.shared.restorePurchases())
+            let info = try await Purchases.shared.restorePurchases()
+            if info.entitlements[AppConfig.entitlementID]?.isActive == true { SharedState.premiumClaimed = true }
+            apply(info)
             if !isPremium {
                 errorMessage = L10n.localized("No active Premium purchase was found on this Apple ID.")
             }
