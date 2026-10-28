@@ -379,7 +379,7 @@ struct ClosingBookView: View {
 /// the page is written (0…1); `onWritten` fires once the last word is down. Reduce Motion lands
 /// on the open, written page straight away.
 struct BookWritingScene: View {
-    let heading: String?                // String Catalog key, the line at the top of the page
+    var mood = 0                        // the face in the page's header
     let lines: [String]                 // String Catalog keys, written one after another
     var pageWidth: CGFloat = 130
     var loops = false
@@ -395,9 +395,9 @@ struct BookWritingScene: View {
     @State private var typed = 0             // characters written so far, across all rows
     @State private var inkOpacity = 1.0
 
-    init(heading: String? = nil, lines: [String], pageWidth: CGFloat = 130, loops: Bool = false,
+    init(mood: Int = 0, lines: [String], pageWidth: CGFloat = 130, loops: Bool = false,
          onInk: @escaping (CGFloat) -> Void = { _ in }, onWritten: @escaping () -> Void = {}) {
-        self.heading = heading
+        self.mood = mood
         self.lines = lines
         self.pageWidth = pageWidth
         self.loops = loops
@@ -416,7 +416,14 @@ struct BookWritingScene: View {
     private var margin: CGFloat { w * 0.1 }
     private var fontSize: CGFloat { pageWidth * 0.078 }      // Fonts.ui scales this itself
     private var pitch: CGFloat { DesignScale.s(fontSize) * 1.95 }
-    private var textTop: CGFloat { h * (heading == nil ? 0.17 : 0.27) }
+    // The real page header, laid out at the real page's width and shrunk onto this page.
+    private var headerTop: CGFloat { h * 0.06 }
+    private var realColumn: CGFloat {
+        min(UIScreen.main.bounds.width, Metrics.maxContentWidth) - Metrics.pageHorizontalInset * 2
+    }
+    private var headerScale: CGFloat { (w - margin * 2) / realColumn }
+    private var headerHeight: CGFloat { DesignScale.s(98) * headerScale }   // the big day + its month line
+    private var textTop: CGFloat { headerTop + headerHeight + h * 0.04 }
 
     var body: some View {
         ZStack(alignment: .topLeading) {
@@ -452,7 +459,8 @@ struct BookWritingScene: View {
             .overlay(shape.strokeBorder(Palette.ink, lineWidth: 2))
     }
 
-    /// The right-hand page: heading, date, rules, and the words going down with the pencil.
+    /// The right-hand page: the same header as a real page, rules, and the words going down with
+    /// the pencil.
     private var page: some View {
         let shape = UnevenRoundedRectangle(topLeadingRadius: 2, bottomLeadingRadius: 2,
                                            bottomTrailingRadius: w * 0.04, topTrailingRadius: w * 0.04,
@@ -460,18 +468,11 @@ struct BookWritingScene: View {
         return ZStack(alignment: .topLeading) {
             PageThemeBackground(theme: .paper)
             rules
-            VStack(alignment: .leading, spacing: h * 0.02) {
-                if let heading {
-                    Text(verbatim: L10n.localized(heading))
-                        .font(Fonts.display(fontSize * 1.18, .heavy))
-                        .foregroundStyle(Palette.ink)
-                        .lineLimit(2).minimumScaleFactor(0.7)
-                }
-                Text(verbatim: HDate.monthDay(.now))
-                    .font(Fonts.ui(fontSize * 0.86, .heavy))
-                    .foregroundStyle(Palette.inkSoft)
-            }
-            .padding(.horizontal, margin).padding(.top, h * 0.07)
+            PageHeader(date: .now, mood: mood) { EmptyView() }
+                .frame(width: realColumn, alignment: .leading)
+                .scaleEffect(headerScale, anchor: .topLeading)
+                .frame(width: w - margin * 2, height: headerHeight, alignment: .topLeading)
+                .padding(.leading, margin).padding(.top, headerTop)
             writing
             pencil
         }

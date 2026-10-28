@@ -568,7 +568,7 @@ private struct MorningOutcomeCard: View {
     /// The month's book opening and the page being written — the same book as the journaling
     /// screen, played once.
     private var page: some View {
-        BookWritingScene(lines: Self.pageLines, pageWidth: 92, onInk: { value in
+        BookWritingScene(mood: 1, lines: Self.pageLines, pageWidth: 92, onInk: { value in
             ink = value
             if value > 0 && phase == .locked { phase = .writing }
         }, onWritten: { Task { await unlock() } })
@@ -629,7 +629,7 @@ private struct JournalWritingIllustration: View {
 
     var body: some View {
         VStack(spacing: 12) {
-            BookWritingScene(heading: "A moment for me", lines: Self.lines, pageWidth: 124, loops: true)
+            BookWritingScene(lines: Self.lines, pageWidth: 124, loops: true)
                 .rotationEffect(.degrees(-3))
             HStack(spacing: 6) {
                 Image(systemName: "heart.fill")
