@@ -64,6 +64,13 @@
 		697BCFCE5C54F26D079B2ACC /* InlineJournalColorPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 844234A8087C915D91DACCCE /* InlineJournalColorPicker.swift */; };
 		202D7B64B98338633FFF1DF2 /* BookCovers.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BC04CD671C53C05C24B47DD /* BookCovers.swift */; };
 		D6CC23C409C0D15AB4381D66 /* BookPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 366362B09E10730407670682 /* BookPage.swift */; };
+		374FBF6DA6485A4DB3791687 /* PageHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4D25DBC9015DBCAE539B680C /* PageHeader.swift */; };
+		4CD4BA0F66C624D0A47220D5 /* CoachMarks.swift in Sources */ = {isa = PBXBuildFile; fileRef = 050F50537C6FBB3B8C6E7521 /* CoachMarks.swift */; };
+		6070C4D753622C2E0A7B3651 /* BookScenes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16914F8A088569D95794307A /* BookScenes.swift */; };
+		2FE67521256060AA6B87120F /* MonthBook.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3631C820515D735AECDD124E /* MonthBook.swift */; };
+		4047CBE5FD4889A50D93EC2F /* MonthBookCover.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C928280549161A283B7F41F /* MonthBookCover.swift */; };
+		1C9AEE38808F06850A07D784 /* OnboardingScreens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8912A708BDA3AFF67A9C6D7D /* OnboardingScreens.swift */; };
+		28D7404098175D9A0427789D /* OnboardingIllustrations.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DE703FAB54C727B3F05BE51 /* OnboardingIllustrations.swift */; };
 		69C3FBAEAEB3F185C8064723 /* LibraryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 467A5480FADE60412A768408 /* LibraryView.swift */; };
 		6B16962BB5B38A531DFDC368 /* BookCalendar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 54CE3C1C4576F0863F5CC877 /* BookCalendar.swift */; };
 		6D009AB54CDDF82869DC6EBD /* TextLocalization.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4503890E8EE490EB68F8AE82 /* TextLocalization.swift */; };
@@ -226,6 +233,13 @@
 		4569F044B2723DBED6C4394B /* Manrope.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = Manrope.ttf; sourceTree = "<group>"; };
 		7BC04CD671C53C05C24B47DD /* BookCovers.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookCovers.swift; sourceTree = "<group>"; };
 		366362B09E10730407670682 /* BookPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookPage.swift; sourceTree = "<group>"; };
+		4D25DBC9015DBCAE539B680C /* PageHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PageHeader.swift; sourceTree = "<group>"; };
+		050F50537C6FBB3B8C6E7521 /* CoachMarks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoachMarks.swift; sourceTree = "<group>"; };
+		16914F8A088569D95794307A /* BookScenes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookScenes.swift; sourceTree = "<group>"; };
+		3631C820515D735AECDD124E /* MonthBook.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonthBook.swift; sourceTree = "<group>"; };
+		3C928280549161A283B7F41F /* MonthBookCover.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MonthBookCover.swift; sourceTree = "<group>"; };
+		8912A708BDA3AFF67A9C6D7D /* OnboardingScreens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingScreens.swift; sourceTree = "<group>"; };
+		2DE703FAB54C727B3F05BE51 /* OnboardingIllustrations.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingIllustrations.swift; sourceTree = "<group>"; };
 		467A5480FADE60412A768408 /* LibraryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryView.swift; sourceTree = "<group>"; };
 		468C6373F86CE0AF2AEB0E30 /* Shielding.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shielding.swift; sourceTree = "<group>"; };
 		49CAFAD61DDEC967C658D01B /* AffirmationList.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AffirmationList.swift; sourceTree = "<group>"; };
@@ -436,6 +450,8 @@
 		76A221D4A77E7501663E1184 /* History */ = {
 			isa = PBXGroup;
 			children = (
+				3C928280549161A283B7F41F /* MonthBookCover.swift */,
+				3631C820515D735AECDD124E /* MonthBook.swift */,
 				7BC04CD671C53C05C24B47DD /* BookCovers.swift */,
 				467A5480FADE60412A768408 /* LibraryView.swift */,
 			);
@@ -445,6 +461,9 @@
 		80C0B01E6B3F253E3E0424F0 /* DesignSystem */ = {
 			isa = PBXGroup;
 			children = (
+				16914F8A088569D95794307A /* BookScenes.swift */,
+				050F50537C6FBB3B8C6E7521 /* CoachMarks.swift */,
+				4D25DBC9015DBCAE539B680C /* PageHeader.swift */,
 				366362B09E10730407670682 /* BookPage.swift */,
 				2E4ADC8D69FF95378D159525 /* AttachmentOverlay.swift */,
 				8C1D92DDCA8F38C3B3A8C820 /* BrandIcon.swift */,
@@ -537,6 +556,8 @@
 		CB269076970BCB892B3B0C85 /* Onboarding */ = {
 			isa = PBXGroup;
 			children = (
+				2DE703FAB54C727B3F05BE51 /* OnboardingIllustrations.swift */,
+				8912A708BDA3AFF67A9C6D7D /* OnboardingScreens.swift */,
 				0C67B55D50159B662AEB0776 /* OnboardingView.swift */,
 			);
 			path = Onboarding;
@@ -919,6 +940,13 @@
 				9E98E2A45FC45BD9600D4C5D /* Haptics.swift in Sources */,
 				202D7B64B98338633FFF1DF2 /* BookCovers.swift in Sources */,
 				D6CC23C409C0D15AB4381D66 /* BookPage.swift in Sources */,
+				374FBF6DA6485A4DB3791687 /* PageHeader.swift in Sources */,
+				4CD4BA0F66C624D0A47220D5 /* CoachMarks.swift in Sources */,
+				6070C4D753622C2E0A7B3651 /* BookScenes.swift in Sources */,
+				2FE67521256060AA6B87120F /* MonthBook.swift in Sources */,
+				4047CBE5FD4889A50D93EC2F /* MonthBookCover.swift in Sources */,
+				1C9AEE38808F06850A07D784 /* OnboardingScreens.swift in Sources */,
+				28D7404098175D9A0427789D /* OnboardingIllustrations.swift in Sources */,
 				69C3FBAEAEB3F185C8064723 /* LibraryView.swift in Sources */,
 				2A79495612C3D4AEB9AF3897 /* HomeView.swift in Sources */,
 				135AAC3EDCED7165DFAFF9DE /* HonestlyApp.swift in Sources */,
