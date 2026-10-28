@@ -37,8 +37,10 @@ struct MiniPage: View {
             .aspectRatio(3 / 4.4, contentMode: .fit)
             .overlay(alignment: .topLeading) {
                 GeometryReader { geo in
+                    // Laid out at a whole page's size, not the card's — given only the card's
+                    // small height, the words were squeezed onto one truncated line.
                     page
-                        .frame(width: pageWidth, alignment: .topLeading)
+                        .frame(width: pageWidth, height: pageWidth * 4.4 / 3, alignment: .topLeading)
                         .scaleEffect(geo.size.width / pageWidth, anchor: .topLeading)
                         .frame(width: geo.size.width, height: geo.size.height, alignment: .topLeading)
                 }
