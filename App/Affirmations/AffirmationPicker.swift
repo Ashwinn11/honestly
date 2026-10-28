@@ -120,18 +120,7 @@ struct AffirmationsScreen: View {
                                         resetToken: inputResetToken, onAdd: addDraft)
                         ForEach(custom, id: \.self) { line in managedRow(line) }
                     } else {
-                        Button { flow.showPaywall() } label: {
-                            HStack(spacing: 12) {
-                                Image(systemName: "lock.fill").foregroundStyle(Palette.inkSofter)
-                                Text(loc: "Write your own with Premium")
-                                    .font(Fonts.ui(14, .semibold)).foregroundStyle(Palette.inkSofter)
-                                Spacer()
-                            }
-                            .padding(14).frame(minHeight: 48)
-                            .background(Palette.cream, in: RoundedRectangle(cornerRadius: 14))
-                            .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Palette.outlineSoft, lineWidth: 1.2))
-                        }
-                        .buttonStyle(.plain)
+                        LibraryLockedWriteRow { flow.showPaywall() }
                     }
 
                     VStack(alignment: .leading, spacing: 7) {

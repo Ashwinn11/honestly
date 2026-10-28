@@ -74,6 +74,27 @@ struct LibrarySectionTitle: View {
     }
 }
 
+/// Stands in for `LibraryWriteRow` when writing your own is Premium: a locked row that opens the
+/// paywall. Shared by the affirmation and prompt libraries.
+struct LibraryLockedWriteRow: View {
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 12) {
+                Image(systemName: "lock.fill").foregroundStyle(Palette.inkSofter)
+                Text(loc: "Write your own with Premium")
+                    .font(Fonts.ui(14, .semibold)).foregroundStyle(Palette.inkSofter)
+                Spacer()
+            }
+            .padding(14).frame(minHeight: 48)
+            .background(Palette.cream, in: RoundedRectangle(cornerRadius: 14))
+            .overlay(RoundedRectangle(cornerRadius: 14).strokeBorder(Palette.outlineSoft, lineWidth: 1.2))
+        }
+        .buttonStyle(.plain)
+    }
+}
+
 struct LibraryWriteRow: View {
     let placeholder: String
     let addLabel: String

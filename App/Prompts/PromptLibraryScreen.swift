@@ -14,8 +14,14 @@ struct PromptLibraryScreen: View {
             ScrollView {
                 LazyVStack(alignment: .leading, spacing: 10) {
                     LibrarySectionTitle(title: "Your own")
-                    LibraryWriteRow(placeholder: "Write your own prompt…", addLabel: "Add prompt",
-                                    draft: $draft, onAdd: add)
+                    // Writing your own is Premium: free accounts see the same locked row as
+                    // affirmations instead of a box that only asks for Premium on +.
+                    if premium.isPremium {
+                        LibraryWriteRow(placeholder: "Write your own prompt…", addLabel: "Add prompt",
+                                        draft: $draft, onAdd: add)
+                    } else {
+                        LibraryLockedWriteRow { flow.showPaywall() }
+                    }
 
                     ForEach(prompts.custom, id: \.self) { row($0, builtIn: false) }
                     if !prompts.builtIn.isEmpty {
