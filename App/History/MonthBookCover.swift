@@ -27,12 +27,14 @@ struct MonthBookCover: View {
         let look = lookOverride ?? covers.look(for: book)
         let photo = look.photo
         let ink = look.ink
+        // Ink outlines thin out on small books (Home's 46-point one) so they stay drawn, not heavy.
+        let outline = min(2, max(1, w * 0.016))
         let coverShape = UnevenRoundedRectangle(topLeadingRadius: w * 0.03, bottomLeadingRadius: w * 0.03,
                                                 bottomTrailingRadius: w * 0.09, topTrailingRadius: w * 0.09,
                                                 style: .continuous)
 
         ZStack(alignment: .topLeading) {
-            PageEdges()
+            PageEdges(outline: outline)
                 .frame(width: edge + w * 0.08, height: h - w * 0.07)
                 .offset(x: w - w * 0.08, y: w * 0.035)
 
@@ -78,12 +80,12 @@ struct MonthBookCover: View {
             }
             .frame(width: w, height: h)
             .clipShape(coverShape)
-            .overlay(coverShape.strokeBorder(Palette.ink, lineWidth: 2))
+            .overlay(coverShape.strokeBorder(Palette.ink, lineWidth: outline))
 
             if book.isCurrent {
                 RibbonShape()
                     .fill(Palette.amber)
-                    .overlay(RibbonShape().stroke(Palette.ink, lineWidth: 2))
+                    .overlay(RibbonShape().stroke(Palette.ink, lineWidth: outline * 0.75))
                     .frame(width: w * 0.1, height: h * 0.3)
                     .offset(x: w * 0.72, y: -w * 0.04)
             }
@@ -103,6 +105,8 @@ struct MonthBookCover: View {
 
 /// The stack of page edges showing past the cover's open side.
 private struct PageEdges: View {
+    var outline: CGFloat = 2
+
     var body: some View {
         let shape = UnevenRoundedRectangle(bottomTrailingRadius: 5, topTrailingRadius: 5, style: .continuous)
         Canvas { ctx, size in
@@ -115,7 +119,7 @@ private struct PageEdges: View {
             }
         }
         .clipShape(shape)
-        .overlay(shape.strokeBorder(Palette.ink, lineWidth: 2))
+        .overlay(shape.strokeBorder(Palette.ink, lineWidth: outline))
     }
 }
 
