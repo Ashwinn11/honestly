@@ -548,7 +548,7 @@ private struct CoverTitle: View {
                     line(name, Fonts.serif(22, italic: true), width: 92, color: Palette.cream)
                     small(year, color: hex("F4F1E6"), size: 6.5, tracking: 3)
                 }
-                .position(x: 62, y: 98)
+                .position(x: 62, y: 82)
             case .littleFlorals:
                 ZStack {
                     TornStrip().fill(Palette.cream).overlay(TornStrip().stroke(Palette.ink, lineWidth: 0.8))
