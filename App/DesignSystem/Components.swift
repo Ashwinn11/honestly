@@ -196,6 +196,55 @@ struct CompactIconFace: View {
     }
 }
 
+// MARK: - Empty pages — the one empty state wherever pages are listed
+
+/// A sun, a line saying what's missing, and an optional next step. Used by the Library's search
+/// and filters, an empty month book, and a page that's gone.
+struct EmptyPagesState: View {
+    let title: String                    // String Catalog keys
+    var message: String? = nil
+    var actionTitle: String? = nil
+    var action: (() -> Void)? = nil
+
+    init(title: String, message: String? = nil, actionTitle: String? = nil, action: (() -> Void)? = nil) {
+        self.title = title
+        self.message = message
+        self.actionTitle = actionTitle
+        self.action = action
+    }
+
+    var body: some View {
+        VStack(spacing: 18) {
+            ZStack {
+                SoftGlow(color: Palette.sunDisc, opacity: 0.2, size: 180)
+                SunMark(size: 58).floaty(period: 5)
+            }
+            VStack(spacing: 7) {
+                Text(loc: title)
+                    .font(Fonts.display(21, .bold)).foregroundStyle(Palette.ink)
+                    .multilineTextAlignment(.center)
+                if let message {
+                    Text(loc: message)
+                        .font(Fonts.ui(14, .semibold)).foregroundStyle(Palette.inkSofter)
+                        .multilineTextAlignment(.center).lineSpacing(2)
+                }
+            }
+            if let actionTitle, let action {
+                Button { Haptics.tap(); action() } label: {
+                    Text(loc: actionTitle).font(Fonts.ui(14, .heavy)).foregroundStyle(Palette.ink)
+                        .padding(.horizontal, 18).frame(minHeight: 46)
+                }
+                .buttonStyle(TactileButtonStyle(fill: AnyShapeStyle(Palette.onAmber),
+                                                cornerRadius: DesignScale.s(14), ledge: 4, bordered: true))
+                .padding(.top, 4)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 40)
+        .padding(.bottom, 40)
+    }
+}
+
 // MARK: - Toggle (the profile "morning nudge" switch)
 
 struct AmberToggle: View {

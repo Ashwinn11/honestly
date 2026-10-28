@@ -79,6 +79,8 @@ struct EntryDetailView: View {
                     .padding(.top, 80)
             } else if hasPages {
                 reader
+            } else if book != nil {
+                gridScreen          // a book whose pages are all gone still opens, empty
             } else {
                 missing
             }
@@ -172,7 +174,7 @@ struct EntryDetailView: View {
                     .font(Fonts.display(21, .bold)).foregroundStyle(Palette.ink)
                     .lineLimit(1)
                 Spacer(minLength: 0)
-                gridModeSwitch
+                if !entries.isEmpty { gridModeSwitch }
             }
             .padding(.horizontal, 20)
             .padding(.top, 8)
@@ -181,7 +183,9 @@ struct EntryDetailView: View {
 
             ScrollView {
                 Group {
-                    if gridMode == .pages {
+                    if entries.isEmpty {
+                        emptyBook.padding(.top, 70)
+                    } else if gridMode == .pages {
                         pagesGrid
                     } else if let book {
                         BookCalendar(year: book.year, month: book.month, entries: entries,
@@ -265,15 +269,32 @@ struct EntryDetailView: View {
         withAnimation(Motion.snappy) { store.delete(entry) }
     }
 
+    /// A month book with no pages left in it.
+    @ViewBuilder private var emptyBook: some View {
+        let now = Calendar.current.dateComponents([.year, .month], from: Date())
+        let isThisMonth = book.map { $0.year == now.year && $0.month == now.month } ?? false
+        if isThisMonth && !store.ritualDoneToday {
+            EmptyPagesState(title: "This book is empty",
+                            message: "Today's page can be the first in it.",
+                            actionTitle: "Write today's page",
+                            action: { flow.startRitual() })
+        } else {
+            EmptyPagesState(title: "This book is empty",
+                            message: "There are no pages left from this month.")
+        }
+    }
+
     private var missing: some View {
-        VStack(spacing: 14) {
+        VStack(spacing: 0) {
             IconTileButton(icon: "chevron.backward", size: 38, iconSize: 15) { dismiss() }
                 .frame(maxWidth: .infinity, alignment: .leading)
-            Spacer()
-            Text("This page has drifted off.").font(Fonts.ui(15, .semibold)).foregroundStyle(Palette.inkSofter)
-            Spacer()
+                .padding(.horizontal, 20)
+                .padding(.top, 8)
+                .capWidth(Metrics.maxContentWidth)
+            EmptyPagesState(title: "This page has drifted off.")
+                .padding(.top, 70)
+            Spacer(minLength: 0)
         }
-        .padding(.horizontal, 22).padding(.top, 56)
     }
 }
 
