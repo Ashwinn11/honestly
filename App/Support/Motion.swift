@@ -71,13 +71,22 @@ private struct Spin: ViewModifier {
     var period: Double
     @State private var angle: Double = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.onboardingAnimationsActive) private var animationsActive
     func body(content: Content) -> some View {
         content
             .rotationEffect(.degrees(angle))
-            .onAppear {
-                guard !reduceMotion else { return }
-                withAnimation(.linear(duration: period).repeatForever(autoreverses: false)) { angle = 360 }
-            }
+            .onAppear(perform: updateAnimation)
+            .onChange(of: animationsActive) { _, _ in updateAnimation() }
+    }
+
+    private func updateAnimation() {
+        guard animationsActive, !reduceMotion else {
+            var transaction = Transaction()
+            transaction.disablesAnimations = true
+            withTransaction(transaction) { angle = 0 }
+            return
+        }
+        withAnimation(.linear(duration: period).repeatForever(autoreverses: false)) { angle = 360 }
     }
 }
 
@@ -93,15 +102,24 @@ private struct Floaty: ViewModifier {
     var delay: Double
     @State private var up = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.onboardingAnimationsActive) private var animationsActive
 
     func body(content: Content) -> some View {
         content
             .offset(y: up ? -amplitude : 0)
-            .onAppear {
-                guard !reduceMotion else { return }
-                withAnimation(.easeInOut(duration: period / 2).repeatForever(autoreverses: true).delay(delay)) {
-                    up = true
-                }
-            }
+            .onAppear(perform: updateAnimation)
+            .onChange(of: animationsActive) { _, _ in updateAnimation() }
+    }
+
+    private func updateAnimation() {
+        guard animationsActive, !reduceMotion else {
+            var transaction = Transaction()
+            transaction.disablesAnimations = true
+            withTransaction(transaction) { up = false }
+            return
+        }
+        withAnimation(.easeInOut(duration: period / 2).repeatForever(autoreverses: true).delay(delay)) {
+            up = true
+        }
     }
 }

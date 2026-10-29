@@ -54,23 +54,11 @@ struct BigWinsWidgetView: View {
         }
     }
 
-    private var emptySunSize: CGFloat {
-        switch sizeFamily {
-        case .systemSmall: return 34
-        case .systemLarge: return 60
-        case .systemExtraLarge: return 72
-        default: return 46
-        }
-    }
-
     var body: some View {
         Group {
             if let line = entry.affirmation {
                 VStack(spacing: quoteSpacing) {
-                    Image(systemName: "quote.opening")
-                        .font(.system(size: quoteGlyphSize, weight: .semibold))
-                        .foregroundStyle(textColor)
-                        .accessibilityHidden(true)
+                    QuoteMark(size: quoteGlyphSize)
                     Affirmations.text(line)
                         .font(AffirmationWidgetFont.make(name: entry.fontName, size: quoteSize, weight: .semibold))
                         .foregroundStyle(textColor)
@@ -84,8 +72,7 @@ struct BigWinsWidgetView: View {
                 .padding(family == .systemSmall ? 10 : 18)
             } else {
                 VStack(spacing: family == .systemSmall ? 8 : 12) {
-                    SunMark(size: emptySunSize)
-                        .accessibilityHidden(true)
+                    QuoteMark(size: quoteGlyphSize)
                     Text(loc: entry.needsSetup ? "Open Honestly to get started" : "Unlock this widget with Premium")
                         .font(Fonts.ui(family == .systemSmall ? 13 : 16, .semibold))
                         .foregroundStyle(entry.backgroundHex == nil ? PageTheme.from(entry.themeID).inkSoft : Palette.inkSoft)

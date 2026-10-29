@@ -7,7 +7,15 @@ struct OnbWelcomeView: View {
         VStack(spacing: 0) {
             ZStack {
                 SoftGlow(color: Palette.sunDisc, opacity: 0.22, size: 280)
-                SunMark(size: 118).spin(period: 26)
+                Image("app-mark")
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 118, height: 118)
+                    .clipShape(RoundedRectangle(cornerRadius: 27, style: .continuous))
+                    .overlay(RoundedRectangle(cornerRadius: 27, style: .continuous)
+                        .strokeBorder(Palette.ink, lineWidth: 2))
+                    .shadow(color: Palette.ink.opacity(0.12), radius: 12, x: 0, y: 7)
+                    .accessibilityHidden(true)
                 InkGlyph(kind: .sparkle, size: 24, fill: Palette.glyphGold)
                     .offset(x: -74, y: -60)
                     .floaty(period: 4)
@@ -177,6 +185,7 @@ struct OnbReminderView: View {
     let affirmation: String
     @Environment(PromptLibrary.self) private var prompts
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.onboardingAnimationsActive) private var animationsActive
     @State private var visibleCount = 0
 
     var body: some View {
@@ -197,7 +206,11 @@ struct OnbReminderView: View {
                 }
             }
         }
-        .task { await revealNotifications() }
+        .task(id: animationsActive) {
+            visibleCount = 0
+            guard animationsActive else { return }
+            await revealNotifications()
+        }
     }
 
     private var arrival: AnyTransition {
@@ -217,7 +230,7 @@ struct OnbReminderView: View {
             return
         }
         do {
-            try await Task.sleep(for: .milliseconds(300))
+            try await Task.sleep(for: .milliseconds(180))
             for index in 0..<2 {
                 withAnimation(Motion.snappy) { visibleCount = index + 1 }
                 Haptics.notificationSound()
@@ -235,6 +248,7 @@ struct OnbSocialProofView: View {
     private var sp: SocialProof { AppContent.socialProof }
     @Environment(\.locale) private var locale
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.onboardingAnimationsActive) private var animationsActive
     @State private var hasAppeared = false
 
     var body: some View {
@@ -281,11 +295,13 @@ struct OnbSocialProofView: View {
         }
         // Glow anchored near the top (behind the stars/heading), so it stays put as the cards grow.
         .background(alignment: .top) { SoftGlow(color: Palette.sunDisc, opacity: 0.16, size: 300).offset(y: 40) }
-        .task {
+        .task(id: animationsActive) {
+            hasAppeared = false
+            guard animationsActive else { return }
             if reduceMotion {
                 hasAppeared = true
             } else {
-                try? await Task.sleep(for: .milliseconds(120))
+                try? await Task.sleep(for: .milliseconds(90))
                 withAnimation(Motion.snappy) { hasAppeared = true }
             }
         }

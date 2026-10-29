@@ -54,8 +54,7 @@ struct PaywallView: View {
     // MARK: Hero
     private var hero: some View {
         VStack(spacing: 10) {
-            SunMark(size: 60).floaty()
-                .background { SoftGlow(color: Palette.amber, opacity: 0.15, size: 210) }
+            JournalWritingIllustration(showsCaption: false, pageWidth: 116)
             Text(loc: "Take your mornings back")
                 .display(27, .bold)
                 .multilineTextAlignment(.center)

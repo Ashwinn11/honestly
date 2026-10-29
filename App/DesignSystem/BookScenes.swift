@@ -69,6 +69,7 @@ struct BookWritingScene: View {
 
     @Environment(CoverStore.self) private var covers
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.onboardingAnimationsActive) private var animationsActive
     @State private var coverTurned = false   // the front of the cover has swung up to upright
     @State private var insideDown = false    // …and its inside has come down on the left
     @State private var opened = false        // the book has slid over to sit open as a spread
@@ -122,7 +123,20 @@ struct BookWritingScene: View {
         // A closed book sits centred; it slides over as it opens into a spread.
         .offset(x: opened ? 0 : -w / 2)
         .accessibilityHidden(true)
-        .task { await play() }
+        .task(id: animationsActive) {
+            reset()
+            guard animationsActive else { return }
+            await play()
+        }
+    }
+
+    private func reset() {
+        coverTurned = false
+        insideDown = false
+        opened = false
+        rows = []
+        typed = 0
+        inkOpacity = 1
     }
 
     /// The cover's inside, lying open on the left.
@@ -261,29 +275,29 @@ struct BookWritingScene: View {
         }
         do {
             repeat {
-                try await Task.sleep(for: .milliseconds(450))
-                withAnimation(.easeInOut(duration: 0.62)) { opened = true }
-                withAnimation(.easeIn(duration: 0.3)) { coverTurned = true }
-                try await Task.sleep(for: .milliseconds(300))
-                withAnimation(.easeOut(duration: 0.32)) { insideDown = true }
-                try await Task.sleep(for: .milliseconds(450))
+                try await Task.sleep(for: .milliseconds(220))
+                withAnimation(.easeInOut(duration: 0.46)) { opened = true }
+                withAnimation(.easeIn(duration: 0.22)) { coverTurned = true }
+                try await Task.sleep(for: .milliseconds(220))
+                withAnimation(.easeOut(duration: 0.22)) { insideDown = true }
+                try await Task.sleep(for: .milliseconds(250))
                 for c in 1...max(total, 1) {
                     try Task.checkCancellation()
                     typed = c
                     onInk(CGFloat(c) / CGFloat(max(total, 1)))
-                    try await Task.sleep(for: .milliseconds(rows.isEmpty ? 0 : 50))
+                    try await Task.sleep(for: .milliseconds(rows.isEmpty ? 0 : 30))
                 }
                 onWritten()
                 guard loops else { return }
                 // Let it sit, lift the ink, close the book, and start a fresh page.
-                try await Task.sleep(for: .seconds(1.8))
-                withAnimation(.easeOut(duration: 0.35)) { inkOpacity = 0 }
-                try await Task.sleep(for: .milliseconds(350))
-                withAnimation(.easeInOut(duration: 0.62)) { opened = false }
-                withAnimation(.easeIn(duration: 0.3)) { insideDown = false }
-                try await Task.sleep(for: .milliseconds(300))
-                withAnimation(.easeOut(duration: 0.32)) { coverTurned = false }
-                try await Task.sleep(for: .milliseconds(450))
+                try await Task.sleep(for: .seconds(1.2))
+                withAnimation(.easeOut(duration: 0.25)) { inkOpacity = 0 }
+                try await Task.sleep(for: .milliseconds(250))
+                withAnimation(.easeInOut(duration: 0.46)) { opened = false }
+                withAnimation(.easeIn(duration: 0.22)) { insideDown = false }
+                try await Task.sleep(for: .milliseconds(220))
+                withAnimation(.easeOut(duration: 0.22)) { coverTurned = false }
+                try await Task.sleep(for: .milliseconds(250))
                 typed = 0
                 inkOpacity = 1
                 onInk(0)

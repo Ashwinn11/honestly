@@ -166,7 +166,7 @@ struct ProfileView: View {
                 AffirmationDeliverySettingsScreen()
             } label: {
                 settingRow {
-                    rowText("Affirmation delivery", "Reminder timing and widget access")
+                    rowText("Notification reminders", "Choose reminder times and days")
                 } trailing: { chevron }
             }
             .buttonStyle(RowPressStyle())

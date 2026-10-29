@@ -41,9 +41,12 @@ struct EntryEditorView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // The same header as writing and reading; its one control is ✓, which saves and closes.
+            // Discard the local edits with ✕, or keep them with ✓.
             PageHeader(date: entry.createdAt, mood: entry.moodRaw) {
-                IconTileButton.confirm { save() }
+                HStack(spacing: 6) {
+                    IconTileButton.close { dismiss() }
+                    IconTileButton.confirm { save() }
+                }
             }
             .padding(EdgeInsets(top: 4, leading: Metrics.pageHorizontalInset,
                                 bottom: 0, trailing: Metrics.pageHorizontalInset - 3))

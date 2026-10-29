@@ -191,7 +191,10 @@ final class JournalStore {
         context.delete(entry)
         try? context.save()
         reload()
-        if wasToday { Shielding.reconcile() }
+        if wasToday {
+            Shielding.reconcile()
+            AffirmationNudge.scheduleReminderIfNeeded(ritualDoneToday: false)
+        }
     }
 
     func deleteAll() {

@@ -9,17 +9,20 @@ struct BigWinsLockScreenWidgetView: View {
     var body: some View {
         Group {
             if let line = entry.affirmation {
-                Affirmations.text(line)
-                    .font(AffirmationWidgetFont.make(name: entry.fontName, size: 13, weight: .semibold))
-                    .foregroundStyle(.white)
-                    .multilineTextAlignment(.leading)
-                    .lineSpacing(1)
-                    .lineLimit(3)
-                    .minimumScaleFactor(0.78)
+                HStack(alignment: .firstTextBaseline, spacing: 3) {
+                    QuoteMark(size: 6, weight: .regular)
+                    Affirmations.text(line)
+                        .font(AffirmationWidgetFont.make(name: entry.fontName, size: 13, weight: .semibold))
+                        .foregroundStyle(.white)
+                        .multilineTextAlignment(.leading)
+                        .lineSpacing(1)
+                        .lineLimit(3)
+                        .minimumScaleFactor(0.78)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
             } else {
                 HStack(spacing: 8) {
-                    SunMark(size: 24)
-                        .accessibilityHidden(true)
+                    QuoteMark(size: 18)
                     Text(loc: entry.needsSetup ? "Open Honestly to get started" : "Unlock this widget with Premium")
                         .font(Fonts.ui(10.5, .medium))
                         .foregroundStyle(.white)

@@ -15,6 +15,7 @@ struct MorningOutcomeCard: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var phase = Phase.locked
     @State private var ink: CGFloat = 0              // how much of the page is written
+    @State private var didUnlock = false
     private let brands: [Brand] = [.instagram, .tiktok, .snapchat]
 
     private static let pageLines = [
@@ -123,9 +124,7 @@ struct MorningOutcomeCard: View {
                 page.transition(.opacity.combined(with: .scale(scale: 0.96)))
             } else {
                 VStack(spacing: 6) {
-                    Image(systemName: "quote.opening")
-                        .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(Palette.amberDeep)
+                    QuoteMark(size: 16)
                     Affirmations.text(affirmation)
                         .font(Font(FontChoice.baskerville.uiFont(size: DesignScale.s(17))))
                         .foregroundStyle(Palette.ink)
@@ -145,10 +144,14 @@ struct MorningOutcomeCard: View {
     /// The month's book opening and the page being written — the same book as the journaling
     /// screen, played once.
     private var page: some View {
-        BookWritingScene(mood: 1, lines: Self.pageLines, pageWidth: 92, onInk: { value in
+        BookWritingScene(mood: 1, lines: Self.pageLines, pageWidth: 92, loops: true, onInk: { value in
             ink = value
             if value > 0 && phase == .locked { phase = .writing }
-        }, onWritten: { Task { await unlock() } })
+        }, onWritten: {
+            guard !didUnlock else { return }
+            didUnlock = true
+            Task { await unlock() }
+        })
     }
 
     private func unlock() async {
@@ -168,6 +171,9 @@ struct MorningOutcomeCard: View {
 /// The month's book opening and a page being written in it, again and again — the book the
 /// user will write in, met before they ever open it.
 struct JournalWritingIllustration: View {
+    var showsCaption = true
+    var pageWidth: CGFloat = 124
+
     private static let lines = [
         "There’s a lot on my mind",
         "this morning, so I’ll start",
@@ -176,16 +182,18 @@ struct JournalWritingIllustration: View {
 
     var body: some View {
         VStack(spacing: 12) {
-            BookWritingScene(lines: Self.lines, pageWidth: 124, loops: true)
+            BookWritingScene(lines: Self.lines, pageWidth: pageWidth, loops: true)
                 .rotationEffect(.degrees(-3))
-            HStack(spacing: 6) {
-                Image(systemName: "heart.fill")
-                    .foregroundStyle(Palette.amberDeep)
-                Text(loc: "A few honest lines are enough.")
-                    .foregroundStyle(Palette.inkSoft)
+            if showsCaption {
+                HStack(spacing: 6) {
+                    Image(systemName: "heart.fill")
+                        .foregroundStyle(Palette.amberDeep)
+                    Text(loc: "A few honest lines are enough.")
+                        .foregroundStyle(Palette.inkSoft)
+                }
+                .font(Fonts.ui(11, .semibold))
+                .fixedSize(horizontal: false, vertical: true)
             }
-            .font(Fonts.ui(11, .semibold))
-            .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity)
         .background { SoftGlow(color: Palette.sunDisc, opacity: 0.22, size: 320) }
@@ -219,10 +227,7 @@ struct OnbAffirmationPreview: View {
             PageThemeBackground(theme: widgetTheme, layout: .widget)
 
             VStack(spacing: 5) {
-                Image(systemName: "quote.opening")
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(widgetTheme.ink)
-                    .accessibilityHidden(true)
+                QuoteMark(size: 15)
                 Affirmations.text(text)
                     .font(Font(widgetFont.uiFont(size: DesignScale.s(16))).weight(.semibold))
                     .foregroundStyle(widgetTheme.ink)
@@ -249,6 +254,7 @@ struct OnbAffirmationPreview: View {
 
 struct AppBlockLoop: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.onboardingAnimationsActive) private var animationsActive
     @State private var lockedCount = 0
     private let brands: [Brand] = [.instagram, .tiktok, .snapchat]
 
@@ -286,7 +292,11 @@ struct AppBlockLoop: View {
                 .minimumScaleFactor(0.8)
         }
         .accessibilityHidden(true)
-        .task { await animateLocks() }
+        .task(id: animationsActive) {
+            lockedCount = 0
+            guard animationsActive else { return }
+            await animateLocks()
+        }
     }
 
     private func animateLocks() async {
@@ -294,10 +304,10 @@ struct AppBlockLoop: View {
         while !Task.isCancelled {
             lockedCount = 0
             do {
-                try await Task.sleep(for: .milliseconds(450))
+                try await Task.sleep(for: .milliseconds(200))
                 for count in 1...brands.count {
                     withAnimation(Motion.pop) { lockedCount = count }
-                    try await Task.sleep(for: .milliseconds(330))
+                    try await Task.sleep(for: .milliseconds(240))
                 }
                 try await Task.sleep(for: .seconds(1.2))
             } catch {

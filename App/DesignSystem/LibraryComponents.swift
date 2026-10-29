@@ -70,10 +70,10 @@ struct LibraryWriteRow: View {
     @FocusState private var focused: Bool
 
     var body: some View {
-        HStack(alignment: .top, spacing: 10) {
+        HStack(alignment: .center, spacing: 10) {
             TextField(LocalizedStringKey(placeholder), text: $draft, axis: .vertical)
                 .font(Fonts.ui(15, .semibold)).foregroundStyle(Palette.ink)
-                .lineLimit(2...5)
+                .lineLimit(1...5)
                 .focused($focused)
                 .id(resetToken)
             IconTileButton(icon: "plus", size: 38, iconSize: 14, action: onAdd)
@@ -98,8 +98,12 @@ struct LibraryEntryRow: View {
     var body: some View {
         HStack(spacing: 0) {
             Button(action: onSelect) {
-                HStack(alignment: .top, spacing: 12) {
-                    SunMark(size: 26, muted: !selected).accessibilityHidden(true)
+                HStack(alignment: .center, spacing: 12) {
+                    Circle()
+                        .fill(selected ? Palette.amber : Palette.ink.opacity(0.12))
+                        .frame(width: selected ? 8 : 6, height: selected ? 8 : 6)
+                        .overlay(Circle().strokeBorder(Palette.ink, lineWidth: 1))
+                        .accessibilityHidden(true)
                     Group { if builtIn { Text(loc: line) } else { Text(verbatim: line) } }
                         .font(Fonts.ui(15, .semibold)).foregroundStyle(Palette.ink)
                         .multilineTextAlignment(.leading).fixedSize(horizontal: false, vertical: true)

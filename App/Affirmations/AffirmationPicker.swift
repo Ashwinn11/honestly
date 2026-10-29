@@ -1,8 +1,7 @@
 import SwiftUI
 
 /// Topic choices are shared by onboarding and Manage affirmations, two to a row. An empty selection
-/// means all topics. Onboarding passes `collapsedCount` to show only the first few behind
-/// "Show more"; Manage affirmations shows them all.
+/// means all topics. Both screens can collapse longer lists behind the same "Show more" control.
 struct AffirmationTopicPicker: View {
     @Environment(AffirmationList.self) private var list
     @Environment(PremiumManager.self) private var premium
@@ -130,7 +129,10 @@ struct AffirmationsScreen: View {
                             .fixedSize(horizontal: false, vertical: true)
                     }
                     .padding(.top, 10)
-                    AffirmationTopicPicker(selection: $selectedTopics)
+                    AffirmationTopicPicker(selection: $selectedTopics, collapsedCount: 6)
+
+                    AffirmationWidgetCustomizationSection()
+                        .padding(.top, 10)
                 }
             }
             .scrollDismissesKeyboard(.interactively)
@@ -158,7 +160,7 @@ struct AffirmationsScreen: View {
 
     private func managedRow(_ line: String) -> some View {
         HStack(spacing: 12) {
-            SunMark(size: 26, muted: true).accessibilityHidden(true)
+            QuoteMark(size: 17)
             Affirmations.text(line)
                 .font(Fonts.ui(14, .semibold)).foregroundStyle(Palette.ink)
                 .fixedSize(horizontal: false, vertical: true)
@@ -172,6 +174,8 @@ struct AffirmationsScreen: View {
             .accessibilityLabel(Text(loc: "Manage affirmation"))
         }
         .padding(.leading, 12)
+        .padding(.trailing, 4)
+        .padding(.vertical, 12)
         .outlinedSurface(radius: Radius.control)
     }
 

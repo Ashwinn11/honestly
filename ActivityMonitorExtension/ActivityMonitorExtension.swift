@@ -10,8 +10,8 @@ final class ActivityMonitorExtension: DeviceActivityMonitor {
     override func intervalDidStart(for activity: DeviceActivityName) {
         super.intervalDidStart(for: activity)
         Shielding.reconcile()
-        // Runs even on days the app is never opened — the only trigger that reliably covers that
-        // case, since everything else depends on the app or its UI actually being used.
+        // Replenishes the rolling reminder queue on days the app isn't opened. The app also
+        // schedules this queue on launch and resume, so reminders don't require Screen Time access.
         AffirmationNudge.scheduleReminderIfNeeded(ritualDoneToday: SharedState.ritualCompleted())
     }
 

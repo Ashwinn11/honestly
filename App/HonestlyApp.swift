@@ -5,6 +5,7 @@ import WidgetKit
 
 @main
 struct HonestlyApp: App {
+    private static let lockWidgetQuoteRefreshKey = "didRefreshLockWidgetQuoteLayoutV1"
     @State private var premium = PremiumManager()
     @State private var screenTime = ScreenTimeManager()
     @State private var flow = AppFlow()
@@ -83,6 +84,12 @@ struct HonestlyApp: App {
                     Shielding.reconcile()
                     AffirmationNudge.schedule()
                     prompts.refresh()
+                    AffirmationNudge.scheduleReminderIfNeeded(ritualDoneToday: SharedState.ritualCompleted())
+                    if !SharedState.defaults.bool(forKey: Self.lockWidgetQuoteRefreshKey) {
+                        SharedState.defaults.set(true, forKey: Self.lockWidgetQuoteRefreshKey)
+                        SharedState.defaults.synchronize()
+                        WidgetCenter.shared.reloadTimelines(ofKind: "BigWinsLockScreenWidget")
+                    }
                 }
                 .onChange(of: premium.isPremium) { _, isPremium in
                     // Apply purchases and revocations to the app and its extensions.
@@ -115,6 +122,7 @@ struct HonestlyApp: App {
                     AffirmationNudge.schedule()
                     // A new day opens on a new prompt.
                     prompts.refresh()
+                    AffirmationNudge.scheduleReminderIfNeeded(ritualDoneToday: SharedState.ritualCompleted())
                 }
         }
     }

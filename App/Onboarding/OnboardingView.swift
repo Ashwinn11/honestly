@@ -1,6 +1,17 @@
 import SwiftUI
 import WidgetKit
 
+private struct OnboardingAnimationsActiveKey: EnvironmentKey {
+    static let defaultValue = true
+}
+
+extension EnvironmentValues {
+    var onboardingAnimationsActive: Bool {
+        get { self[OnboardingAnimationsActiveKey.self] }
+        set { self[OnboardingAnimationsActiveKey.self] = newValue }
+    }
+}
+
 struct OnboardingView: View {
     var onFinish: () -> Void
 
@@ -12,6 +23,8 @@ struct OnboardingView: View {
     @State private var picks: [String] = []
     @State private var morningAnswer: MorningAnswer?
     @State private var journalAnswer: JournalAnswer?
+    @State private var onboardingAnimationsActive = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private enum Beat: Int, CaseIterable {
         case brand, morning, journaling, affirmations, personal, social, notif, paywall
@@ -35,13 +48,17 @@ struct OnboardingView: View {
                     .capWidth(Metrics.maxContentWidth)
             }
         }
-        .overlay(alignment: .top) {
-            if beat == .brand {          // language picker lives on the very first screen
-                LanguagePickerPill().padding(.top, 6)
-            }
-        }
-        .animation(Motion.gentle, value: index)
+        .environment(\.onboardingAnimationsActive, onboardingAnimationsActive)
+        .animation(Motion.snappy, value: index)
         .onAppear { picks = affirmations.selectedTopics }
+        .task(id: index) {
+            onboardingAnimationsActive = false
+            if !reduceMotion {
+                try? await Task.sleep(for: .milliseconds(420))
+                guard !Task.isCancelled else { return }
+            }
+            onboardingAnimationsActive = true
+        }
     }
 
     private var slide: AnyTransition {
@@ -105,8 +122,13 @@ struct OnboardingView: View {
                                  secondary: FooterLink? = nil,
                                  @ViewBuilder content: @escaping () -> C) -> some View {
         VStack(spacing: 0) {
+            if beat == .brand {
+                LanguagePickerPill()
+                    .padding(.top, 6)
+                    .padding(.bottom, 14)
+            }
             OnbDots(index: index, total: dotTotal)
-                .padding(.top, beat == .brand ? 42 : 8)
+                .padding(.top, beat == .brand ? 0 : 8)
                 .padding(.bottom, 8)
             GeometryReader { geo in
                 ScrollView {
@@ -218,12 +240,14 @@ struct OnboardingView: View {
 
     private func advance() {
         guard index < beats.count - 1 else { return }
+        onboardingAnimationsActive = false
         forward = true
         withAnimation(Motion.gentle) { index += 1 }
     }
 
     private func back() {
         guard index > 0 else { return }
+        onboardingAnimationsActive = false
         forward = false
         withAnimation(Motion.gentle) { index = max(0, index - 1) }
     }

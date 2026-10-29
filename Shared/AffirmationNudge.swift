@@ -3,24 +3,41 @@ import UserNotifications
 
 /// Two kinds of notification. "Today's affirmation" carries a topic based affirmation on its own
 /// schedule. Separately, one "Journal reminder" carrying the day's writing prompt goes out at
-/// 8pm on days the page is still unwritten.
+/// 8am on days the page is still unwritten.
 enum AffirmationNudge {
-    private static let reminderID = "honestly.affirmation.reminder"
+    private static let legacyReminderID = "honestly.affirmation.reminder"
+    private static let reminderIDPrefix = "honestly.journal.reminder."
     private static let dailyIDPrefix = "honestly.affirmation.daily."
     /// The old scheme queued one echo per line written that morning. Still cleared on every
     /// reschedule, so updating mid-day never leaves those firing alongside the new daily one.
     private static let legacyEchoIDs = (0..<5).map { "honestly.affirmation.echo.\($0)" }
     /// Leave room for the separate journal reminder within iOS's pending-request limit.
     private static let horizonDays = 14
+    /// A rolling journal queue means the free reminder works without a Screen Time callback.
+    /// 42 affirmation requests + 14 journal requests + 5 legacy IDs stay below iOS's 64-request cap.
+    private static let journalReminderHorizonDays = 14
     private static let maximumDailyTimes = 3
     private static let enabledKey = "affirmationNudgeOn"
-    private static let reminderLastDayKey = "affirmationReminderLastSentDay"
+    private static let reminderLastDayKey = "affirmationReminderLastSentDay" // legacy; cleared on reset
     private static let reminderPromptsKey = "journalReminderPrompts"   // day key → that day's prompt
 
     static let defaultMinutes = 9 * 60
 
     private static var dailyIDs: [String] { (0..<(horizonDays * maximumDailyTimes)).map { dailyIDPrefix + "\($0)" } }
-    private static var allIDs: [String] { [reminderID] + dailyIDs + legacyEchoIDs }
+    private static var allIDs: [String] { [legacyReminderID] + journalReminderIDs + dailyIDs + legacyEchoIDs }
+
+    private static func journalReminderID(for date: Date) -> String {
+        reminderIDPrefix + SharedState.dayKey(for: date)
+    }
+
+    /// Include yesterday to clean up a missed legacy request and all dates in the rolling window.
+    private static var journalReminderIDs: [String] {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        return (-1...journalReminderHorizonDays).compactMap {
+            calendar.date(byAdding: .day, value: $0, to: today)
+        }.map { journalReminderID(for: $0) }
+    }
 
     /// Reminders are free. They're on once someone allows notifications in onboarding (see
     /// `enable`) or flips the toggle in Affirmation delivery; an absent key is OFF.
@@ -33,6 +50,7 @@ enum AffirmationNudge {
     static func enable() {
         SharedState.defaults.set(true, forKey: enabledKey)
         schedule()
+        scheduleReminderIfNeeded(ritualDoneToday: SharedState.ritualCompleted())
     }
 
     /// Legacy single-time preference, used once when migrating older installs.
@@ -61,6 +79,7 @@ enum AffirmationNudge {
         let granted = await requestPermission()
         guard granted else { return false }
         schedule()
+        scheduleReminderIfNeeded(ritualDoneToday: SharedState.ritualCompleted())
         return true
     }
 
@@ -71,7 +90,7 @@ enum AffirmationNudge {
     }
 
     /// Re-lays the next `horizonDays` of topic based affirmations. Call when schedule, topics,
-    /// language, Premium state, or the reminder toggle changes. Leaves the 8pm journal reminder
+    /// language, Premium state, or the reminder toggle changes. Leaves the 8am journal reminder
     /// alone; it has its own lifecycle.
     static func schedule() {
         let center = UNUserNotificationCenter.current()
@@ -103,58 +122,69 @@ enum AffirmationNudge {
         }
     }
 
-    /// Call once today's page is written — the 8pm "come write" reminder no longer applies.
+    /// Call once today's page is written — keep future reminders queued, but remove today's.
     static func ritualWritten() {
-        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [reminderID])
+        UNUserNotificationCenter.current().removePendingNotificationRequests(
+            withIdentifiers: [legacyReminderID, journalReminderID(for: Date())])
     }
 
-    /// Call once a day from `ActivityMonitorExtension.intervalDidStart` (04:00) — runs even if the
-    /// app itself is never opened, so a day with zero app-opens still gets a reminder. Ritual can
-    /// never be done yet at 04:00, so this schedules for a fixed later time of day, cancelled by
-    /// `ritualWritten` if the user does end up writing before then. Fires at most once per day.
-    static let reminderHour = 20   // 8pm — gives the whole day to write first
+    /// Maintains a rolling two-week queue. Called from app launch/resume, reminder enablement, and
+    /// the 04:00 DeviceActivity callback when available. It does not depend on Screen Time access.
+    static let reminderHour = 8   // 8am — a morning writing nudge
     static func scheduleReminderIfNeeded(ritualDoneToday: Bool) {
-        guard isEnabled, !ritualDoneToday else { return }
-        let d = SharedState.defaults
-        let today = SharedState.dayKey()
-        guard d.string(forKey: reminderLastDayKey) != today else { return }   // already handled today
-        d.set(today, forKey: reminderLastDayKey)
-        addReminder()
+        scheduleJournalReminders(ritualDoneToday: ritualDoneToday)
+    }
+
+    static func scheduleJournalReminders(ritualDoneToday: Bool) {
+        let center = UNUserNotificationCenter.current()
+        center.removePendingNotificationRequests(withIdentifiers: [legacyReminderID] + journalReminderIDs)
+        guard isEnabled else { return }
+
+        let calendar = Calendar.current
+        let now = Date()
+        let today = calendar.startOfDay(for: now)
+        let todayKey = SharedState.dayKey(for: today)
+        for offset in 0..<journalReminderHorizonDays {
+            guard let date = calendar.date(byAdding: .day, value: offset, to: today) else { continue }
+            if SharedState.dayKey(for: date) == todayKey && ritualDoneToday { continue }
+            addReminder(for: date, now: now)
+        }
     }
 
     /// Each coming day's writing-page prompt, already in the app's language — mirrored by the
-    /// app (the 04:00 extension can't read the prompt library) so each night's reminder asks
+    /// app (the 04:00 extension can't read the prompt library) so each morning's reminder asks
     /// that day's prompt. If today's changed, a reminder already waiting for tonight is swapped.
     static func setReminderPrompts(_ byDay: [String: String]) {
         let d = SharedState.defaults
         let old = d.dictionary(forKey: reminderPromptsKey) as? [String: String]
         guard old != byDay else { return }
         d.set(byDay, forKey: reminderPromptsKey)
-        let today = SharedState.dayKey()
-        guard old?[today] != byDay[today] else { return }
-        Task {
-            let pending = await UNUserNotificationCenter.current().pendingNotificationRequests()
-            guard pending.contains(where: { $0.identifier == reminderID }) else { return }
-            addReminder()
-        }
+        scheduleJournalReminders(ritualDoneToday: SharedState.ritualCompleted())
     }
 
-    private static func addReminder() {
+    private static func addReminder(for date: Date, now: Date) {
+        let calendar = Calendar.current
+        guard let fireDate = calendar.date(bySettingHour: reminderHour, minute: 0, second: 0, of: date),
+              fireDate > now else { return }
+
+        let content = journalReminderContent(for: date)
+        let when = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: fireDate)
+        let trigger = UNCalendarNotificationTrigger(dateMatching: when, repeats: false)
+        UNUserNotificationCenter.current().add(UNNotificationRequest(
+            identifier: journalReminderID(for: date), content: content, trigger: trigger))
+    }
+
+    private static func journalReminderContent(for date: Date) -> UNMutableNotificationContent {
         let content = UNMutableNotificationContent()
         // Not SwiftUI here, so `Text(loc:)` doesn't apply — do the String Catalog lookup directly.
         content.title = L10n.localized("Journal reminder")
         let prompts = SharedState.defaults.dictionary(forKey: reminderPromptsKey) as? [String: String]
-        let prompt = prompts?[SharedState.dayKey()]?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let prompt = prompts?[SharedState.dayKey(for: date)]?.trimmingCharacters(in: .whitespacesAndNewlines)
         content.body = prompt?.isEmpty == false
             ? prompt!
             : L10n.localized("Write today's page — a few quiet minutes, just for you.")
         content.sound = .default
-
-        var when = DateComponents()
-        when.hour = reminderHour
-        when.minute = 0
-        let trigger = UNCalendarNotificationTrigger(dateMatching: when, repeats: false)
-        UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: reminderID, content: content, trigger: trigger))
+        return content
     }
 
     static func cancel() {

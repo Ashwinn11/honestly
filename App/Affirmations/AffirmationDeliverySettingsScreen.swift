@@ -2,36 +2,26 @@ import SwiftUI
 import WidgetKit
 import UIKit
 
-/// Reminder timing lives here. Affirmations use the same topics everywhere in the app.
+/// Notification reminder timing and days.
 struct AffirmationDeliverySettingsScreen: View {
-    @Environment(PremiumManager.self) private var premium
-    @Environment(AppFlow.self) private var flow
     @Environment(\.dismiss) private var dismiss
     @AppStorage("affirmationNudgeOn", store: SharedState.defaults) private var enabled = false
-    @AppStorage(SharedState.Key.affirmationWidgetTheme, store: SharedState.defaults) private var widgetThemeID = SharedState.defaultWidgetTheme
-    @AppStorage(SharedState.Key.affirmationWidgetBackgroundColor, store: SharedState.defaults) private var widgetBackgroundHex = ""
-    @AppStorage(SharedState.Key.affirmationWidgetTextColor, store: SharedState.defaults) private var widgetTextHex = "33261A"
-    @AppStorage(SharedState.Key.affirmationWidgetFont, store: SharedState.defaults) private var widgetFontName = "Manrope"
     @State private var reminderTimes = [AffirmationNudge.defaultMinutes]
     @State private var reminderDays = Array(1...7)
     @State private var notifDenied = false
-    @State private var showingWidgetTheme = false
-    @State private var showingBackgroundColor = false
-    @State private var showingTextColor = false
-    @State private var showingWidgetFont = false
 
     private let weekdaySymbols = Calendar.current.veryShortStandaloneWeekdaySymbols
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            ScreenHeader(Text(loc: "Affirmation delivery"), back: { dismiss() })
+            ScreenHeader(Text(loc: "Notification reminders"), back: { dismiss() })
                 .padding(.bottom, 18)
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     VStack(alignment: .leading, spacing: 12) {
                         sectionTitle("Daily reminders")
                         card {
-                            toggleRow("Affirmation reminders", detail: "Affirmations at your times, plus a writing nudge at 8 pm")
+                            toggleRow("Notification reminders", detail: "Affirmations at your times, plus a writing nudge at 8 am")
                         }
                         if enabled {
                             card {
@@ -81,65 +71,6 @@ struct AffirmationDeliverySettingsScreen: View {
                         }
                     }
 
-                    VStack(alignment: .leading, spacing: 12) {
-                        sectionTitle("Affirmation widgets")
-                        if premium.allows(.widget) {
-                            card {
-                                VStack(spacing: 12) {
-                                    Button { showingWidgetTheme = true } label: {
-                                        HStack(spacing: 12) {
-                                            PageThemeBackground(theme: PageTheme.from(widgetThemeID), layout: .widget)
-                                                .frame(width: 56, height: 44)
-                                                .clipShape(RoundedRectangle(cornerRadius: Radius.tile, style: .continuous))
-                                                .overlay(RoundedRectangle(cornerRadius: Radius.tile, style: .continuous)
-                                                    .strokeBorder(Palette.ink.opacity(0.22), lineWidth: 1))
-                                            VStack(alignment: .leading, spacing: 2) {
-                                                Text(loc: "Page theme")
-                                                    .font(Fonts.ui(14, .bold)).foregroundStyle(Palette.ink)
-                                                Text(loc: PageTheme.from(widgetThemeID).label)
-                                                    .font(Fonts.ui(12, .medium)).foregroundStyle(Palette.inkSofter)
-                                            }
-                                            Spacer(minLength: 4)
-                                            Image(systemName: "chevron.forward")
-                                                .font(.system(size: 12, weight: .bold)).foregroundStyle(Palette.inkSofter)
-                                        }
-                                        .frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
-                                        .contentShape(Rectangle())
-                                    }
-                                    .buttonStyle(.plain)
-
-                                    HStack(spacing: 12) {
-                                        widgetColorButton(title: "Background color", hex: effectiveBackgroundHex) {
-                                            showingBackgroundColor = true
-                                        }
-                                        widgetColorButton(title: "Text color", hex: effectiveTextHex) {
-                                            showingTextColor = true
-                                        }
-                                    }
-
-                                    Button { showingWidgetFont = true } label: {
-                                        HStack(spacing: 10) {
-                                            IconTile(size: 32) {
-                                                Image(systemName: "textformat")
-                                                    .font(.system(size: DesignScale.s(14), weight: .bold))
-                                                    .foregroundStyle(Palette.ink)
-                                            }
-                                            Text(loc: "Font").font(Fonts.ui(14, .bold)).foregroundStyle(Palette.ink)
-                                            Spacer()
-                                            Text(widgetFontName).font(Fonts.ui(12, .medium)).foregroundStyle(Palette.inkSofter)
-                                            Image(systemName: "chevron.forward")
-                                                .font(.system(size: 12, weight: .bold)).foregroundStyle(Palette.inkSofter)
-                                        }
-                                        .frame(maxWidth: .infinity, minHeight: 40)
-                                        .contentShape(Rectangle())
-                                    }
-                                    .buttonStyle(.plain)
-                                }
-                            }
-                        } else {
-                            PremiumLockedRow(title: "Unlock this widget with Premium") { flow.showPaywall() }
-                        }
-                    }
                 }
             }
             .scrollIndicators(.hidden)
@@ -149,18 +80,6 @@ struct AffirmationDeliverySettingsScreen: View {
         .capWidth(Metrics.maxContentWidth)
         .background(PaperBackground())
         .toolbar(.hidden, for: .navigationBar)
-        .sheet(isPresented: $showingWidgetTheme, onDismiss: reloadWidgetStyle) {
-            ThemePickerSheet(selection: widgetThemeSelection, title: "Theme", confirmSelection: true, surface: .widget)
-        }
-        .sheet(isPresented: $showingBackgroundColor, onDismiss: reloadWidgetStyle) {
-            WidgetColorPickerSheet(title: "Background color", hex: backgroundColorBinding)
-        }
-        .sheet(isPresented: $showingTextColor, onDismiss: reloadWidgetStyle) {
-            WidgetColorPickerSheet(title: "Text color", hex: $widgetTextHex)
-        }
-        .sheet(isPresented: $showingWidgetFont, onDismiss: reloadWidgetStyle) {
-            WidgetFontPickerSheet(selection: $widgetFontName)
-        }
         .onAppear {
             reminderTimes = AffirmationNudge.times
             reminderDays = AffirmationNudge.weekdays
@@ -192,65 +111,6 @@ struct AffirmationDeliverySettingsScreen: View {
         content()
                 .padding(16)
                 .outlinedSurface(radius: Radius.panel)
-    }
-
-    private var widgetThemeSelection: Binding<PageTheme> {
-        Binding(
-            get: { PageTheme.from(widgetThemeID) },
-            set: { theme in
-                widgetThemeID = theme.rawValue
-                widgetBackgroundHex = ""
-                SharedState.affirmationWidgetTheme = theme.rawValue
-                SharedState.affirmationWidgetBackgroundColor = nil
-            }
-        )
-    }
-
-    /// What the widget actually draws its text in — light on a dark theme until a colour is picked.
-    private var effectiveTextHex: String {
-        widgetBackgroundHex.isEmpty
-            ? PageTheme.from(widgetThemeID).widgetTextHex(chosen: widgetTextHex) : widgetTextHex
-    }
-
-    private var effectiveBackgroundHex: String {
-        widgetBackgroundHex.isEmpty ? colorHex(PageTheme.from(widgetThemeID).baseColor) : widgetBackgroundHex
-    }
-
-    private var backgroundColorBinding: Binding<String> {
-        Binding(
-            get: { effectiveBackgroundHex },
-            set: { widgetBackgroundHex = $0 }
-        )
-    }
-
-    private func widgetColorButton(title: String, hex: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack(spacing: 7) {
-                Circle().fill(Color(hex: hex)).frame(width: 24, height: 24)
-                    .overlay(Circle().strokeBorder(Palette.ink.opacity(0.35), lineWidth: 1))
-                Text(loc: title).font(Fonts.ui(11.5, .semibold)).foregroundStyle(Palette.ink)
-                    .lineLimit(1).minimumScaleFactor(0.8)
-                Spacer(minLength: 0)
-            }
-            .frame(maxWidth: .infinity, minHeight: 40, alignment: .leading)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-    }
-
-    private func reloadWidgetStyle() {
-        // Each setting is persisted by its AppStorage binding as it changes. Writing all four
-        // values here can write stale values captured by the parent view when a sheet closes.
-        SharedState.defaults.synchronize()
-        WidgetCenter.shared.reloadAllTimelines()
-    }
-
-    private func colorHex(_ color: Color) -> String {
-        let uiColor = UIColor(color)
-        var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0
-        uiColor.getRed(&red, green: &green, blue: &blue, alpha: nil)
-        return String(format: "%02X%02X%02X", Int((red * 255).rounded()),
-                      Int((green * 255).rounded()), Int((blue * 255).rounded()))
     }
 
     private func sectionTitle(_ title: String) -> some View {
@@ -304,6 +164,152 @@ struct AffirmationDeliverySettingsScreen: View {
         SharedState.defaults.set(reminderDays, forKey: SharedState.Key.affirmationReminderWeekdays)
         WidgetCenter.shared.reloadAllTimelines()
         AffirmationNudge.schedule()
+    }
+}
+
+/// Widget appearance is part of managing the affirmation library, so these controls live on that
+/// screen rather than alongside reminder timing.
+struct AffirmationWidgetCustomizationSection: View {
+    @Environment(PremiumManager.self) private var premium
+    @Environment(AppFlow.self) private var flow
+    @AppStorage(SharedState.Key.affirmationWidgetTheme, store: SharedState.defaults) private var widgetThemeID = SharedState.defaultWidgetTheme
+    @AppStorage(SharedState.Key.affirmationWidgetBackgroundColor, store: SharedState.defaults) private var widgetBackgroundHex = ""
+    @AppStorage(SharedState.Key.affirmationWidgetTextColor, store: SharedState.defaults) private var widgetTextHex = "33261A"
+    @AppStorage(SharedState.Key.affirmationWidgetFont, store: SharedState.defaults) private var widgetFontName = "Manrope"
+    @State private var showingWidgetTheme = false
+    @State private var showingBackgroundColor = false
+    @State private var showingTextColor = false
+    @State private var showingWidgetFont = false
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(loc: "Affirmation widgets").font(Fonts.ui(15, .bold)).foregroundStyle(Palette.ink)
+            if premium.allows(.widget) {
+                card {
+                    VStack(spacing: 12) {
+                        Button { showingWidgetTheme = true } label: {
+                            HStack(spacing: 12) {
+                                PageThemeBackground(theme: PageTheme.from(widgetThemeID), layout: .widget)
+                                    .frame(width: 56, height: 44)
+                                    .clipShape(RoundedRectangle(cornerRadius: Radius.tile, style: .continuous))
+                                    .overlay(RoundedRectangle(cornerRadius: Radius.tile, style: .continuous)
+                                        .strokeBorder(Palette.ink.opacity(0.22), lineWidth: 1))
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(loc: "Page theme")
+                                        .font(Fonts.ui(14, .bold)).foregroundStyle(Palette.ink)
+                                    Text(loc: PageTheme.from(widgetThemeID).label)
+                                        .font(Fonts.ui(12, .medium)).foregroundStyle(Palette.inkSofter)
+                                }
+                                Spacer(minLength: 4)
+                                Image(systemName: "chevron.forward")
+                                    .font(.system(size: 12, weight: .bold)).foregroundStyle(Palette.inkSofter)
+                            }
+                            .frame(maxWidth: .infinity, minHeight: 48, alignment: .leading)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+
+                        HStack(spacing: 12) {
+                            widgetColorButton(title: "Background color", hex: effectiveBackgroundHex) {
+                                showingBackgroundColor = true
+                            }
+                            widgetColorButton(title: "Text color", hex: effectiveTextHex) {
+                                showingTextColor = true
+                            }
+                        }
+
+                        Button { showingWidgetFont = true } label: {
+                            HStack(spacing: 10) {
+                                IconTile(size: 32) {
+                                    Image(systemName: "textformat")
+                                        .font(.system(size: DesignScale.s(14), weight: .bold))
+                                        .foregroundStyle(Palette.ink)
+                                }
+                                Text(loc: "Font").font(Fonts.ui(14, .bold)).foregroundStyle(Palette.ink)
+                                Spacer()
+                                Text(widgetFontName).font(Fonts.ui(12, .medium)).foregroundStyle(Palette.inkSofter)
+                                Image(systemName: "chevron.forward")
+                                    .font(.system(size: 12, weight: .bold)).foregroundStyle(Palette.inkSofter)
+                            }
+                            .frame(maxWidth: .infinity, minHeight: 40)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+            } else {
+                PremiumLockedRow(title: "Unlock this widget with Premium") { flow.showPaywall() }
+            }
+        }
+        .sheet(isPresented: $showingWidgetTheme, onDismiss: reloadWidgetStyle) {
+            ThemePickerSheet(selection: widgetThemeSelection, title: "Theme", confirmSelection: true, surface: .widget)
+        }
+        .sheet(isPresented: $showingBackgroundColor, onDismiss: reloadWidgetStyle) {
+            WidgetColorPickerSheet(title: "Background color", hex: backgroundColorBinding)
+        }
+        .sheet(isPresented: $showingTextColor, onDismiss: reloadWidgetStyle) {
+            WidgetColorPickerSheet(title: "Text color", hex: $widgetTextHex)
+        }
+        .sheet(isPresented: $showingWidgetFont, onDismiss: reloadWidgetStyle) {
+            WidgetFontPickerSheet(selection: $widgetFontName)
+        }
+    }
+
+    private func card<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        content().padding(16).outlinedSurface(radius: Radius.panel)
+    }
+
+    private var widgetThemeSelection: Binding<PageTheme> {
+        Binding(
+            get: { PageTheme.from(widgetThemeID) },
+            set: { theme in
+                widgetThemeID = theme.rawValue
+                widgetBackgroundHex = ""
+                SharedState.affirmationWidgetTheme = theme.rawValue
+                SharedState.affirmationWidgetBackgroundColor = nil
+            }
+        )
+    }
+
+    private var effectiveTextHex: String {
+        widgetBackgroundHex.isEmpty
+            ? PageTheme.from(widgetThemeID).widgetTextHex(chosen: widgetTextHex) : widgetTextHex
+    }
+
+    private var effectiveBackgroundHex: String {
+        widgetBackgroundHex.isEmpty ? colorHex(PageTheme.from(widgetThemeID).baseColor) : widgetBackgroundHex
+    }
+
+    private var backgroundColorBinding: Binding<String> {
+        Binding(get: { effectiveBackgroundHex }, set: { widgetBackgroundHex = $0 })
+    }
+
+    private func widgetColorButton(title: String, hex: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 7) {
+                Circle().fill(Color(hex: hex)).frame(width: 24, height: 24)
+                    .overlay(Circle().strokeBorder(Palette.ink.opacity(0.35), lineWidth: 1))
+                Text(loc: title).font(Fonts.ui(11.5, .semibold)).foregroundStyle(Palette.ink)
+                    .lineLimit(1).minimumScaleFactor(0.8)
+                Spacer(minLength: 0)
+            }
+            .frame(maxWidth: .infinity, minHeight: 40, alignment: .leading)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func reloadWidgetStyle() {
+        SharedState.defaults.synchronize()
+        WidgetCenter.shared.reloadAllTimelines()
+    }
+
+    private func colorHex(_ color: Color) -> String {
+        let uiColor = UIColor(color)
+        var red: CGFloat = 0, green: CGFloat = 0, blue: CGFloat = 0
+        uiColor.getRed(&red, green: &green, blue: &blue, alpha: nil)
+        return String(format: "%02X%02X%02X", Int((red * 255).rounded()),
+                      Int((green * 255).rounded()), Int((blue * 255).rounded()))
     }
 }
 

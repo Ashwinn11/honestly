@@ -266,8 +266,7 @@ private struct WidgetThemeMiniature: View {
                 PageThemeSurface(theme: theme)
                 // The medium widget's layout (`BigWinsWidgetView`).
                 VStack(spacing: 5) {
-                    Image(systemName: "quote.opening")
-                        .font(.system(size: 18, weight: .semibold))
+                    QuoteMark(size: 18)
                     Affirmations.text(quote)
                         .font(Font((FontChoice(rawValue: fontName) ?? .manrope).uiFont(size: 19)).weight(.semibold))
                         .multilineTextAlignment(.center)

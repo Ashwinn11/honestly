@@ -58,3 +58,18 @@ struct SunMark: View {
         .frame(width: size, height: size)
     }
 }
+
+/// The app's affirmation quote icon, using the familiar system glyph in the coral accent.
+struct QuoteMark: View {
+    var size: CGFloat
+    var fill: Color = Palette.amber
+    var weight: Font.Weight = .semibold
+
+    var body: some View {
+        Image(systemName: "quote.opening")
+            .font(.system(size: size, weight: weight))
+            .foregroundStyle(fill)
+            .frame(width: size, height: size)
+            .accessibilityHidden(true)
+    }
+}

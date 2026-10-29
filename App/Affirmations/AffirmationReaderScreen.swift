@@ -49,7 +49,7 @@ struct AffirmationReaderScreen: View {
                         ForEach(Array(lines.enumerated()), id: \.element) { index, item in
                             GeometryReader { geometry in
                                 VStack(spacing: 24) {
-                                    SunMark(size: 56).accessibilityHidden(true)
+                                    QuoteMark(size: 38)
                                     Affirmations.text(item)
                                         .font(Fonts.display(30, .bold)).foregroundStyle(Palette.ink)
                                         .multilineTextAlignment(.center).lineSpacing(6)

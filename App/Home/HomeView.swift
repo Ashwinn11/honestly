@@ -205,11 +205,7 @@ struct HomeView: View {
                     .toolbar(.hidden, for: .navigationBar)
             } label: {
                 HStack(spacing: 12) {
-                    Image(systemName: "quote.opening")
-                        .font(.system(size: 19, weight: .semibold))
-                        .foregroundStyle(Palette.amberDeep)
-                        .frame(width: 22)
-                        .accessibilityHidden(true)
+                    QuoteMark(size: 19)
                     Affirmations.text(affirmations.today(premium: premium.allows(.fullAffirmations)))
                         .font(Fonts.ui(14.5, .semibold)).foregroundStyle(Palette.ink)
                         .fixedSize(horizontal: false, vertical: true)
