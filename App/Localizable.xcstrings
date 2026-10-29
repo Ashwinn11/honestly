@@ -15665,156 +15665,156 @@
         }
       }
     },
-    "Honestly Premium purchases, including lifetime access and monthly subscriptions when offered, are processed by Apple. We use RevenueCat to verify your purchase and unlock premium features. This involves an anonymous purchase identifier only — no name, email, or contact information is required or collected." : {
+    "Honestly Premium purchases, including lifetime access and yearly or monthly subscriptions, are processed by Apple. We use RevenueCat to verify your purchase and unlock premium features. This involves an anonymous purchase identifier only — no name, email, or contact information is required or collected." : {
       "extractionState" : "manual",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "تُعالَج مشتريات Honestly Premium عبر Apple، بما في ذلك الوصول مدى الحياة والاشتراكات الشهرية عند توفرها. نستخدم RevenueCat للتحقق من شرائك وفتح ميزات Premium. يتضمن ذلك معرّف شراء مجهول الهوية فقط؛ ولا نطلب أو نجمع اسمًا أو بريدًا إلكترونيًا أو معلومات اتصال."
+            "value" : "تُعالَج مشتريات Honestly Premium عبر Apple، بما في ذلك الوصول مدى الحياة والاشتراكات السنوية أو الشهرية. نستخدم RevenueCat للتحقق من شرائك وفتح ميزات Premium. يتضمن ذلك معرّف شراء مجهول الهوية فقط؛ ولا نطلب أو نجمع اسمًا أو بريدًا إلكترونيًا أو معلومات اتصال."
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Käufe von Honestly Premium, einschließlich lebenslangem Zugriff und gegebenenfalls Monatsabos, werden von Apple abgewickelt. Wir nutzen RevenueCat, um deinen Kauf zu prüfen und Premium-Funktionen freizuschalten. Dabei wird nur eine anonyme Kaufkennung verwendet. Name, E-Mail-Adresse oder Kontaktdaten werden weder benötigt noch erfasst."
+            "value" : "Käufe von Honestly Premium, einschließlich lebenslangem Zugriff sowie Jahres- und Monatsabos, werden von Apple abgewickelt. Wir nutzen RevenueCat, um deinen Kauf zu prüfen und Premium-Funktionen freizuschalten. Dabei wird nur eine anonyme Kaufkennung verwendet. Name, E-Mail-Adresse oder Kontaktdaten werden weder benötigt noch erfasst."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Las compras de Honestly Premium, incluido el acceso de por vida y las suscripciones mensuales cuando estén disponibles, se procesan a través de Apple. Usamos RevenueCat para verificar tu compra y activar las funciones Premium. Solo se utiliza un identificador de compra anónimo; no se requieren ni recopilan nombres, correos electrónicos ni datos de contacto."
+            "value" : "Las compras de Honestly Premium, incluido el acceso de por vida y las suscripciones anuales o mensuales, se procesan a través de Apple. Usamos RevenueCat para verificar tu compra y activar las funciones Premium. Solo se utiliza un identificador de compra anónimo; no se requieren ni recopilan nombres, correos electrónicos ni datos de contacto."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Les achats Honestly Premium, y compris l’accès à vie et les abonnements mensuels lorsqu’ils sont proposés, sont traités par Apple. Nous utilisons RevenueCat pour vérifier votre achat et activer les fonctionnalités Premium. Seul un identifiant d’achat anonyme est utilisé ; aucun nom, e-mail ni renseignement de contact n’est demandé ou collecté."
+            "value" : "Les achats Honestly Premium, y compris l’accès à vie et les abonnements annuels ou mensuels, sont traités par Apple. Nous utilisons RevenueCat pour vérifier votre achat et activer les fonctionnalités Premium. Seul un identifiant d’achat anonyme est utilisé ; aucun nom, e-mail ni renseignement de contact n’est demandé ou collecté."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Gli acquisti di Honestly Premium, inclusi l’accesso a vita e gli abbonamenti mensili quando disponibili, sono gestiti da Apple. Usiamo RevenueCat per verificare il tuo acquisto e sbloccare le funzionalità Premium. Viene utilizzato solo un identificativo di acquisto anonimo; non richiediamo né raccogliamo nome, e-mail o recapiti."
+            "value" : "Gli acquisti di Honestly Premium, inclusi l’accesso a vita e gli abbonamenti annuali o mensili, sono gestiti da Apple. Usiamo RevenueCat per verificare il tuo acquisto e sbloccare le funzionalità Premium. Viene utilizzato solo un identificativo di acquisto anonimo; non richiediamo né raccogliamo nome, e-mail o recapiti."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Honestly Premiumの購入は、買い切りと提供される場合の月額サブスクリプションを含め、Appleが処理します。購入の確認とPremium機能の有効化にはRevenueCatを使用します。匿名の購入識別子のみを使用し、氏名、メールアドレス、連絡先情報を要求・収集することはありません。"
+            "value" : "Honestly Premiumの購入は、買い切りと年額・月額サブスクリプションを含め、Appleが処理します。購入の確認とPremium機能の有効化にはRevenueCatを使用します。匿名の購入識別子のみを使用し、氏名、メールアドレス、連絡先情報を要求・収集することはありません。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "평생 이용권과 제공되는 경우의 월간 구독을 포함한 Honestly Premium 구매는 Apple에서 처리합니다. 구매 확인과 Premium 기능 활성화에는 RevenueCat을 사용합니다. 익명의 구매 식별자만 사용하며 이름, 이메일 또는 연락처 정보는 요구하거나 수집하지 않습니다."
+            "value" : "평생 이용권과 연간·월간 구독을 포함한 Honestly Premium 구매는 Apple에서 처리합니다. 구매 확인과 Premium 기능 활성화에는 RevenueCat을 사용합니다. 익명의 구매 식별자만 사용하며 이름, 이메일 또는 연락처 정보는 요구하거나 수집하지 않습니다."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Aankopen van Honestly Premium, waaronder levenslange toegang en maandabonnementen wanneer die worden aangeboden, worden door Apple verwerkt. We gebruiken RevenueCat om je aankoop te verifiëren en Premium-functies te ontgrendelen. Hiervoor wordt alleen een anonieme aankoopcode gebruikt. Je naam, e-mailadres of contactgegevens zijn niet nodig en worden niet verzameld."
+            "value" : "Aankopen van Honestly Premium, waaronder levenslange toegang en jaar- of maandabonnementen, worden door Apple verwerkt. We gebruiken RevenueCat om je aankoop te verifiëren en Premium-functies te ontgrendelen. Hiervoor wordt alleen een anonieme aankoopcode gebruikt. Je naam, e-mailadres of contactgegevens zijn niet nodig en worden niet verzameld."
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "As compras do Honestly Premium, incluindo o acesso vitalício e as subscrições mensais quando disponíveis, são processadas pela Apple. Usamos o RevenueCat para verificar a compra e desbloquear as funcionalidades Premium. É usado apenas um identificador de compra anónimo; não são necessários nem recolhidos nomes, endereços de e-mail ou contactos."
+            "value" : "As compras do Honestly Premium, incluindo o acesso vitalício e as subscrições anuais ou mensais, são processadas pela Apple. Usamos o RevenueCat para verificar a compra e desbloquear as funcionalidades Premium. É usado apenas um identificador de compra anónimo; não são necessários nem recolhidos nomes, endereços de e-mail ou contactos."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Покупки Honestly Premium, включая пожизненный доступ и месячные подписки, когда они предлагаются, обрабатываются Apple. Мы используем RevenueCat для проверки покупки и открытия функций Premium. Для этого используется только анонимный идентификатор покупки; имя, адрес электронной почты и контактные данные не требуются и не собираются."
+            "value" : "Покупки Honestly Premium, включая пожизненный доступ и годовые или месячные подписки, обрабатываются Apple. Мы используем RevenueCat для проверки покупки и открытия функций Premium. Для этого используется только анонимный идентификатор покупки; имя, адрес электронной почты и контактные данные не требуются и не собираются."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Honestly Premium 的购买由 Apple 处理，包括终身使用权以及提供时的月度订阅。我们使用 RevenueCat 验证购买并解锁 Premium 功能。此过程仅涉及匿名购买标识符，无须提供姓名、电子邮箱或联系方式，我们也不会收集这些信息。"
+            "value" : "Honestly Premium 的购买由 Apple 处理，包括终身使用权以及年度或月度订阅。我们使用 RevenueCat 验证购买并解锁 Premium 功能。此过程仅涉及匿名购买标识符，无须提供姓名、电子邮箱或联系方式，我们也不会收集这些信息。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Honestly Premium 的購買由 Apple 處理，包括終身使用權以及提供時的月訂閱。我們使用 RevenueCat 驗證購買並解鎖 Premium 功能。此過程僅涉及匿名購買識別碼，無須提供姓名、電子郵件或聯絡資訊，我們也不會收集這些資訊。"
+            "value" : "Honestly Premium 的購買由 Apple 處理，包括終身使用權以及年訂閱或月訂閱。我們使用 RevenueCat 驗證購買並解鎖 Premium 功能。此過程僅涉及匿名購買識別碼，無須提供姓名、電子郵件或聯絡資訊，我們也不會收集這些資訊。"
           }
         }
       }
     },
-    "Honestly Premium unlocks your full history and additional features. Lifetime access is a one-time purchase for the lifetime of the app on your Apple account. When offered, a monthly subscription provides access while active and automatically renews each month unless cancelled. You can manage or cancel subscriptions in your App Store account settings. The price and billing period are shown before purchase. Purchases are handled and billed by Apple under Apple's terms. Refunds are managed by Apple through the App Store." : {
+    "Honestly Premium unlocks your full history and additional features. Lifetime access is a one-time purchase for the lifetime of the app on your Apple account. Yearly and monthly subscriptions provide access while active and automatically renew at the end of each period unless cancelled. You can manage or cancel subscriptions in your App Store account settings. The price and billing period are shown before purchase. Purchases are handled and billed by Apple under Apple's terms. Refunds are managed by Apple through the App Store." : {
       "extractionState" : "manual",
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "يفتح Honestly Premium سجلك الكامل وميزات إضافية. الوصول مدى الحياة هو شراء لمرة واحدة طوال عمر التطبيق على حساب Apple الخاص بك. عند توفره، يتيح الاشتراك الشهري الوصول ما دام نشطًا ويتجدد تلقائيًا كل شهر ما لم يُلغَ. يمكنك إدارة الاشتراكات أو إلغاؤها من إعدادات حسابك في App Store. يظهر السعر وفترة الفوترة قبل الشراء. تتولى Apple معالجة المشتريات وفوترتها وفق شروطها، كما تدير عمليات الاسترداد عبر App Store."
+            "value" : "يفتح Honestly Premium سجلك الكامل وميزات إضافية. الوصول مدى الحياة هو شراء لمرة واحدة طوال عمر التطبيق على حساب Apple الخاص بك. تتيح الاشتراكات السنوية والشهرية الوصول ما دامت نشطة وتتجدد تلقائيًا في نهاية كل فترة ما لم تُلغَ. يمكنك إدارة الاشتراكات أو إلغاؤها من إعدادات حسابك في App Store. يظهر السعر وفترة الفوترة قبل الشراء. تتولى Apple معالجة المشتريات وفوترتها وفق شروطها، كما تدير عمليات الاسترداد عبر App Store."
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Honestly Premium schaltet deinen vollständigen Verlauf und weitere Funktionen frei. Lebenslanger Zugriff ist ein einmaliger Kauf für die Lebensdauer der App auf deinem Apple-Konto. Ein Monatsabo bietet, sofern angeboten, Zugriff während der Laufzeit und verlängert sich monatlich automatisch, bis es gekündigt wird. Abos kannst du in deinen App-Store-Kontoeinstellungen verwalten oder kündigen. Preis und Abrechnungszeitraum werden vor dem Kauf angezeigt. Apple wickelt Käufe und Abrechnung nach den eigenen Bedingungen ab. Erstattungen werden von Apple über den App Store verwaltet."
+            "value" : "Honestly Premium schaltet deinen vollständigen Verlauf und weitere Funktionen frei. Lebenslanger Zugriff ist ein einmaliger Kauf für die Lebensdauer der App auf deinem Apple-Konto. Jahres- und Monatsabos bieten Zugriff während der Laufzeit und verlängern sich am Ende jedes Zeitraums automatisch, bis sie gekündigt werden. Abos kannst du in deinen App-Store-Kontoeinstellungen verwalten oder kündigen. Preis und Abrechnungszeitraum werden vor dem Kauf angezeigt. Apple wickelt Käufe und Abrechnung nach den eigenen Bedingungen ab. Erstattungen werden von Apple über den App Store verwaltet."
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Honestly Premium desbloquea tu historial completo y funciones adicionales. El acceso de por vida es una compra única para toda la vida útil de la app en tu cuenta de Apple. Cuando se ofrece, la suscripción mensual da acceso mientras esté activa y se renueva automáticamente cada mes, salvo que se cancele. Puedes gestionar o cancelar las suscripciones en los ajustes de tu cuenta del App Store. El precio y el periodo de facturación se muestran antes de comprar. Apple gestiona y factura las compras conforme a sus condiciones. Los reembolsos los gestiona Apple a través del App Store."
+            "value" : "Honestly Premium desbloquea tu historial completo y funciones adicionales. El acceso de por vida es una compra única para toda la vida útil de la app en tu cuenta de Apple. Las suscripciones anuales y mensuales dan acceso mientras estén activas y se renuevan automáticamente al final de cada periodo, salvo que se cancelen. Puedes gestionar o cancelar las suscripciones en los ajustes de tu cuenta del App Store. El precio y el periodo de facturación se muestran antes de comprar. Apple gestiona y factura las compras conforme a sus condiciones. Los reembolsos los gestiona Apple a través del App Store."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Honestly Premium donne accès à l’historique complet et à des fonctionnalités supplémentaires. L’accès à vie est un achat unique valable pendant la durée de vie de l’app sur votre compte Apple. Lorsqu’il est proposé, l’abonnement mensuel donne accès tant qu’il est actif et se renouvelle automatiquement chaque mois jusqu’à résiliation. Vous pouvez gérer ou résilier vos abonnements dans les réglages de votre compte App Store. Le prix et la période de facturation sont affichés avant l’achat. Les achats sont traités et facturés par Apple selon ses conditions. Les remboursements sont gérés par Apple via l’App Store."
+            "value" : "Honestly Premium donne accès à l’historique complet et à des fonctionnalités supplémentaires. L’accès à vie est un achat unique valable pendant la durée de vie de l’app sur votre compte Apple. Les abonnements annuels et mensuels donnent accès tant qu’ils sont actifs et se renouvellent automatiquement à la fin de chaque période jusqu’à résiliation. Vous pouvez gérer ou résilier vos abonnements dans les réglages de votre compte App Store. Le prix et la période de facturation sont affichés avant l’achat. Les achats sont traités et facturés par Apple selon ses conditions. Les remboursements sont gérés par Apple via l’App Store."
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Honestly Premium sblocca la cronologia completa e funzionalità aggiuntive. L’accesso a vita è un acquisto una tantum valido per la durata dell’app sul tuo account Apple. Quando disponibile, l’abbonamento mensile offre accesso finché è attivo e si rinnova automaticamente ogni mese salvo disdetta. Puoi gestire o annullare gli abbonamenti nelle impostazioni del tuo account App Store. Il prezzo e il periodo di fatturazione sono mostrati prima dell’acquisto. Gli acquisti sono gestiti e fatturati da Apple secondo le sue condizioni. I rimborsi sono gestiti da Apple tramite l’App Store."
+            "value" : "Honestly Premium sblocca la cronologia completa e funzionalità aggiuntive. L’accesso a vita è un acquisto una tantum valido per la durata dell’app sul tuo account Apple. Gli abbonamenti annuali e mensili offrono accesso finché sono attivi e si rinnovano automaticamente alla fine di ogni periodo salvo disdetta. Puoi gestire o annullare gli abbonamenti nelle impostazioni del tuo account App Store. Il prezzo e il periodo di fatturazione sono mostrati prima dell’acquisto. Gli acquisti sono gestiti e fatturati da Apple secondo le sue condizioni. I rimborsi sono gestiti da Apple tramite l’App Store."
           }
         },
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Honestly Premiumでは、すべての履歴と追加機能が使えます。買い切りはAppleアカウントに紐づく一度限りの購入で、アプリの提供期間中有効です。月額サブスクリプションが提供される場合、有効期間中に利用でき、解約しない限り毎月自動更新されます。App Storeアカウントの設定から管理・解約できます。価格と請求期間は購入前に表示されます。購入と請求はAppleの規約に基づきAppleが処理します。返金はApp Storeを通じてAppleが管理します。"
+            "value" : "Honestly Premiumでは、すべての履歴と追加機能が使えます。買い切りはAppleアカウントに紐づく一度限りの購入で、アプリの提供期間中有効です。年額・月額サブスクリプションは有効期間中に利用でき、解約しない限り各期間の終わりに自動更新されます。App Storeアカウントの設定から管理・解約できます。価格と請求期間は購入前に表示されます。購入と請求はAppleの規約に基づきAppleが処理します。返金はApp Storeを通じてAppleが管理します。"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Honestly Premium은 전체 기록과 추가 기능을 제공합니다. 평생 이용권은 Apple 계정에서 앱이 제공되는 동안 유효한 일회성 구매입니다. 월간 구독이 제공되는 경우 구독이 활성화된 동안 이용할 수 있으며 취소하지 않으면 매월 자동 갱신됩니다. App Store 계정 설정에서 구독을 관리하거나 취소할 수 있습니다. 가격과 결제 기간은 구매 전에 표시됩니다. 구매와 결제는 Apple 약관에 따라 Apple이 처리하며, 환불은 App Store를 통해 Apple이 관리합니다."
+            "value" : "Honestly Premium은 전체 기록과 추가 기능을 제공합니다. 평생 이용권은 Apple 계정에서 앱이 제공되는 동안 유효한 일회성 구매입니다. 연간·월간 구독은 활성화된 동안 이용할 수 있으며 취소하지 않으면 각 기간이 끝날 때 자동 갱신됩니다. App Store 계정 설정에서 구독을 관리하거나 취소할 수 있습니다. 가격과 결제 기간은 구매 전에 표시됩니다. 구매와 결제는 Apple 약관에 따라 Apple이 처리하며, 환불은 App Store를 통해 Apple이 관리합니다."
           }
         },
         "nl" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Honestly Premium ontgrendelt je volledige geschiedenis en extra functies. Levenslange toegang is een eenmalige aankoop voor de levensduur van de app op je Apple-account. Een maandabonnement geeft, wanneer aangeboden, toegang zolang het actief is en wordt elke maand automatisch verlengd tenzij je opzegt. Je kunt abonnementen beheren of annuleren via je App Store-accountinstellingen. De prijs en factureringsperiode worden vóór aankoop getoond. Aankopen en betalingen worden door Apple verwerkt volgens de voorwaarden van Apple. Terugbetalingen worden door Apple via de App Store afgehandeld."
+            "value" : "Honestly Premium ontgrendelt je volledige geschiedenis en extra functies. Levenslange toegang is een eenmalige aankoop voor de levensduur van de app op je Apple-account. Jaar- en maandabonnementen geven toegang zolang ze actief zijn en worden aan het eind van elke periode automatisch verlengd tenzij je opzegt. Je kunt abonnementen beheren of annuleren via je App Store-accountinstellingen. De prijs en factureringsperiode worden vóór aankoop getoond. Aankopen en betalingen worden door Apple verwerkt volgens de voorwaarden van Apple. Terugbetalingen worden door Apple via de App Store afgehandeld."
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "O Honestly Premium desbloqueia o histórico completo e funcionalidades adicionais. O acesso vitalício é uma compra única válida durante a vida da aplicação na tua conta Apple. Quando disponível, a subscrição mensal dá acesso enquanto estiver ativa e renova automaticamente todos os meses, salvo cancelamento. Podes gerir ou cancelar subscrições nas definições da tua conta da App Store. O preço e o período de faturação são apresentados antes da compra. As compras são processadas e faturadas pela Apple segundo os seus termos. Os reembolsos são geridos pela Apple através da App Store."
+            "value" : "O Honestly Premium desbloqueia o histórico completo e funcionalidades adicionais. O acesso vitalício é uma compra única válida durante a vida da aplicação na tua conta Apple. As subscrições anuais e mensais dão acesso enquanto estiverem ativas e renovam automaticamente no fim de cada período, salvo cancelamento. Podes gerir ou cancelar subscrições nas definições da tua conta da App Store. O preço e o período de faturação são apresentados antes da compra. As compras são processadas e faturadas pela Apple segundo os seus termos. Os reembolsos são geridos pela Apple através da App Store."
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Honestly Premium открывает полную историю и дополнительные функции. Пожизненный доступ — это разовая покупка, действующая в течение срока существования приложения в вашей учётной записи Apple. Месячная подписка, когда она предлагается, даёт доступ в течение активного периода и автоматически продлевается каждый месяц до отмены. Управлять подписками и отменять их можно в настройках учётной записи App Store. Цена и расчётный период показываются перед покупкой. Покупки и платежи обрабатываются Apple по условиям Apple. Возвраты оформляются Apple через App Store."
+            "value" : "Honestly Premium открывает полную историю и дополнительные функции. Пожизненный доступ — это разовая покупка, действующая в течение срока существования приложения в вашей учётной записи Apple. Годовая и месячная подписки дают доступ в течение активного периода и автоматически продлеваются в конце каждого периода до отмены. Управлять подписками и отменять их можно в настройках учётной записи App Store. Цена и расчётный период показываются перед покупкой. Покупки и платежи обрабатываются Apple по условиям Apple. Возвраты оформляются Apple через App Store."
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Honestly Premium 可解锁完整历史记录及其他功能。终身使用权为一次性购买，在你的 Apple 账户中于应用存续期间有效。如果提供月度订阅，订阅有效期间可使用相关功能，且会每月自动续订，直至取消。你可以在 App Store 账户设置中管理或取消订阅。价格和计费周期会在购买前显示。购买及扣费由 Apple 按其条款处理，退款由 Apple 通过 App Store 管理。"
+            "value" : "Honestly Premium 可解锁完整历史记录及其他功能。终身使用权为一次性购买，在你的 Apple 账户中于应用存续期间有效。年度和月度订阅在有效期间可使用相关功能，并会在每个周期结束时自动续订，直至取消。你可以在 App Store 账户设置中管理或取消订阅。价格和计费周期会在购买前显示。购买及扣费由 Apple 按其条款处理，退款由 Apple 通过 App Store 管理。"
           }
         },
         "zh-Hant" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Honestly Premium 可解鎖完整歷史紀錄及其他功能。終身使用權為一次性購買，在你的 Apple 帳號中於 App 存續期間有效。如果提供月訂閱，訂閱有效期間可使用相關功能，且會每月自動續訂，直到取消。你可以在 App Store 帳號設定中管理或取消訂閱。價格和計費週期會在購買前顯示。購買及扣款由 Apple 依其條款處理，退款由 Apple 透過 App Store 管理。"
+            "value" : "Honestly Premium 可解鎖完整歷史紀錄及其他功能。終身使用權為一次性購買，在你的 Apple 帳號中於 App 存續期間有效。年訂閱和月訂閱在有效期間可使用相關功能，並會在每個週期結束時自動續訂，直到取消。你可以在 App Store 帳號設定中管理或取消訂閱。價格和計費週期會在購買前顯示。購買及扣款由 Apple 依其條款處理，退款由 Apple 透過 App Store 管理。"
           }
         }
       }
