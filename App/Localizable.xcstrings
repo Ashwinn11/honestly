@@ -273361,83 +273361,6 @@
         }
       }
     },
-    "Only you can read it. Tap the prompt to pick from the list." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "لا أحد غيرك يستطيع قراءتها. اضغط على السؤال لتختار من القائمة."
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nur du kannst sie lesen. Tippe auf die Frage, um aus der Liste zu wählen."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Solo tú puedes leerla. Toca la pregunta para elegir de la lista."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Personne d’autre que toi ne peut la lire. Touche la question pour choisir dans la liste."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Solo tu puoi leggerla. Tocca la domanda per scegliere dall’elenco."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "読めるのはあなただけ。問いをタップしてリストから選べます。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "이 페이지는 나만 볼 수 있어요. 질문을 눌러 목록에서 골라 보세요."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Alleen jij kunt hem lezen. Tik op de vraag om uit de lijst te kiezen."
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Só você pode lê-la. Toque na pergunta para escolher da lista."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Её можешь прочитать только ты. Нажми на вопрос, чтобы выбрать из списка."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "只有你能看到这一页。点一下问题，从列表中挑选。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "只有你能看到這一頁。點一下問題，從列表中挑選。"
-          }
-        }
-      }
-    },
     "Turn on reminders" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -274512,6 +274435,83 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "啟用提醒後，日記提醒和肯定語提醒會在裝置本機安排。內容在裝置上產生，不會傳送至伺服器。"
+          }
+        }
+      }
+    },
+    "Only you can read it. Tap here to pick another prompt." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "لا أحد غيرك يستطيع قراءتها. اضغط هنا لتختار سؤالًا آخر."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Nur du kannst sie lesen. Tippe hier, um eine andere Frage zu wählen."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solo tú puedes leerla. Toca aquí para elegir otra pregunta."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personne d’autre que toi ne peut la lire. Touche ici pour choisir une autre question."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Solo tu puoi leggerla. Tocca qui per scegliere un’altra domanda."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "読めるのはあなただけ。ここをタップすると別の問いを選べます。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "이 페이지는 나만 볼 수 있어요. 여기를 눌러 다른 질문을 골라 보세요."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alleen jij kunt hem lezen. Tik hier om een andere vraag te kiezen."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Só você pode lê-la. Toque aqui para escolher outra pergunta."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Её можешь прочитать только ты. Нажми здесь, чтобы выбрать другой вопрос."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "只有你能看到这一页。点这里，换一个问题。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "只有你能看到這一頁。點這裡，換一個問題。"
           }
         }
       }

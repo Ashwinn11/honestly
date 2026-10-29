@@ -107,8 +107,9 @@ struct PageDateStamp: View {
 
 // MARK: - The day's prompt, faint, where the writing goes
 
-/// Today's question, printed faintly where the first words will go and gone once they do. A small
-/// list mark at its very end says it can be changed: tapping the question opens the prompt list,
+/// Today's question, printed faintly where the first words will go and gone once they do. The
+/// question itself isn't a button — a tap on it lands in the page like anywhere else, so the cursor
+/// is never taken by the prompt list. The swap tile at the end of its first line opens the list,
 /// to pick another or write one's own.
 struct PagePromptHint: View {
     let text: String
@@ -120,25 +121,31 @@ struct PagePromptHint: View {
         self.onChoose = onChoose
     }
 
+    /// The tile's tap area — `IconTileButton` never goes below 44 points.
+    private static var tileFrame: CGFloat { max(44, DesignScale.s(32)) }
+    /// Half the height of the question's first line, where the tile is centred.
+    private static var firstLineMid: CGFloat {
+        (UIFont(name: "Manrope-ExtraBold", size: DesignScale.s(18))?.lineHeight ?? DesignScale.s(25)) / 2
+    }
+
     var body: some View {
-        Button { Haptics.tap(); onChoose() } label: {
-            // One no-break space glues the last word to the list mark, so the mark never wraps onto
-            // a line by itself; a second one cost the 3–4 points that pushed whole questions to two
-            // lines when the words alone fit on one.
-            (Text(verbatim: text + "\u{00A0}").foregroundStyle(pageTheme.ink.opacity(pageTheme.isDark ? 0.5 : 0.34))
-             + Text(Image(systemName: "list.bullet")).font(.system(size: DesignScale.s(14), weight: .bold))
-                .foregroundStyle(pageTheme.inkSoft))
-                .font(Fonts.display(18, .heavy))
-                .lineSpacing(2)
-                .multilineTextAlignment(.leading)
-                .fixedSize(horizontal: false, vertical: true)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .contentShape(Rectangle())
-        }
-        .buttonStyle(PressableStyle(scale: 0.98))
-        .anchorPreference(key: CoachAnchorKey.self, value: .bounds) { anchor in [CoachAnchor.prompt: anchor] }
-        .accessibilityLabel(Text(verbatim: text))
-        .accessibilityHint(Text("Choose a prompt"))
+        // The question starts exactly where the cursor does; the tile floats at the end of its first
+        // line without moving it.
+        Text(verbatim: text)
+            .foregroundStyle(pageTheme.ink.opacity(pageTheme.isDark ? 0.5 : 0.34))
+            .font(Fonts.display(18, .heavy))
+            .lineSpacing(2)
+            .multilineTextAlignment(.leading)
+            .fixedSize(horizontal: false, vertical: true)
+            .allowsHitTesting(false)
+            .padding(.trailing, Self.tileFrame + 8)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .overlay(alignment: .topTrailing) {
+                IconTileButton(icon: "arrow.triangle.2.circlepath", size: 32, iconSize: 13,
+                               label: "Choose a prompt", action: onChoose)
+                    .offset(y: Self.firstLineMid - Self.tileFrame / 2)
+                    .anchorPreference(key: CoachAnchorKey.self, value: .bounds) { anchor in [CoachAnchor.prompt: anchor] }
+            }
     }
 }
 

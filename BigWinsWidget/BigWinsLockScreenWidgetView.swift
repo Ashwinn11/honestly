@@ -10,7 +10,7 @@ struct BigWinsLockScreenWidgetView: View {
         Group {
             if let line = entry.affirmation {
                 HStack(alignment: .firstTextBaseline, spacing: 3) {
-                    QuoteMark(size: 6, weight: .regular)
+                    QuoteMark(size: 9, weight: .regular)
                     Affirmations.text(line)
                         .font(AffirmationWidgetFont.make(name: entry.fontName, size: 13, weight: .semibold))
                         .foregroundStyle(.white)

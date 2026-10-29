@@ -218,8 +218,8 @@ struct RitualView: View {
             if let step = coachStep, let anchor = anchors[step] {
                 let target = geo[anchor]
                 let width = min(DesignScale.s(step == .mood ? 268 : 280), geo.size.width - 32)
-                // The mood tip hangs left from the face at the right; the page tip starts under the question.
-                let preferred = step == .mood ? target.midX - width * 0.78 : target.minX - 6
+                // Both tips hang left from their control at the right: the mood face, then the swap tile.
+                let preferred = target.midX - width * 0.78
                 let x = min(max(16, preferred), geo.size.width - width - 16)
                 Group {
                     if step == .mood {
@@ -231,8 +231,8 @@ struct RitualView: View {
                         }
                     } else {
                         CoachMarkCard(title: "This page is yours",
-                                      message: "Only you can read it. Tap the prompt to pick from the list.",
-                                      step: 2, steps: 2, arrowX: min(target.minX + 34, target.maxX) - x,
+                                      message: "Only you can read it. Tap here to pick another prompt.",
+                                      step: 2, steps: 2, arrowX: target.midX - x,
                                       onNext: { endTips() }, onDismiss: { endTips() }) {
                             EmptyView()
                         }
