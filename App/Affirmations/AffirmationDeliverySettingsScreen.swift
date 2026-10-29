@@ -8,6 +8,7 @@ struct AffirmationDeliverySettingsScreen: View {
     @AppStorage("affirmationNudgeOn", store: SharedState.defaults) private var enabled = false
     @State private var reminderTimes = [AffirmationNudge.defaultMinutes]
     @State private var reminderDays = Array(1...7)
+    @State private var journalMinutes = AffirmationNudge.defaultJournalMinutes
     @State private var notifDenied = false
 
     private let weekdaySymbols = Calendar.current.veryShortStandaloneWeekdaySymbols
@@ -17,13 +18,29 @@ struct AffirmationDeliverySettingsScreen: View {
             ScreenHeader(Text(loc: "Notification reminders"), back: { dismiss() })
                 .padding(.bottom, 18)
             ScrollView {
-                VStack(alignment: .leading, spacing: 20) {
-                    VStack(alignment: .leading, spacing: 12) {
-                        sectionTitle("Daily reminders")
+                VStack(alignment: .leading, spacing: 24) {
+                    card {
+                        toggleRow("Notification reminders", detail: "Journal and affirmation reminders, at the times you pick")
+                    }
+                    if enabled {
+                        // The journal reminder is one time, every day, only while the page is blank —
+                        // a single row, as onboarding shows it.
                         card {
-                            toggleRow("Notification reminders", detail: "Affirmations at your times, plus a writing nudge at 8 am")
+                            HStack(spacing: 12) {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(loc: "Journal reminder")
+                                        .font(Fonts.ui(15, .bold)).foregroundStyle(Palette.ink)
+                                    Text(loc: "Only on mornings your page is still blank.")
+                                        .font(Fonts.ui(12, .medium)).foregroundStyle(Palette.inkSofter)
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
+                                Spacer(minLength: 4)
+                                DatePicker("", selection: journalTimeBinding, displayedComponents: .hourAndMinute)
+                                    .labelsHidden().tint(Palette.amber)
+                            }
                         }
-                        if enabled {
+                        VStack(alignment: .leading, spacing: 12) {
+                            sectionTitle("Affirmation reminders")
                             card {
                                 VStack(alignment: .leading, spacing: 12) {
                                     Text(loc: "Times")
@@ -70,7 +87,6 @@ struct AffirmationDeliverySettingsScreen: View {
                             }
                         }
                     }
-
                 }
             }
             .scrollIndicators(.hidden)
@@ -83,9 +99,11 @@ struct AffirmationDeliverySettingsScreen: View {
         .onAppear {
             reminderTimes = AffirmationNudge.times
             reminderDays = AffirmationNudge.weekdays
+            journalMinutes = AffirmationNudge.journalReminderMinutes
         }
         .onChange(of: reminderTimes) { _, _ in saveDeliveryChanges() }
         .onChange(of: reminderDays) { _, _ in saveDeliveryChanges() }
+        .onChange(of: journalMinutes) { _, minutes in AffirmationNudge.setJournalReminderMinutes(minutes) }
         .onChange(of: enabled) { _, isOn in
             guard isOn else { AffirmationNudge.cancel(); return }
             Task {
@@ -136,6 +154,15 @@ struct AffirmationDeliverySettingsScreen: View {
             let parts = Calendar.current.dateComponents([.hour, .minute], from: date)
             guard reminderTimes.indices.contains(index) else { return }
             reminderTimes[index] = (parts.hour ?? 9) * 60 + (parts.minute ?? 0)
+        })
+    }
+
+    private var journalTimeBinding: Binding<Date> {
+        Binding(get: {
+            Calendar.current.date(bySettingHour: journalMinutes / 60, minute: journalMinutes % 60, second: 0, of: .now) ?? .now
+        }, set: { date in
+            let parts = Calendar.current.dateComponents([.hour, .minute], from: date)
+            journalMinutes = (parts.hour ?? 8) * 60 + (parts.minute ?? 0)
         })
     }
 

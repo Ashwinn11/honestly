@@ -5,9 +5,8 @@ enum AppContent {
     // MARK: Journal
     static let emptyJournalFallback = "Left the page quiet today — and that counts too."
 
-    // MARK: Social proof
+    // MARK: Social proof — real App Store reviews; the paywall quotes the first
     static let socialProof = SocialProof(
-        rating: "5.0 / 5",
         quotes: [
             .init(text: "It's a really good app—it's attractive and minimalist, with no distractions, which makes it perfect for mornings.",
                   author: "Ianm34223"),
@@ -19,9 +18,7 @@ enum AppContent {
 // MARK: - Funnel model types
 
 struct SocialProof {
-    let rating: String        // "" until a real App Store rating is supplied
     let quotes: [Quote]       // empty until real review quotes are supplied
-    var hasStats: Bool { !rating.isEmpty }
 
     struct Quote: Identifiable {
         let text: String

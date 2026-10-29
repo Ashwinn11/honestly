@@ -10,6 +10,7 @@ enum AppConfig {
     static let entitlementID       = "premium"
     static let lifetimePackageID   = "$rc_lifetime"
     static let monthlyPackageID    = "$rc_monthly"
+    static let annualPackageID     = "$rc_annual"
 
     static let morningScheduleName = "morning.block.window"
 

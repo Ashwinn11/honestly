@@ -231,7 +231,7 @@ struct RitualView: View {
                         }
                     } else {
                         CoachMarkCard(title: "This page is yours",
-                                      message: "Tap the prompt to pick from the list.",
+                                      message: "Only you can read it. Tap the prompt to pick from the list.",
                                       step: 2, steps: 2, arrowX: min(target.minX + 34, target.maxX) - x,
                                       onNext: { endTips() }, onDismiss: { endTips() }) {
                             EmptyView()
@@ -464,6 +464,9 @@ private struct CelebrationView: View {
             .capWidth(Metrics.maxContentWidth)   // centered column; gradient stays full-bleed
         }
         .task {
+            // A first page written during onboarding comes before the paywall — not the moment to
+            // ask for a rating. The next milestone asks instead.
+            guard SharedState.onboardingComplete else { return }
             try? await Task.sleep(for: .seconds(1.2))
             ReviewPrompt.maybeAsk(streak: streak, requestReview)
         }

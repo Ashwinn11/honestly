@@ -122,7 +122,10 @@ struct PagePromptHint: View {
 
     var body: some View {
         Button { Haptics.tap(); onChoose() } label: {
-            (Text(verbatim: text + "\u{00A0}\u{00A0}").foregroundStyle(pageTheme.ink.opacity(pageTheme.isDark ? 0.5 : 0.34))
+            // One no-break space glues the last word to the list mark, so the mark never wraps onto
+            // a line by itself; a second one cost the 3–4 points that pushed whole questions to two
+            // lines when the words alone fit on one.
+            (Text(verbatim: text + "\u{00A0}").foregroundStyle(pageTheme.ink.opacity(pageTheme.isDark ? 0.5 : 0.34))
              + Text(Image(systemName: "list.bullet")).font(.system(size: DesignScale.s(14), weight: .bold))
                 .foregroundStyle(pageTheme.inkSoft))
                 .font(Fonts.display(18, .heavy))

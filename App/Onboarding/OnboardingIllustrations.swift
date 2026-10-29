@@ -1,11 +1,11 @@
 import SwiftUI
 
-// The moving pictures onboarding uses: the morning played out, the book being written in,
-// the affirmation preview and the apps falling asleep.
+// The moving pictures onboarding uses: the morning played out (once, on the plan), the
+// affirmation preview, and the apps falling asleep (after a purchase, choosing them).
 
 // MARK: - Tomorrow morning, played once (locked → write → apps unlock → affirmation)
 
-/// Shows the outcome rather than the steps: the apps from the morning question sit locked while the
+/// Shows the outcome rather than the steps: the feed apps sit locked while the
 /// pencil writes a page, the meter fills with the ink, and the apps wake up the moment the page is
 /// done — then the user's own affirmation arrives. It ends, and stays, there; Reduce Motion lands
 /// on that end state straight away.
@@ -168,39 +168,6 @@ struct MorningOutcomeCard: View {
 }
 
 
-/// The month's book opening and a page being written in it, again and again — the book the
-/// user will write in, met before they ever open it.
-struct JournalWritingIllustration: View {
-    var showsCaption = true
-    var pageWidth: CGFloat = 124
-
-    private static let lines = [
-        "There’s a lot on my mind",
-        "this morning, so I’ll start",
-        "with just one thing."
-    ]
-
-    var body: some View {
-        VStack(spacing: 12) {
-            BookWritingScene(lines: Self.lines, pageWidth: pageWidth, loops: true)
-                .rotationEffect(.degrees(-3))
-            if showsCaption {
-                HStack(spacing: 6) {
-                    Image(systemName: "heart.fill")
-                        .foregroundStyle(Palette.amberDeep)
-                    Text(loc: "A few honest lines are enough.")
-                        .foregroundStyle(Palette.inkSoft)
-                }
-                .font(Fonts.ui(11, .semibold))
-                .fixedSize(horizontal: false, vertical: true)
-            }
-        }
-        .frame(maxWidth: .infinity)
-        .background { SoftGlow(color: Palette.sunDisc, opacity: 0.22, size: 320) }
-        .accessibilityHidden(true)
-    }
-}
-
 struct OnbAffirmationPreview: View {
     let text: String
     let topic: String
@@ -259,38 +226,30 @@ struct AppBlockLoop: View {
     private let brands: [Brand] = [.instagram, .tiktok, .snapchat]
 
     var body: some View {
-        VStack(spacing: 8) {
-            HStack(spacing: 16) {
-                ForEach(Array(brands.enumerated()), id: \.offset) { index, brand in
-                    ZStack(alignment: .topTrailing) {
-                        BrandIcon(brand: brand, size: 42)
-                            .grayscale(index < lockedCount ? 1 : 0)
-                            .opacity(index < lockedCount ? 0.48 : 1)
-                        if index < lockedCount {
-                            Image(systemName: "lock.fill")
-                                .font(.system(size: 8, weight: .bold))
-                                .foregroundStyle(.white)
-                                .frame(width: 16, height: 16)
-                                .background(Palette.ink, in: Circle())
-                                .overlay(Circle().strokeBorder(Palette.paper, lineWidth: 1.5))
-                                .offset(x: 4, y: -4)
-                        }
+        HStack(spacing: 16) {
+            ForEach(Array(brands.enumerated()), id: \.offset) { index, brand in
+                ZStack(alignment: .topTrailing) {
+                    BrandIcon(brand: brand, size: 42)
+                        .grayscale(index < lockedCount ? 1 : 0)
+                        .opacity(index < lockedCount ? 0.48 : 1)
+                    if index < lockedCount {
+                        Image(systemName: "lock.fill")
+                            .font(.system(size: 8, weight: .bold))
+                            .foregroundStyle(.white)
+                            .frame(width: 16, height: 16)
+                            .background(Palette.ink, in: Circle())
+                            .overlay(Circle().strokeBorder(Palette.paper, lineWidth: 1.5))
+                            .offset(x: 4, y: -4)
                     }
-                    .animation(Motion.pop, value: lockedCount)
                 }
+                .animation(Motion.pop, value: lockedCount)
             }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 12)
-            .background(Palette.cream.opacity(0.88), in: RoundedRectangle(cornerRadius: Radius.panel, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: Radius.panel, style: .continuous)
-                .strokeBorder(Palette.outlineSoft, lineWidth: 1.2))
-            Text(loc: "Write first, scroll later.")
-                .font(Fonts.ui(11.5, .bold))
-                .foregroundStyle(Palette.inkSoft)
-                .multilineTextAlignment(.center)
-                .lineLimit(1)
-                .minimumScaleFactor(0.8)
         }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 12)
+        .background(Palette.cream.opacity(0.88), in: RoundedRectangle(cornerRadius: Radius.panel, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: Radius.panel, style: .continuous)
+            .strokeBorder(Palette.outlineSoft, lineWidth: 1.2))
         .accessibilityHidden(true)
         .task(id: animationsActive) {
             lockedCount = 0

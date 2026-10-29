@@ -71,26 +71,62 @@ final class PremiumManager {
             ?? current.availablePackages.first { $0.packageType == .monthly }
     }
 
+    var annualPackage: Package? {
+        guard let current = offerings?.current else { return nil }
+        return current.availablePackages.first {
+            $0.identifier == AppConfig.annualPackageID && $0.packageType == .annual
+        } ?? current.annual
+            ?? current.availablePackages.first { $0.packageType == .annual }
+    }
+
     var hasMonthly: Bool { monthlyPackage != nil }
     var monthlyPriceString: String { monthlyPackage?.storeProduct.localizedPriceString ?? "" }
+
+    var hasAnnual: Bool { annualPackage != nil }
+    var annualPriceString: String { annualPackage?.storeProduct.localizedPriceString ?? "" }
+    /// The yearly price spread over twelve months — "$2.49".
+    var annualPerMonthString: String { annualPackage?.storeProduct.localizedPricePerMonth ?? "" }
+
+    /// Twelve months at the monthly price, in the monthly product's currency — the anchor the
+    /// yearly price is struck against.
+    var monthlyForAYearString: String {
+        guard let product = monthlyPackage?.storeProduct,
+              let formatter = product.priceFormatter else { return "" }
+        return formatter.string(from: (product.price * 12) as NSDecimalNumber) ?? ""
+    }
+
+    /// How much less the yearly plan costs than twelve monthly payments, rounded down; nil when
+    /// either price is missing or yearly isn't cheaper.
+    var annualSavingsPercent: Int? {
+        guard let annual = annualPackage?.storeProduct.price,
+              let monthly = monthlyPackage?.storeProduct.price, monthly > 0 else { return nil }
+        let ratio = NSDecimalNumber(decimal: annual / (monthly * 12)).doubleValue
+        let percent = Int((1 - ratio) * 100)
+        return percent > 0 ? percent : nil
+    }
 
     var hasLifetime: Bool { lifetimePackage != nil }
     var lifetimePriceString: String { lifetimePackage?.storeProduct.localizedPriceString ?? "" }
 
     @discardableResult
     func purchaseLifetime() async -> Bool {
-        await purchaseLifetimeOrMonthly(lifetime: true)
+        await purchase(\.lifetimePackage)
     }
 
     @discardableResult
     func purchaseMonthly() async -> Bool {
-        await purchaseLifetimeOrMonthly(lifetime: false)
+        await purchase(\.monthlyPackage)
     }
 
-    private func purchaseLifetimeOrMonthly(lifetime: Bool) async -> Bool {
+    @discardableResult
+    func purchaseAnnual() async -> Bool {
+        await purchase(\.annualPackage)
+    }
+
+    private func purchase(_ plan: KeyPath<PremiumManager, Package?>) async -> Bool {
         errorMessage = nil
-        if (lifetime ? lifetimePackage : monthlyPackage) == nil { await loadOfferings() }
-        guard let package = lifetime ? lifetimePackage : monthlyPackage else {
+        if self[keyPath: plan] == nil { await loadOfferings() }
+        guard let package = self[keyPath: plan] else {
             errorMessage = L10n.localized("This purchase is unavailable. Please try again shortly.")
             return false
         }

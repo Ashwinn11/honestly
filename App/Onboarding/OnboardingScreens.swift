@@ -24,56 +24,46 @@ struct OnbWelcomeView: View {
                     .floaty(period: 5, delay: 0.4)
             }
             .floaty(period: 6)
-            .padding(.bottom, 22)
-            Text("Honestly")
-                .font(Fonts.display(52, .heavy))
-                .foregroundStyle(Palette.ink)
-            Text(loc: "Let it out on the page. Find words that lift you.")
-                .font(Fonts.ui(16, .semibold))
-                .foregroundStyle(Palette.inkSoft)
-                .multilineTextAlignment(.center)
-                .lineSpacing(3)
-                .frame(maxWidth: 280)
-                .padding(.top, 18)
+            .padding(.bottom, 30)
+            OnbHeader(eyebrow: "Honestly", title: "Your journal opens before your apps do.")
         }
     }
 }
 
 struct OnbMorningQuestionView: View {
-    @Binding var selection: MorningAnswer?
+    @Binding var selection: [MorningAnswer]
 
     var body: some View {
-        VStack(spacing: 16) {
-            OnbHeader(eyebrow: "Your mornings", title: "What gets in the way of a morning that feels like yours?")
+        VStack(spacing: 18) {
+            OnbHeader(eyebrow: "Your mornings", title: "How do most of your mornings start?",
+                      hint: "Pick any that sound like you.")
             VStack(spacing: 9) {
                 ForEach(MorningAnswer.allCases) { answer in
-                    OnbChoiceRow(title: answer.title, selected: selection == answer) {
+                    OnbChoiceRow(title: answer.title, selected: selection.contains(answer)) {
                         Haptics.select()
-                        selection = answer
+                        selection.toggle(answer)
                     }
                 }
             }
-            AppBlockLoop()
         }
     }
 }
 
 struct OnbJournalQuestionView: View {
-    @Binding var selection: JournalAnswer?
+    @Binding var selection: [JournalAnswer]
 
     var body: some View {
-        VStack(spacing: 10) {
-            OnbHeader(eyebrow: "Your journaling", title: "What makes journaling hard to return to?")
+        VStack(spacing: 18) {
+            OnbHeader(eyebrow: "Your journaling", title: "What usually gets in the way of journaling?",
+                      hint: "Pick any.")
             VStack(spacing: 9) {
                 ForEach(JournalAnswer.allCases) { answer in
-                    OnbChoiceRow(title: answer.title, selected: selection == answer) {
+                    OnbChoiceRow(title: answer.title, selected: selection.contains(answer)) {
                         Haptics.select()
-                        selection = answer
+                        selection.toggle(answer)
                     }
                 }
             }
-            JournalWritingIllustration()
-                .padding(.top, 6)
         }
     }
 }
@@ -84,10 +74,12 @@ struct OnbAffirmationQuestionView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            OnbHeader(eyebrow: "Your affirmations", title: "What would you like affirmations to support?")
+            OnbHeader(eyebrow: "Your affirmations", title: "What would you like to hear more often?")
                 .padding(.bottom, 18)
             AffirmationTopicPicker(selection: $picks, onSelection: { Haptics.select() }, collapsedCount: 6)
-                .padding(.bottom, 5)
+                .padding(.bottom, 12)
+            Eyebrow(text: "Today's affirmation", tracking: 1.4, size: 11)
+                .padding(.bottom, 8)
             OnbAffirmationPreview(text: sample, topic: picks.last ?? "")
         }
     }
@@ -96,12 +88,28 @@ struct OnbAffirmationQuestionView: View {
 struct OnbPersonalizedPlanView: View {
     let title: String
     let affirmation: String
+    /// What Honestly does about each answer, one line apiece.
+    let promises: [String]
 
     var body: some View {
-        VStack(spacing: 26) {
-            OnbHeader(eyebrow: "Made for your mornings", title: title)
+        VStack(spacing: 24) {
+            OnbHeader(eyebrow: "Your mornings, with Honestly", title: title)
             MorningOutcomeCard(affirmation: affirmation)
                 .rotationEffect(.degrees(-4))
+            VStack(alignment: .leading, spacing: 11) {
+                ForEach(promises, id: \.self) { line in
+                    HStack(alignment: .top, spacing: 10) {
+                        SunMark(size: 17, rays: false)
+                            .padding(.top, 1)
+                        Text(loc: line)
+                            .font(Fonts.ui(14.5, .semibold))
+                            .foregroundStyle(Palette.ink)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+            }
+            .frame(maxWidth: 310)
         }
         .frame(maxWidth: .infinity)
         .padding(.horizontal, 8)
@@ -143,6 +151,12 @@ struct OnbChoiceRow: View {
     }
 }
 
+private extension Array where Element: Equatable {
+    /// Adds the answer, or takes it back out — keeping the order they were picked in.
+    mutating func toggle(_ element: Element) {
+        if let at = firstIndex(of: element) { remove(at: at) } else { append(element) }
+    }
+}
 
 // MARK: - Notification preview
 
@@ -153,7 +167,7 @@ struct NotifCard<Message: View>: View {
     @ViewBuilder var message: Message
 
     var body: some View {
-        HStack(alignment: .top, spacing: DesignScale.s(12)) {
+        HStack(alignment: .center, spacing: DesignScale.s(12)) {
             Image("app-mark").resizable().scaledToFill()
                 .frame(width: DesignScale.s(42), height: DesignScale.s(42))
                 .clipShape(RoundedRectangle(cornerRadius: DesignScale.s(Radius.tile), style: .continuous))
@@ -163,6 +177,7 @@ struct NotifCard<Message: View>: View {
                     Text(loc: title).font(Fonts.ui(14, .heavy)).foregroundStyle(Palette.ink)
                     Spacer()
                     Text(verbatim: time).font(Fonts.ui(12, .semibold)).foregroundStyle(Palette.inkSofter)
+                        .contentTransition(.numericText())
                 }
                 message
                     .font(Fonts.ui(13.5, .semibold)).foregroundStyle(Palette.notifBody)
@@ -179,27 +194,39 @@ struct NotifCard<Message: View>: View {
     }
 }
 
-/// The two notifications Honestly sends, as they'll arrive: the writing page's prompt in the
-/// evening when the day's page is still blank, and an affirmation at the times the user picks.
+/// When tomorrow's page should be ready, set the way Notification reminders sets it — a list
+/// whose times open the system picker — then the two notifications as they'll arrive: the
+/// writing page's prompt when the day's page is still blank, and the day's affirmation.
 struct OnbReminderView: View {
+    @Binding var journalMinutes: Int
+    @Binding var affirmationMinutes: Int
+    let prompt: String
     let affirmation: String
-    @Environment(PromptLibrary.self) private var prompts
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.onboardingAnimationsActive) private var animationsActive
     @State private var visibleCount = 0
 
     var body: some View {
-        VStack(spacing: 24) {
-            OnbHeader(eyebrow: "Two gentle reminders", title: "Today's prompt, and a kind thought.")
+        VStack(spacing: 20) {
+            OnbHeader(eyebrow: "Tomorrow morning", title: "When should your page be ready?")
+            VStack(spacing: 0) {
+                timeRow("Journal reminder", detail: "Only on mornings your page is still blank.",
+                        minutes: $journalMinutes)
+                Rectangle().fill(Palette.outlineSoft).frame(height: 1)
+                    .padding(.vertical, 12)
+                timeRow("Affirmation reminder", detail: nil, minutes: $affirmationMinutes)
+            }
+            .padding(16)
+            .outlinedSurface(radius: Radius.panel)
             VStack(spacing: 12) {
                 if visibleCount > 0 {
-                    NotifCard(title: "Journal reminder", time: clock(AffirmationNudge.reminderHour * 60)) {
-                        Text(verbatim: prompts.pageText ?? L10n.localized("Write today's page — a few quiet minutes, just for you."))
+                    NotifCard(title: "Journal reminder", time: Self.clock(journalMinutes)) {
+                        Text(verbatim: prompt)
                     }
                     .transition(arrival)
                 }
                 if visibleCount > 1 {
-                    NotifCard(title: "Today's affirmation", time: clock(AffirmationNudge.defaultMinutes)) {
+                    NotifCard(title: "Today's affirmation", time: Self.clock(affirmationMinutes)) {
                         Affirmations.text(affirmation)
                     }
                     .transition(arrival)
@@ -213,12 +240,39 @@ struct OnbReminderView: View {
         }
     }
 
+    private func timeRow(_ title: String, detail: String?, minutes: Binding<Int>) -> some View {
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(loc: title).font(Fonts.ui(15, .bold)).foregroundStyle(Palette.ink)
+                if let detail {
+                    Text(loc: detail).font(Fonts.ui(12, .medium)).foregroundStyle(Palette.inkSofter)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            Spacer(minLength: 4)
+            DatePicker("", selection: Self.time(minutes), displayedComponents: .hourAndMinute)
+                .labelsHidden()
+                .tint(Palette.amber)
+        }
+    }
+
+    /// Minutes after midnight, as the picker's date.
+    private static func time(_ minutes: Binding<Int>) -> Binding<Date> {
+        Binding(get: {
+            Calendar.current.date(bySettingHour: minutes.wrappedValue / 60, minute: minutes.wrappedValue % 60,
+                                  second: 0, of: .now) ?? .now
+        }, set: { date in
+            let parts = Calendar.current.dateComponents([.hour, .minute], from: date)
+            minutes.wrappedValue = (parts.hour ?? 0) * 60 + (parts.minute ?? 0)
+        })
+    }
+
     private var arrival: AnyTransition {
         .asymmetric(insertion: .move(edge: .top).combined(with: .opacity), removal: .opacity)
     }
 
     /// A time of day in the app's language — 8:00 PM, 20:00.
-    private func clock(_ minutes: Int) -> String {
+    static func clock(_ minutes: Int) -> String {
         let time = Calendar.current.date(bySettingHour: minutes / 60, minute: minutes % 60, second: 0, of: .now) ?? .now
         return time.formatted(.dateTime.hour().minute().locale(HDate.appLocale))
     }
@@ -242,69 +296,19 @@ struct OnbReminderView: View {
     }
 }
 
-// MARK: - Social proof
+// MARK: - After a purchase: the apps that wait
 
-struct OnbSocialProofView: View {
-    private var sp: SocialProof { AppContent.socialProof }
-    @Environment(\.locale) private var locale
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @Environment(\.onboardingAnimationsActive) private var animationsActive
-    @State private var hasAppeared = false
+/// Straight after buying, the app blocking they just paid for — before they land on Home.
+struct OnbChooseAppsView: View {
+    let chosen: Bool
 
     var body: some View {
-        VStack(spacing: 16) {
-            OnbHeader(eyebrow: "From the App Store", title: "A small part of\nsomeone’s morning.")
-            HStack(spacing: 5) {
-                ForEach(0..<5, id: \.self) { index in
-                    InkGlyph(kind: .star, size: 28, fill: Palette.glyphGold, lineWidth: 1.4)
-                        .opacity(hasAppeared ? 1 : 0)
-                        .scaleEffect(hasAppeared ? 1 : 0.9)
-                        .animation(reduceMotion ? nil : Motion.snappy.delay(Double(index) * 0.07),
-                                   value: hasAppeared)
-                }
-            }
-            if sp.hasStats {
-                Text(sp.rating).font(Fonts.display(40, .heavy)).foregroundStyle(Palette.ink)
-                    .opacity(hasAppeared ? 1 : 0)
-                    .offset(y: hasAppeared || reduceMotion ? 0 : 7)
-                    .animation(reduceMotion ? nil : .easeOut(duration: 0.22).delay(0.28),
-                               value: hasAppeared)
-            }
-
-            VStack(spacing: 12) {
-                ForEach(sp.quotes) { q in
-                    VStack(alignment: .leading, spacing: 8) {
-                        Text("“\(Text(loc: q.text))”")
-                            .font(Fonts.ui(15, .bold)).foregroundStyle(Palette.ink).lineSpacing(3)
-                            .fixedSize(horizontal: false, vertical: true)
-                        Text("— \(q.author)")
-                            .font(Fonts.ui(12.5, .semibold)).foregroundStyle(Palette.inkSofter)
-                        if locale.language.languageCode?.identifier != "en" {
-                            Text(loc: "Translated from English")
-                                .font(Fonts.ui(11, .medium)).foregroundStyle(Palette.inkSofter)
-                        }
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .softCard(padding: 16)
-                    .opacity(hasAppeared ? 1 : 0)
-                    .offset(y: hasAppeared || reduceMotion ? 0 : 8)
-                    .animation(reduceMotion ? nil : .easeOut(duration: 0.22).delay(0.42 + Double(sp.quotes.firstIndex(where: { $0.id == q.id }) ?? 0) * 0.12),
-                               value: hasAppeared)
-                }
-            }
+        VStack(spacing: 24) {
+            OnbHeader(eyebrow: "Your mornings",
+                      title: chosen ? "Your apps will wait each morning until you’ve written."
+                                    : "Choose the apps that wait")
+            AppBlockLoop()
         }
-        // Glow anchored near the top (behind the stars/heading), so it stays put as the cards grow.
-        .background(alignment: .top) { SoftGlow(color: Palette.sunDisc, opacity: 0.16, size: 300).offset(y: 40) }
-        .task(id: animationsActive) {
-            hasAppeared = false
-            guard animationsActive else { return }
-            if reduceMotion {
-                hasAppeared = true
-            } else {
-                try? await Task.sleep(for: .milliseconds(90))
-                withAnimation(Motion.snappy) { hasAppeared = true }
-            }
-        }
+        .background { SoftGlow(color: Palette.sunDisc, opacity: 0.16, size: 300) }
     }
-
 }

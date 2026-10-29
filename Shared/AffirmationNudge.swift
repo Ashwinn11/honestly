@@ -2,8 +2,8 @@ import Foundation
 import UserNotifications
 
 /// Two kinds of notification. "Today's affirmation" carries a topic based affirmation on its own
-/// schedule. Separately, one "Journal reminder" carrying the day's writing prompt goes out at
-/// 8am on days the page is still unwritten.
+/// schedule. Separately, one "Journal reminder" carrying the day's writing prompt goes out at the
+/// time the user picked (8am unless they chose another) on days the page is still unwritten.
 enum AffirmationNudge {
     private static let legacyReminderID = "honestly.affirmation.reminder"
     private static let reminderIDPrefix = "honestly.journal.reminder."
@@ -20,6 +20,7 @@ enum AffirmationNudge {
     private static let enabledKey = "affirmationNudgeOn"
     private static let reminderLastDayKey = "affirmationReminderLastSentDay" // legacy; cleared on reset
     private static let reminderPromptsKey = "journalReminderPrompts"   // day key → that day's prompt
+    private static let journalMinutesKey = "journalReminderMinutes"    // minutes after midnight
 
     static let defaultMinutes = 9 * 60
 
@@ -90,8 +91,8 @@ enum AffirmationNudge {
     }
 
     /// Re-lays the next `horizonDays` of topic based affirmations. Call when schedule, topics,
-    /// language, Premium state, or the reminder toggle changes. Leaves the 8am journal reminder
-    /// alone; it has its own lifecycle.
+    /// language, Premium state, or the reminder toggle changes. Leaves the journal reminder alone;
+    /// it has its own lifecycle.
     static func schedule() {
         let center = UNUserNotificationCenter.current()
         center.removePendingNotificationRequests(withIdentifiers: dailyIDs + legacyEchoIDs)
@@ -130,7 +131,20 @@ enum AffirmationNudge {
 
     /// Maintains a rolling two-week queue. Called from app launch/resume, reminder enablement, and
     /// the 04:00 DeviceActivity callback when available. It does not depend on Screen Time access.
-    static let reminderHour = 8   // 8am — a morning writing nudge
+    static let defaultJournalMinutes = 8 * 60   // 8am — the morning journal reminder
+
+    /// When the journal reminder goes out, in minutes after midnight — picked in onboarding or in
+    /// Notification reminders. Stored in the app group so the 04:00 extension queues the same time.
+    static var journalReminderMinutes: Int {
+        let stored = SharedState.defaults.object(forKey: journalMinutesKey) as? Int
+        return stored.flatMap { (0..<1440).contains($0) ? $0 : nil } ?? defaultJournalMinutes
+    }
+
+    static func setJournalReminderMinutes(_ minutes: Int) {
+        SharedState.defaults.set(minutes, forKey: journalMinutesKey)
+        scheduleJournalReminders(ritualDoneToday: SharedState.ritualCompleted())
+    }
+
     static func scheduleReminderIfNeeded(ritualDoneToday: Bool) {
         scheduleJournalReminders(ritualDoneToday: ritualDoneToday)
     }
@@ -164,7 +178,8 @@ enum AffirmationNudge {
 
     private static func addReminder(for date: Date, now: Date) {
         let calendar = Calendar.current
-        guard let fireDate = calendar.date(bySettingHour: reminderHour, minute: 0, second: 0, of: date),
+        let minutes = journalReminderMinutes
+        guard let fireDate = calendar.date(bySettingHour: minutes / 60, minute: minutes % 60, second: 0, of: date),
               fireDate > now else { return }
 
         let content = journalReminderContent(for: date)
@@ -196,6 +211,7 @@ enum AffirmationNudge {
         SharedState.defaults.removeObject(forKey: enabledKey)
         SharedState.defaults.removeObject(forKey: reminderLastDayKey)
         SharedState.defaults.removeObject(forKey: reminderPromptsKey)
+        SharedState.defaults.removeObject(forKey: journalMinutesKey)
     }
 
     /// Without a delegate, iOS silently drops local notifications while the app is in the

@@ -3,9 +3,13 @@ import Foundation
 
 struct PaywallView: View {
     var onClose: () -> Void
+    /// Onboarding goes on to choosing the apps after a purchase; elsewhere a purchase just closes.
+    var onPurchased: (() -> Void)? = nil
     @Environment(PremiumManager.self) private var premium
+    @Environment(JournalStore.self) private var store
+    @Environment(\.locale) private var locale
 
-    private enum Plan { case lifetime, monthly }
+    private enum Plan { case lifetime, annual, monthly }
     @State private var selected: Plan = .lifetime
     @State private var purchasing = false
     @State private var restoring = false
@@ -15,20 +19,26 @@ struct PaywallView: View {
     var body: some View {
         ZStack {
             PaperBackground()
-            VStack(spacing: 0) {
-                GeometryReader { geo in
-                    ScrollView {
+            GeometryReader { geo in
+                ScrollView {
+                    // The footer is part of the page, not pinned: it closes the page when everything
+                    // fits, and follows the plans when they scroll.
+                    VStack(spacing: 0) {
+                        Spacer(minLength: 10)
                         VStack(spacing: 18) {
                             hero
                             benefitsCard
+                            reviewCard
                             planPicker
                         }
                         .padding(.horizontal, 22)
-                        .padding(.vertical, 10)
-                        .frame(minHeight: geo.size.height, alignment: .center)  // center; scroll if tall
+                        Spacer(minLength: 22)
+                        footer
                     }
+                    .frame(minHeight: geo.size.height)
                 }
-                footer
+                .scrollIndicators(.hidden)
+                .scrollBounceBehavior(.basedOnSize)
             }
             .overlay(alignment: .topTrailing) { closeButton }
             .capWidth(Metrics.maxContentWidth)
@@ -40,6 +50,7 @@ struct PaywallView: View {
         }
         .sheet(item: $legal) { LegalView(doc: $0) }
         .onAppear(perform: syncSelection)
+        .onChange(of: premium.hasAnnual) { _, _ in syncSelection() }
         .onChange(of: premium.hasLifetime) { _, _ in syncSelection() }
         .onChange(of: premium.hasMonthly) { _, _ in syncSelection() }
     }
@@ -51,30 +62,38 @@ struct PaywallView: View {
             .padding(.top, 8)
     }
 
-    // MARK: Hero
+    // MARK: Hero — this month's book, titled by how their mornings start; the list says the rest
     private var hero: some View {
-        VStack(spacing: 10) {
-            JournalWritingIllustration(showsCaption: false, pageWidth: 116)
-            Text(loc: "Take your mornings back")
+        VStack(spacing: 14) {
+            MonthBookCover(book: MonthBook.containing(Date(), in: store), width: 84)
+                .rotationEffect(.degrees(-4))
+                .shadow(color: Palette.ink.opacity(0.12), radius: 12, x: 0, y: 7)
+                .background { SoftGlow(color: Palette.sunDisc, opacity: 0.2, size: 240) }
+                .accessibilityHidden(true)
+            Text(loc: MorningAnswer.saved.first?.paywallTitle ?? "Take your mornings back")
                 .display(27, .bold)
                 .multilineTextAlignment(.center)
-            Text(loc: "Everything you need to keep the ritual.")
-                .ui(13.5, .semibold, color: Palette.inkSoft)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
         }
     }
 
-    // MARK: Benefits — sun-disc bullets, no card
+    // MARK: Benefits — sun-disc bullets, no card; what each one does for them
     private var benefitsCard: some View {
         VStack(alignment: .leading, spacing: 12) {
-            benefitRow(Text(loc: "Block apps until you write"))
-            benefitRow(Text(loc: "Write your own prompts"))
-            benefitRow(Text(loc: "Write your own affirmations & use widgets"))
-            benefitRow(Text(loc: "Full history & iCloud backup"))
+            benefitRow(Text(loc: "Your apps wait until you’ve written"))
+            backupBenefit
+            benefitRow(Text(loc: "Your own prompts and affirmations"))
+            benefitRow(Text(loc: "Affirmations on your Home Screen"))
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 4)
+    }
+
+    /// Once this month's book has pages, the backup point names it — their book, not a book.
+    private var backupBenefit: some View {
+        let book = MonthBook.containing(Date(), in: store)
+        return benefitRow(book.entries.isEmpty
+            ? Text(loc: "Every month’s book, backed up to iCloud")
+            : Text("Your \(HDate.monthName(book.firstOfMonth)) book and every one after it, backed up to iCloud"))
     }
 
     private func benefitRow(_ text: Text) -> some View {
@@ -85,24 +104,61 @@ struct PaywallView: View {
         }
     }
 
-    // MARK: Plan picker — Lifetime (best value) + Monthly (optional)
+    // MARK: Review — one real App Store review, where the decision is made
+    @ViewBuilder private var reviewCard: some View {
+        if let quote = AppContent.socialProof.quotes.first {
+            VStack(alignment: .leading, spacing: 7) {
+                HStack(spacing: 3) {
+                    ForEach(0..<5, id: \.self) { _ in
+                        InkGlyph(kind: .star, size: 14, fill: Palette.glyphGold, lineWidth: 1.1)
+                    }
+                }
+                .accessibilityHidden(true)
+                Text("“\(Text(loc: quote.text))”")
+                    .ui(13.5, .semibold)
+                    .lineSpacing(2)
+                    .fixedSize(horizontal: false, vertical: true)
+                Text("— \(quote.author)")
+                    .ui(12, .semibold, color: Palette.inkSofter)
+                if locale.language.languageCode?.identifier != "en" {
+                    Text(loc: "Translated from English")
+                        .ui(11, .medium, color: Palette.inkSofter)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .softCard(padding: 14)
+        }
+    }
+
+    // MARK: Plan picker — Lifetime (the default), Yearly (anchored against twelve monthly
+    // payments), Monthly
     @ViewBuilder private var planPicker: some View {
         VStack(spacing: 12) {
             if premium.hasLifetime {
-                planCard(.lifetime, name: "Lifetime", badge: "BEST VALUE",
-                         sub: "Pay once · yours forever",
+                planCard(.lifetime, name: "Lifetime", badge: Text(loc: "BEST VALUE"),
+                         sub: Text(loc: "Pay once · yours forever"),
                          price: premium.lifetimePriceString, period: nil)
             }
+            if premium.hasAnnual {
+                planCard(.annual, name: "Yearly",
+                         badge: premium.annualSavingsPercent.map { Text("Save \($0)%") },
+                         sub: premium.annualPerMonthString.isEmpty
+                            ? Text(loc: "Billed yearly")
+                            : Text("\(premium.annualPerMonthString)/mo, billed yearly"),
+                         price: premium.annualPriceString, period: "/yr",
+                         anchor: premium.annualSavingsPercent == nil ? nil : premium.monthlyForAYearString)
+            }
             if premium.hasMonthly {
-                planCard(.monthly, name: "Monthly", badge: "FLEXIBLE",
-                         sub: "Billed monthly",
-                         price: premium.monthlyPriceString, period: "mo")
+                planCard(.monthly, name: "Monthly", badge: Text(loc: "FLEXIBLE"),
+                         sub: Text(loc: "Billed monthly"),
+                         price: premium.monthlyPriceString, period: "/mo")
             }
         }
     }
 
-    private func planCard(_ plan: Plan, name: String, badge: String, sub: String,
-                          price: String, period: String?) -> some View {
+    /// One plan. `anchor` is the price it's measured against, struck through above its own.
+    private func planCard(_ plan: Plan, name: String, badge: Text?, sub: Text,
+                          price: String, period: String?, anchor: String? = nil) -> some View {
         let isSel = selected == plan
         return Button {
             Haptics.select()
@@ -117,17 +173,28 @@ struct PaywallView: View {
                 VStack(alignment: .leading, spacing: 3) {
                     HStack(spacing: 7) {
                         Text(loc: name).ui(16, .heavy)
-                        Text(loc: badge).ui(9.5, .heavy, color: Palette.amberDeep)
-                            .tracking(0.5)
-                            .padding(.horizontal, 7).padding(.vertical, 3)
-                            .background(Palette.amber.opacity(0.14), in: Capsule())
+                        if let badge {
+                            badge.ui(9.5, .heavy, color: Palette.amberDeep)
+                                .textCase(.uppercase)
+                                .tracking(0.5)
+                                .padding(.horizontal, 7).padding(.vertical, 3)
+                                .background(Palette.amber.opacity(0.14), in: Capsule())
+                        }
                     }
-                    Text(loc: sub).ui(12.5, .semibold, color: Palette.inkSofter)
+                    sub.ui(12.5, .semibold, color: Palette.inkSofter)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer(minLength: 8)
-                HStack(spacing: 1) {
-                    Text(price.isEmpty ? "—" : price).ui(17, .heavy)
-                    if let period { Text("/\(period)").ui(12.5, .bold, color: Palette.inkSoft) }
+                VStack(alignment: .trailing, spacing: 1) {
+                    if let anchor, !anchor.isEmpty {
+                        Text(verbatim: anchor)
+                            .ui(12, .bold, color: Palette.inkSofter)
+                            .strikethrough(color: Palette.inkSofter)
+                    }
+                    HStack(spacing: 1) {
+                        Text(verbatim: price.isEmpty ? "—" : price).ui(17, .heavy)
+                        if let period { Text(loc: period).ui(12.5, .bold, color: Palette.inkSoft) }
+                    }
                 }
             }
             .padding(15)
@@ -139,7 +206,7 @@ struct PaywallView: View {
         .buttonStyle(PressableStyle(scale: 0.98))
     }
 
-    // MARK: Footer — CTA + plan-aware reassurance + links
+    // MARK: Footer — CTA + plan-aware reassurance + links, at the end of the page
     private var footer: some View {
         VStack(spacing: 11) {
             ctaButton
@@ -171,6 +238,13 @@ struct PaywallView: View {
             } else {
                 PrimaryButton(title: "Unlock forever — \(price)") { purchase() }
             }
+        } else if selected == .annual {
+            let price = premium.annualPriceString
+            if price.isEmpty {
+                PrimaryButton(title: "Continue") { purchase() }
+            } else {
+                PrimaryButton(title: "Continue — \(price)/yr") { purchase() }
+            }
         } else {
             let price = premium.monthlyPriceString
             if price.isEmpty {
@@ -185,7 +259,7 @@ struct PaywallView: View {
         HStack(spacing: 5) {
             Image(systemName: "checkmark.shield")
                 .accessibilityHidden(true)
-            Text(loc: selected == .lifetime ? "One-time payment" : "Secure payment")
+            Text(loc: selected == .lifetime ? "One-time payment" : "Cancel anytime in Settings")
         }
     }
 
@@ -193,6 +267,7 @@ struct PaywallView: View {
     private func syncSelection() {
         var available: [Plan] = []
         if premium.hasLifetime { available.append(.lifetime) }
+        if premium.hasAnnual { available.append(.annual) }
         if premium.hasMonthly { available.append(.monthly) }
         if !available.contains(selected), let first = available.first { selected = first }
     }
@@ -201,10 +276,13 @@ struct PaywallView: View {
         guard !purchasing, !restoring else { return }
         purchasing = true
         Task {
-            let ok = selected == .lifetime ? await premium.purchaseLifetime()
-                                           : await premium.purchaseMonthly()
+            let ok = switch selected {
+            case .annual: await premium.purchaseAnnual()
+            case .monthly: await premium.purchaseMonthly()
+            case .lifetime: await premium.purchaseLifetime()
+            }
             purchasing = false
-            if ok { Haptics.success(); onClose() }
+            if ok { Haptics.success(); (onPurchased ?? onClose)() }
             else if premium.errorMessage != nil { showPurchaseAlert = true }
         }
     }
@@ -215,7 +293,7 @@ struct PaywallView: View {
         Task {
             let ok = await premium.restore()
             restoring = false
-            if ok { Haptics.success(); onClose() } else { showPurchaseAlert = true }
+            if ok { Haptics.success(); (onPurchased ?? onClose)() } else { showPurchaseAlert = true }
         }
     }
 

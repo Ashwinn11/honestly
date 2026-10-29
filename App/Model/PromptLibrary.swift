@@ -30,6 +30,9 @@ final class PromptLibrary {
     /// Today's prompt as the writing page shows it, in the app's language.
     var pageText: String? { selected.map(text) }
 
+    /// The question a given day's page will open on, in the app's language.
+    func pageText(on date: Date) -> String? { storage.prompt(on: date).map(text) }
+
     /// Re-reads today's prompt — it changes when the day does — and hands the coming days' prompts
     /// to the journal reminder. Call on launch, on returning to the app, and when the language
     /// changes; picking, adding and deleting prompts do it themselves.
