@@ -216,16 +216,16 @@ struct OnbAffirmationPreview: View {
 
     var body: some View {
         ZStack {
-            PageThemeBackground(theme: widgetTheme)
+            PageThemeBackground(theme: widgetTheme, layout: .widget)
 
             VStack(spacing: 5) {
                 Image(systemName: "quote.opening")
                     .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(Palette.ink)
+                    .foregroundStyle(widgetTheme.ink)
                     .accessibilityHidden(true)
                 Affirmations.text(text)
                     .font(Font(widgetFont.uiFont(size: DesignScale.s(16))).weight(.semibold))
-                    .foregroundStyle(Palette.ink)
+                    .foregroundStyle(widgetTheme.ink)
                     .lineSpacing(1)
                     .multilineTextAlignment(.center)
                     .lineLimit(2)

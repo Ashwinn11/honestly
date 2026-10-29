@@ -285,7 +285,8 @@ struct RichContentView: UIViewRepresentable {
     let attributedText: NSAttributedString
 
     func makeUIView(context: Context) -> UITextView {
-        let tv = UITextView(usingTextLayoutManager: false)
+        let tv = UITextView.makePageInk { UITextView(frame: .zero, textContainer: $0) }
+        tv.applyPageInk(context.environment.pageTheme)
         tv.isEditable = false
         tv.isSelectable = false
         tv.isScrollEnabled = false
@@ -299,6 +300,7 @@ struct RichContentView: UIViewRepresentable {
     }
 
     func updateUIView(_ uiView: UITextView, context: Context) {
+        uiView.applyPageInk(context.environment.pageTheme)
         let contentWidth = uiView.bounds.width > 0
             ? uiView.bounds.width
             : Metrics.maxContentWidth - Metrics.pageHorizontalInset * 2

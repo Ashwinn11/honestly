@@ -10,6 +10,7 @@ struct PageHeader<Controls: View>: View {
     let mood: Int?                       // nil while writing and not yet picked: shows the first face
     var onMood: (() -> Void)?            // nil: the mood is read-only
     var controls: Controls
+    @Environment(\.pageTheme) private var pageTheme
 
     init(date: Date, mood: Int?, onMood: (() -> Void)? = nil, @ViewBuilder controls: () -> Controls) {
         self.date = date
@@ -25,6 +26,7 @@ struct PageHeader<Controls: View>: View {
             moodFace
             controls
         }
+        .padding(.top, pageTheme.headerClearance)
     }
 
     @ViewBuilder private var moodFace: some View {
@@ -36,7 +38,7 @@ struct PageHeader<Controls: View>: View {
             MoodFace(mood: shown, size: DesignScale.s(30))
             Text(loc: name)
                 .font(Fonts.ui(10, .bold))
-                .foregroundStyle(Palette.inkSoft)
+                .foregroundStyle(pageTheme.inkSoft)
                 .lineLimit(1)
                 .minimumScaleFactor(0.7)
         }
@@ -69,6 +71,7 @@ struct PageCloseButton: View {
 /// exactly the day's width.
 struct PageDateStamp: View {
     let date: Date
+    @Environment(\.pageTheme) private var pageTheme
 
     var body: some View {
         let gap = DesignScale.s(-5)
@@ -76,7 +79,7 @@ struct PageDateStamp: View {
         Text(verbatim: HDate.dayNumber(date))
             .font(Fonts.display(44, .heavy))
             .tracking(-2)
-            .foregroundStyle(Palette.ink)
+            .foregroundStyle(pageTheme.ink)
             .fixedSize()
             .padding(.bottom, small + gap)
             .overlay(alignment: .bottom) {
@@ -86,7 +89,7 @@ struct PageDateStamp: View {
                     Text(verbatim: HDate.year(date))
                 }
                 .font(Fonts.ui(12, .heavy))
-                .foregroundStyle(Palette.inkSoft)
+                .foregroundStyle(pageTheme.inkSoft)
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
             }
@@ -110,6 +113,7 @@ struct PageDateStamp: View {
 struct PagePromptHint: View {
     let text: String
     var onChoose: () -> Void
+    @Environment(\.pageTheme) private var pageTheme
 
     init(text: String, onChoose: @escaping () -> Void) {
         self.text = text
@@ -118,10 +122,10 @@ struct PagePromptHint: View {
 
     var body: some View {
         Button { Haptics.tap(); onChoose() } label: {
-            (Text(verbatim: text + "\u{00A0}\u{00A0}").foregroundStyle(Palette.ink.opacity(0.34))
-             + Text(Image(systemName: "list.bullet")).font(.system(size: DesignScale.s(16), weight: .bold))
-                .foregroundStyle(Palette.inkSoft))
-                .font(Fonts.display(21, .heavy))
+            (Text(verbatim: text + "\u{00A0}\u{00A0}").foregroundStyle(pageTheme.ink.opacity(pageTheme.isDark ? 0.5 : 0.34))
+             + Text(Image(systemName: "list.bullet")).font(.system(size: DesignScale.s(14), weight: .bold))
+                .foregroundStyle(pageTheme.inkSoft))
+                .font(Fonts.display(18, .heavy))
                 .lineSpacing(2)
                 .multilineTextAlignment(.leading)
                 .fixedSize(horizontal: false, vertical: true)
@@ -138,11 +142,12 @@ struct PagePromptHint: View {
 /// On a written page, the question it answered: small and faint above the words.
 struct PageAnsweredPrompt: View {
     let text: String
+    @Environment(\.pageTheme) private var pageTheme
 
     var body: some View {
         Text(verbatim: text)
-            .font(Fonts.ui(15, .heavy))
-            .foregroundStyle(Palette.ink.opacity(0.42))
+            .font(Fonts.ui(13.5, .heavy))
+            .foregroundStyle(pageTheme.ink.opacity(pageTheme.isDark ? 0.58 : 0.42))
             .lineSpacing(2)
             .fixedSize(horizontal: false, vertical: true)
             .frame(maxWidth: .infinity, alignment: .leading)

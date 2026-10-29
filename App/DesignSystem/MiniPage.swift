@@ -38,14 +38,18 @@ struct MiniPage: View {
             .overlay(alignment: .topLeading) {
                 GeometryReader { geo in
                     // Laid out at a whole page's size, not the card's — given only the card's
-                    // small height, the words were squeezed onto one truncated line.
+                    // small height, the words were squeezed onto one truncated line. The theme is
+                    // drawn at that same size, so its whole design fits the card, top to foot.
+                    // There's no status bar: the header sits 16pt down, where a page's would
+                    // under a 12pt one, so the theme's scenery keeps its place around it.
                     page
                         .frame(width: pageWidth, height: pageWidth * 4.4 / 3, alignment: .topLeading)
+                        .background(PageThemeBackground(theme: PageTheme.from(entry.themeID), layout: .page(topInset: 12)))
                         .scaleEffect(geo.size.width / pageWidth, anchor: .topLeading)
                         .frame(width: geo.size.width, height: geo.size.height, alignment: .topLeading)
                 }
             }
-            .background(PageThemeBackground(theme: PageTheme.from(entry.themeID)))
+            .environment(\.pageTheme, PageTheme.from(entry.themeID))
             .clipShape(shape)
             .overlay(shape.strokeBorder(Palette.ink, lineWidth: 1.5))
             .accessibilityElement(children: .ignore)
@@ -70,7 +74,8 @@ struct MiniPage: View {
             RichContentView(attributedText: rich)
         } else {
             Text(lines)
-                .font(Fonts.ui(16, .medium)).foregroundStyle(Palette.inkBody)
+                .font(Fonts.ui(16, .medium))
+                .foregroundStyle(PageTheme.from(entry.themeID).tintsInk ? PageTheme.from(entry.themeID).ink : Palette.inkBody)
                 .lineSpacing(4)
                 .multilineTextAlignment(.leading)
                 .frame(maxWidth: .infinity, alignment: .leading)

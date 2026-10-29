@@ -77,7 +77,7 @@ struct EntryEditorView: View {
             .scrollDismissesKeyboard(.interactively)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .background(PageThemeBackground(theme: theme))
+        .pageTheme(theme)
         .safeAreaInset(edge: .bottom) {
             VStack(spacing: 0) {
                 if journalFocused || showFormattingSheet {

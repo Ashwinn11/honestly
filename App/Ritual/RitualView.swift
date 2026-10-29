@@ -62,7 +62,7 @@ struct RitualView: View {
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                .background(PageThemeBackground(theme: theme))
+                .pageTheme(theme)
                 .safeAreaInset(edge: .bottom) {
                     // While the editor has focus, the footer becomes the formatting toolbar instead
                     // of the step CTA — same slot, same pattern as the rest of the ritual's chrome.
@@ -94,8 +94,6 @@ struct RitualView: View {
                     .padding(.top, 8)
                     .padding(.bottom, 14)
                 }
-                // The whole screen is the page: its edges run top to bottom, past the toolbar.
-                .overlay { BookEdges() }
                 .overlayPreferenceValue(CoachAnchorKey.self) { coachOverlay($0) }
                 .onAppear { startTipsIfNeeded() }
             }
@@ -442,7 +440,7 @@ private struct CelebrationView: View {
                 VStack(spacing: 0) {
                     // Today's page goes into the month's book, and the book closes over it.
                     ClosingBookView(book: book, width: 128)
-                        .frame(height: 200)
+                        .frame(height: DesignScale.s(200))   // the book scales with the device; so must its room
 
                     Text(loc: screenTime.blockingPresentation.isScheduledNow
                          ? "Your apps are awake" : "You made time for yourself.")

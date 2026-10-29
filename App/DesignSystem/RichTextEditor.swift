@@ -68,7 +68,8 @@ struct RichTextEditor: UIViewRepresentable {
     }
 
     func makeUIView(context: Context) -> UITextView {
-        let tv = JournalTextView(usingTextLayoutManager: false)
+        let tv = UITextView.makePageInk { JournalTextView(frame: .zero, textContainer: $0) }
+        tv.applyPageInk(context.environment.pageTheme)
         tv.keyboardAllowed = keyboardAllowed
         tv.backgroundColor = .clear
         tv.isOpaque = false
@@ -138,6 +139,10 @@ struct RichTextEditor: UIViewRepresentable {
         uiView.isOpaque = false
         uiView.allowsEditingTextAttributes = true
         uiView.smartInsertDeleteType = .no
+        let pageTheme = context.environment.pageTheme
+        uiView.applyPageInk(pageTheme)
+        context.coordinator.placeholderLabel?.textColor = pageTheme.isDark
+            ? UIColor(pageTheme.inkSoft) : UIColor(Palette.inkSofter)
         context.coordinator.placeholderLabel?.text = L10n.localized(placeholder)
         context.coordinator.placeholderLabel?.isHidden = !attributedText.string.isEmpty
         // Only replace textStorage when content actually differs — setting `attributedText` via the

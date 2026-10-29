@@ -136,8 +136,6 @@ struct EntryDetailView: View {
                 )
                 .closesOnPullDown { closePage() }
 
-            BookEdges()
-
             if showGrid {
                 gridScreen.transition(.opacity)
             }
@@ -476,7 +474,7 @@ private struct JournalReaderPage: View {
             }
             .scrollIndicators(.hidden)
         }
-        .background(PageThemeBackground(theme: PageTheme.from(entry.themeID)))
+        .pageTheme(PageTheme.from(entry.themeID))
     }
 
     // Rich (formatted text + inline images) for entries written after this feature shipped;
@@ -488,7 +486,7 @@ private struct JournalReaderPage: View {
         } else {
             Text(entry.journal)
                 .font(Fonts.ui(16.5, .semibold))
-                .foregroundStyle(Palette.inkBody)
+                .foregroundStyle(PageTheme.from(entry.themeID).tintsInk ? PageTheme.from(entry.themeID).ink : Palette.inkBody)
                 .lineSpacing(11)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }

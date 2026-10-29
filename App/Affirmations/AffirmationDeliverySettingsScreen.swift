@@ -88,7 +88,7 @@ struct AffirmationDeliverySettingsScreen: View {
                                 VStack(spacing: 12) {
                                     Button { showingWidgetTheme = true } label: {
                                         HStack(spacing: 12) {
-                                            PageThemeBackground(theme: PageTheme.from(widgetThemeID))
+                                            PageThemeBackground(theme: PageTheme.from(widgetThemeID), layout: .widget)
                                                 .frame(width: 56, height: 44)
                                                 .clipShape(RoundedRectangle(cornerRadius: Radius.tile, style: .continuous))
                                                 .overlay(RoundedRectangle(cornerRadius: Radius.tile, style: .continuous)
@@ -112,7 +112,7 @@ struct AffirmationDeliverySettingsScreen: View {
                                         widgetColorButton(title: "Background color", hex: effectiveBackgroundHex) {
                                             showingBackgroundColor = true
                                         }
-                                        widgetColorButton(title: "Text color", hex: widgetTextHex) {
+                                        widgetColorButton(title: "Text color", hex: effectiveTextHex) {
                                             showingTextColor = true
                                         }
                                     }
@@ -150,7 +150,7 @@ struct AffirmationDeliverySettingsScreen: View {
         .background(PaperBackground())
         .toolbar(.hidden, for: .navigationBar)
         .sheet(isPresented: $showingWidgetTheme, onDismiss: reloadWidgetStyle) {
-            ThemePickerSheet(selection: widgetThemeSelection, title: "Page theme", confirmSelection: true)
+            ThemePickerSheet(selection: widgetThemeSelection, title: "Theme", confirmSelection: true, surface: .widget)
         }
         .sheet(isPresented: $showingBackgroundColor, onDismiss: reloadWidgetStyle) {
             WidgetColorPickerSheet(title: "Background color", hex: backgroundColorBinding)
@@ -204,6 +204,12 @@ struct AffirmationDeliverySettingsScreen: View {
                 SharedState.affirmationWidgetBackgroundColor = nil
             }
         )
+    }
+
+    /// What the widget actually draws its text in — light on a dark theme until a colour is picked.
+    private var effectiveTextHex: String {
+        widgetBackgroundHex.isEmpty
+            ? PageTheme.from(widgetThemeID).widgetTextHex(chosen: widgetTextHex) : widgetTextHex
     }
 
     private var effectiveBackgroundHex: String {
