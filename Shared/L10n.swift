@@ -12,10 +12,14 @@ enum L10n {
         return bundle.localizedString(forKey: key, value: key, table: nil)
     }
 
+    static func appWaitTitle(for appName: String) -> String {
+        let format = localized("%@ can wait.")
+        return String(format: format, appName)
+    }
+
     private static let shieldKeys: [String: String] = [
         "shield.title": "The world can wait.",
         "shield.subtitle": "Write your morning page in Honestly, and your apps wake up.",
-        "shield.primary": "Do my ritual",
-        "shield.secondary": "Not yet",
+        "shield.primary": "Write today's page",
     ]
 }

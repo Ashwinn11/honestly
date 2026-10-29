@@ -52,7 +52,7 @@ struct ProfileView: View {
             }
         }
         .familyActivityPicker(isPresented: $showPicker, selection: $st.selection)
-        .alert("Delete all data?", isPresented: $confirmDelete) {
+        .alert("Delete all data", isPresented: $confirmDelete) {
             Button("Delete everything", role: .destructive) {
                 store.deleteAll(); screenTime.wipe(); affirmations.clear(); prompts.clear(); covers.reset(); Haptics.rigid()
             }

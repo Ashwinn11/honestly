@@ -2,8 +2,8 @@ import ManagedSettings
 import ManagedSettingsUI
 import UIKit
 
-/// The custom shield the user sees on a blocked app. Warm paper, the app's own sun mark, gentle
-/// copy, and a coral "do your ritual" button — a nudge, not a wall.
+/// The custom shield the user sees on a blocked app. Warm paper, the app's own sun mark, and a
+/// name-specific nudge to write today's page.
 ///
 /// Every color here is a flat, static `UIColor(hex:)` (see `Palette`'s "UIKit mirror" section) —
 /// deliberately NOT dynamic/trait-adaptive, and `backgroundBlurStyle` is pinned to the explicit
@@ -12,12 +12,12 @@ import UIKit
 final class ShieldConfigurationExtension: ShieldConfigurationDataSource {
 
     override func configuration(shielding application: Application) -> ShieldConfiguration {
-        makeConfiguration()
+        makeConfiguration(appName: application.localizedDisplayName)
     }
 
     override func configuration(shielding application: Application,
                                 in category: ActivityCategory) -> ShieldConfiguration {
-        makeConfiguration()
+        makeConfiguration(appName: application.localizedDisplayName)
     }
 
     override func configuration(shielding webDomain: WebDomain) -> ShieldConfiguration {
@@ -29,16 +29,21 @@ final class ShieldConfigurationExtension: ShieldConfigurationDataSource {
         makeConfiguration()
     }
 
-    private func makeConfiguration() -> ShieldConfiguration {
-        ShieldConfiguration(
+    private func makeConfiguration(appName: String? = nil) -> ShieldConfiguration {
+        let appName = appName?.trimmingCharacters(in: .whitespacesAndNewlines)
+        let title = if let appName, !appName.isEmpty {
+            L10n.appWaitTitle(for: appName)
+        } else {
+            L10n.t("shield.title")
+        }
+        return ShieldConfiguration(
             backgroundBlurStyle: .systemUltraThinMaterialLight,
             backgroundColor: Palette.paperUI.withAlphaComponent(0.92),
             icon: SunMarkGlyph.image(side: 96, bottomPadding: 24),
-            title: .init(text: L10n.t("shield.title"), color: Palette.inkUI),
+            title: .init(text: title, color: Palette.inkUI),
             subtitle: .init(text: "\n" + L10n.t("shield.subtitle"), color: Palette.inkSoftUI),
             primaryButtonLabel: .init(text: L10n.t("shield.primary"), color: .white),
-            primaryButtonBackgroundColor: Palette.amberUI,
-            secondaryButtonLabel: .init(text: L10n.t("shield.secondary"), color: .white))
+            primaryButtonBackgroundColor: Palette.amberUI)
     }
 }
 

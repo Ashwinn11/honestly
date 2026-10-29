@@ -1,5 +1,11 @@
 import SwiftUI
 
+/// `NSAttributedString` is immutable here, but Foundation doesn't declare it Sendable on iOS.
+/// The decoded value is only read after it returns to the main actor.
+private struct MiniPageDecodedContent: @unchecked Sendable {
+    let value: NSAttributedString
+}
+
 /// A page shown small — the real page in miniature: the same header (the day over its month and
 /// year, the mood) and its words with their photos, doodles and stickers, laid out as on a phone
 /// and shrunk to the card. The one card for a page anywhere pages are listed: a book's grid, the
@@ -86,7 +92,10 @@ struct MiniPage: View {
         guard let data = entry.richContent, !data.isEmpty else { rich = nil; return }
         let key = Self.key(for: entry)
         if let cached = Self.decoded.object(forKey: key) { rich = cached; return }
-        let result = await Task.detached(priority: .userInitiated) { NSAttributedString.from(rtfdData: data) }.value
+        let decoded = await Task.detached(priority: .userInitiated) {
+            NSAttributedString.from(rtfdData: data).map(MiniPageDecodedContent.init)
+        }.value
+        let result = decoded?.value
         if let result { Self.decoded.setObject(result, forKey: key) }
         rich = result
     }

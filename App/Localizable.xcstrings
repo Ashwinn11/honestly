@@ -386,9 +386,81 @@
     },
     "%lld / %lld" : {
       "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld / %2$lld"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld / %2$lld"
+          }
+        },
         "en" : {
           "stringUnit" : {
-            "state" : "new",
+            "state" : "translated",
+            "value" : "%1$lld / %2$lld"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld / %2$lld"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld / %2$lld"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld / %2$lld"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld / %2$lld"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld / %2$lld"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld / %2$lld"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld / %2$lld"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld / %2$lld"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld / %2$lld"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
             "value" : "%1$lld / %2$lld"
           }
         }
@@ -8817,83 +8889,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "刪除所有資料"
-          }
-        }
-      }
-    },
-    "Delete all data?" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "حذف كل البيانات؟"
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Alle Daten löschen?"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "¿Borrar todos los datos?"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Supprimer toutes les données ?"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Eliminare tutti i dati?"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "すべてのデータを削除？"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "모든 데이터를 삭제할까요?"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Alle gegevens wissen?"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Apagar todos os dados?"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Удалить все данные?"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "删除所有数据？"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "刪除所有資料？"
           }
         }
       }
@@ -139934,7 +139929,22 @@
       }
     },
     "Premium" : {
-
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : { "stringUnit" : { "state" : "translated", "value" : "بريميوم" } },
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "Premium" } },
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Premium" } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "Premium" } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "Premium" } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "Premium" } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "プレミアム" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "프리미엄" } },
+        "nl" : { "stringUnit" : { "state" : "translated", "value" : "Premium" } },
+        "pt" : { "stringUnit" : { "state" : "translated", "value" : "Premium" } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "Премиум" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "高级版" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "進階版" } }
+      }
     },
     "Previous affirmation" : {
       "extractionState" : "manual",
@@ -154122,6 +154132,23 @@
             "value" : "先寫下來，再開始瀏覽。"
           }
         }
+      }
+    },
+    "%@ can wait." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : { "stringUnit" : { "state" : "translated", "value" : "يمكن لـ %@ الانتظار." } },
+        "de" : { "stringUnit" : { "state" : "translated", "value" : "%@ kann warten." } },
+        "es" : { "stringUnit" : { "state" : "translated", "value" : "%@ puede esperar." } },
+        "fr" : { "stringUnit" : { "state" : "translated", "value" : "%@ peut attendre." } },
+        "it" : { "stringUnit" : { "state" : "translated", "value" : "%@ può aspettare." } },
+        "ja" : { "stringUnit" : { "state" : "translated", "value" : "%@は後で大丈夫。" } },
+        "ko" : { "stringUnit" : { "state" : "translated", "value" : "%@은(는) 기다려도 돼요." } },
+        "nl" : { "stringUnit" : { "state" : "translated", "value" : "%@ kan wachten." } },
+        "pt" : { "stringUnit" : { "state" : "translated", "value" : "%@ pode esperar." } },
+        "ru" : { "stringUnit" : { "state" : "translated", "value" : "%@ подождёт." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "%@可以等一等。" } },
+        "zh-Hant" : { "stringUnit" : { "state" : "translated", "value" : "%@可以等一下。" } }
       }
     },
     "Write today's page" : {
@@ -268710,83 +268737,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "醒目"
-          }
-        }
-      }
-    },
-    "Night Sky" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "سماء الليل"
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nachthimmel"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cielo nocturno"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ciel nocturne"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cielo notturno"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "夜空"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "밤하늘"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Nachthemel"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Céu noturno"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ночное небо"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "夜空"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "夜空"
           }
         }
       }
