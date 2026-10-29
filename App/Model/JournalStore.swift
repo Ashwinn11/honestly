@@ -119,8 +119,6 @@ final class JournalStore {
         }
     }
 
-    func monthCount(year: Int, month: Int) -> Int { entries(inYear: year, month: month).count }
-
     // MARK: Mutations
 
     /// Create or update today's page, then sync completion out to the app group + shield.

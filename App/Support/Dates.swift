@@ -23,7 +23,6 @@ enum HDate {
         return f.string(from: d)
     }
     static func monthShort(_ d: Date) -> String { fmt("MMM").string(from: d) }                // Jul
-    static func weekdayShort(_ d: Date) -> String { fmt("EEE").string(from: d) }              // Sat
     static func dayNumber(_ d: Date) -> String { fmt("dd").string(from: d) }                 // 04
     static func year(_ d: Date) -> String { fmt("yyyy").string(from: d) }                    // 2026
 

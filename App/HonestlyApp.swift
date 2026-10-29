@@ -20,12 +20,6 @@ struct HonestlyApp: App {
     init() {
         DesignScale.configure(width: UIScreen.main.bounds.width)
         UNUserNotificationCenter.current().delegate = AffirmationNudge.ForegroundPresenter.shared
-        #if DEBUG
-        // Launch with `-replayOnboarding` to walk through onboarding again; no pages are touched.
-        if ProcessInfo.processInfo.arguments.contains("-replayOnboarding") {
-            SharedState.onboardingComplete = false
-        }
-        #endif
 
         // App-group store, local-only. iCloud is never touched automatically — the only sync path
         // is the explicit "Back up to iCloud" action in Profile (`CloudBackup`). SwiftData's

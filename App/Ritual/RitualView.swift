@@ -27,7 +27,7 @@ struct RitualView: View {
     @State private var showThemeSheet = false
     @State private var showFormattingSheet = false
     @State private var theme: PageTheme = .paper
-    // The month's book opens as the page appears — skipped for Reduce Motion and screenshots.
+    // This month's earlier pages, opened by swiping in from the page's spine.
     @State private var showBook = false
     /// First-time tips on the writing page: which one is showing; nil once they're done.
     @State private var coachStep: CoachAnchor?
@@ -50,6 +50,8 @@ struct RitualView: View {
             if step == 1 {
                 CelebrationView(book: monthBook,
                                 streak: store.streak,
+                                pageCount: store.entries.count,
+                                mood: mood ?? 0,
                                 onStart: onClose)
             } else {
                 VStack(spacing: 0) {
@@ -422,6 +424,8 @@ private struct MoodPickerSheet: View {
 private struct CelebrationView: View {
     let book: MonthBook
     let streak: Int
+    let pageCount: Int          // pages written in all, today's included
+    let mood: Int               // today's page's mood
     var onStart: () -> Void
 
     @Environment(\.requestReview) private var requestReview
@@ -464,11 +468,13 @@ private struct CelebrationView: View {
             .capWidth(Metrics.maxContentWidth)   // centered column; gradient stays full-bleed
         }
         .task {
-            // A first page written during onboarding comes before the paywall — not the moment to
-            // ask for a rating. The next milestone asks instead.
+            // A page written during onboarding comes before the paywall — not the moment to ask.
             guard SharedState.onboardingComplete else { return }
-            try? await Task.sleep(for: .seconds(1.2))
-            ReviewPrompt.maybeAsk(streak: streak, requestReview)
+            // Ask once the book has closed and the streak has counted up, not over them. Leaving
+            // sooner cancels the wait, and the ask keeps for the next page instead of firing as
+            // the screen goes away.
+            guard (try? await Task.sleep(for: .seconds(2.4))) != nil else { return }
+            ReviewPrompt.maybeAsk(pages: pageCount, mood: mood, requestReview)
         }
     }
 

@@ -155,19 +155,3 @@ struct PagePromptHint: View {
             }
     }
 }
-
-/// On a written page, the question it answered: small and faint above the words.
-struct PageAnsweredPrompt: View {
-    let text: String
-    @Environment(\.pageTheme) private var pageTheme
-
-    var body: some View {
-        Text(verbatim: text)
-            .font(Fonts.ui(13.5, .heavy))
-            .foregroundStyle(pageTheme.ink.opacity(pageTheme.isDark ? 0.58 : 0.42))
-            .lineSpacing(2)
-            .fixedSize(horizontal: false, vertical: true)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.bottom, 14)
-    }
-}

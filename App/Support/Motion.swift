@@ -65,35 +65,6 @@ extension View {
     }
 }
 
-// MARK: - Spin (continuous slow rotation) — prototype's `sunSpin`
-
-private struct Spin: ViewModifier {
-    var period: Double
-    @State private var angle: Double = 0
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @Environment(\.onboardingAnimationsActive) private var animationsActive
-    func body(content: Content) -> some View {
-        content
-            .rotationEffect(.degrees(angle))
-            .onAppear(perform: updateAnimation)
-            .onChange(of: animationsActive) { _, _ in updateAnimation() }
-    }
-
-    private func updateAnimation() {
-        guard animationsActive, !reduceMotion else {
-            var transaction = Transaction()
-            transaction.disablesAnimations = true
-            withTransaction(transaction) { angle = 0 }
-            return
-        }
-        withAnimation(.linear(duration: period).repeatForever(autoreverses: false)) { angle = 360 }
-    }
-}
-
-extension View {
-    func spin(period: Double = 24) -> some View { modifier(Spin(period: period)) }
-}
-
 // MARK: - Floaty (ambient bob) — prototype's `floaty` / `floatySlow`
 
 private struct Floaty: ViewModifier {

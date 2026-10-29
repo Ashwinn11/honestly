@@ -115,9 +115,4 @@ final class ScreenTimeManager {
         if authorized { center.stopMonitoring([DeviceActivityName(AppConfig.morningScheduleName)]) }
         Shielding.clear()
     }
-
-    // MARK: Window helper
-    func isWithinMorningWindow(_ date: Date = Date()) -> Bool {
-        AppConfig.isWithinBlockWindow(date)
-    }
 }

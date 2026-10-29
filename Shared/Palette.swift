@@ -12,7 +12,6 @@ enum Palette {
     static let inkSofter   = Color(hex: "B7A991")   // tertiary / hints
     static let inkMuted    = Color(hex: "C3B6A2")   // placeholder / faint
     static let hairline    = Color(hex: "D8CBB6")   // chevrons / faint rules
-    static let dashFuture  = Color(hex: "DACDB8")   // future/empty day numerals
 
     /// Standard black-ink card outlines from the redesign.
     static let outline     = ink                            // 2px solid emphasis
@@ -22,7 +21,6 @@ enum Palette {
 
     // MARK: Sunrise accent
     static let amber       = Color(hex: "F5851F")   // primary / accent
-    static let amberLight  = Color(hex: "FF9A4D")   // secondary glow
     static let amberDeep   = Color(hex: "BC5E17")   // text-on-amber-card / links
     static let sunDisc     = Color(hex: "F7B23C")   // the sun's gold disc / Happy-adjacent gold
 

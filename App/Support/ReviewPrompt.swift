@@ -2,7 +2,10 @@ import SwiftUI
 import StoreKit
 
 enum ReviewPrompt {
-    private static let milestones: Set<Int> = [1, 7, 30]
+    /// Pages written in all — not a streak, which most people never hold for a week — after which
+    /// Honestly asks: once someone has come back a few times, then again as the habit settles.
+    /// Three asks fit Apple's yearly budget.
+    private static let pageMilestones = [3, 10, 30]
     private static let datesKey = "review.requestDates"           // rolling 1-year window of prompts
 
     /// Timestamps of in-app review prompts in the trailing 365 days (Apple allows ~3/year).
@@ -16,14 +19,19 @@ enum ReviewPrompt {
         SharedState.defaults.set(d, forKey: datesKey)
     }
 
-    /// Auto-prompt at streak milestones — but only while inside Apple's yearly budget.
+    private static func askedKey(_ milestone: Int) -> String { "review.asked.pages.\(milestone)" }
+
+    /// After a page is closed: asks when the page count has reached a milestone not yet asked
+    /// about — but never on a hard day. A page written sad, awful or in tears isn't the moment to
+    /// ask for stars, so the ask waits for the next good page instead of being spent.
     @MainActor
-    static func maybeAsk(streak: Int, _ request: RequestReviewAction) {
-        guard milestones.contains(streak) else { return }
-        let key = "review.asked.\(streak)"
-        guard !SharedState.defaults.bool(forKey: key) else { return }
+    static func maybeAsk(pages: Int, mood: Int, _ request: RequestReviewAction) {
+        let due = pageMilestones.filter { $0 <= pages && !SharedState.defaults.bool(forKey: askedKey($0)) }
+        guard !due.isEmpty else { return }
+        guard mood == Mood.happy.rawValue || mood == Mood.confused.rawValue else { return }
         guard recentRequests().count < 3 else { return }
-        SharedState.defaults.set(true, forKey: key)
+        // Someone arriving with many pages already is asked once, not once per milestone passed.
+        for milestone in due { SharedState.defaults.set(true, forKey: askedKey(milestone)) }
         request(); recordRequest()
     }
 
