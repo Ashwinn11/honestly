@@ -21,8 +21,9 @@ struct BigWinsLockScreenWidgetView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
             } else {
-                HStack(spacing: 8) {
-                    QuoteMark(size: 18)
+                // The same quote mark as an affirmation: size, weight and place on the first line.
+                HStack(alignment: .firstTextBaseline, spacing: 3) {
+                    QuoteMark(size: 9, weight: .regular)
                     Text(loc: entry.needsSetup ? "Open Honestly to get started" : "Unlock this widget with Premium")
                         .font(Fonts.ui(10.5, .medium))
                         .foregroundStyle(.white)

@@ -123,14 +123,18 @@ struct PagePromptHint: View {
 
     /// The tile's tap area — `IconTileButton` never goes below 44 points.
     private static var tileFrame: CGFloat { max(44, DesignScale.s(32)) }
-    /// Half the height of the question's first line, where the tile is centred.
-    private static var firstLineMid: CGFloat {
-        (UIFont(name: "Manrope-ExtraBold", size: DesignScale.s(18))?.lineHeight ?? DesignScale.s(25)) / 2
+    /// The tile as drawn, inside its tap area.
+    private static var tileSize: CGFloat { DesignScale.s(32) }
+    /// Where the question's letters start below the top of its line: Manrope leaves room above
+    /// its capitals, and the tile lines up with the letters, not that room.
+    private static var capitalsTop: CGFloat {
+        guard let font = UIFont(name: "Manrope-ExtraBold", size: DesignScale.s(18)) else { return DesignScale.s(6) }
+        return font.ascender - font.capHeight
     }
 
     var body: some View {
         // The question starts exactly where the cursor does; the tile floats at the end of its first
-        // line without moving it.
+        // line without moving it, its top level with the top of the question's letters.
         Text(verbatim: text)
             .foregroundStyle(pageTheme.ink.opacity(pageTheme.isDark ? 0.5 : 0.34))
             .font(Fonts.display(18, .heavy))
@@ -143,7 +147,10 @@ struct PagePromptHint: View {
             .overlay(alignment: .topTrailing) {
                 IconTileButton(icon: "arrow.triangle.2.circlepath", size: 32, iconSize: 13,
                                label: "Choose a prompt", action: onChoose)
-                    .offset(y: Self.firstLineMid - Self.tileFrame / 2)
+                    // The header's controls sit 3 points further out than the page's text
+                    // (`inset - 3` in RitualView), so the tile moves out with them and centres
+                    // under the close button.
+                    .offset(x: 3, y: Self.capitalsTop - (Self.tileFrame - Self.tileSize) / 2)
                     .anchorPreference(key: CoachAnchorKey.self, value: .bounds) { anchor in [CoachAnchor.prompt: anchor] }
             }
     }
