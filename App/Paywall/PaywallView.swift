@@ -71,7 +71,7 @@ struct PaywallView: View {
                 .background { SoftGlow(color: Palette.sunDisc, opacity: 0.2, size: 240) }
                 .accessibilityHidden(true)
             Text(loc: MorningAnswer.saved.first?.paywallTitle ?? "Take your mornings back")
-                .display(27, .bold)
+                .display(24, .bold)
                 .multilineTextAlignment(.center)
         }
     }
@@ -99,7 +99,7 @@ struct PaywallView: View {
     private func benefitRow(_ text: Text) -> some View {
         HStack(spacing: 11) {
             SunMark(size: 22, rays: false)
-            text.ui(14.5, .semibold)
+            text.ui(13.5, .semibold)
             Spacer(minLength: 0)
         }
     }
@@ -108,18 +108,9 @@ struct PaywallView: View {
     @ViewBuilder private var reviewCard: some View {
         if let quote = AppContent.socialProof.quotes.first {
             VStack(alignment: .leading, spacing: 7) {
-                HStack(spacing: 3) {
-                    ForEach(0..<5, id: \.self) { _ in
-                        InkGlyph(kind: .star, size: 14, fill: Palette.glyphGold, lineWidth: 1.1)
-                    }
-                }
-                .accessibilityHidden(true)
-                Text("“\(Text(loc: quote.text))”")
-                    .ui(13.5, .semibold)
+                Text("\(Text(reviewText(quote))) \(reviewStars)")
                     .lineSpacing(2)
                     .fixedSize(horizontal: false, vertical: true)
-                Text("— \(quote.author)")
-                    .ui(12, .semibold, color: Palette.inkSofter)
                 if locale.language.languageCode?.identifier != "en" {
                     Text(loc: "Translated from English")
                         .ui(11, .medium, color: Palette.inkSofter)
@@ -128,6 +119,35 @@ struct PaywallView: View {
             .frame(maxWidth: .infinity, alignment: .leading)
             .softCard(padding: 14)
         }
+    }
+
+    private let reviewAttributionSize: CGFloat = 12
+
+    private var reviewStars: Text {
+        let fontSize = DesignScale.s(reviewAttributionSize)
+        let starSize = (UIFont(name: "Manrope-SemiBold", size: fontSize)
+            ?? UIFont.systemFont(ofSize: fontSize, weight: .semibold)).capHeight
+        let renderer = ImageRenderer(content: HStack(spacing: DesignScale.s(2)) {
+            ForEach(0..<5, id: \.self) { _ in
+                InkGlyph(kind: .star, size: starSize, fill: Palette.glyphGold, lineWidth: DesignScale.s(0.8))
+            }
+        }.fixedSize())
+        renderer.scale = UIScreen.main.scale
+        if let image = renderer.uiImage {
+            return Text(Image(uiImage: image))
+        }
+        return Text(verbatim: "★★★★★").font(Fonts.ui(reviewAttributionSize, .semibold)).foregroundColor(Palette.glyphGold)
+    }
+
+    private func reviewText(_ quote: SocialProof.Quote) -> AttributedString {
+        var text = AttributedString("“" + L10n.localized(quote.text) + "” ")
+        text.font = Fonts.ui(13.5, .semibold)
+        text.foregroundColor = Palette.ink
+        var author = AttributedString("—\u{00A0}" + quote.author)
+        author.font = Fonts.ui(reviewAttributionSize, .semibold)
+        author.foregroundColor = Palette.inkSofter
+        text.append(author)
+        return text
     }
 
     // MARK: Plan picker — Lifetime (the default), Yearly (anchored against twelve monthly
