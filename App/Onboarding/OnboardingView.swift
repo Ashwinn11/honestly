@@ -239,23 +239,7 @@ struct OnboardingView: View {
     }
 
     private func ctaButton(_ b: FooterButton) -> some View {
-        Button {
-            guard b.enabled else { return }
-            Haptics.tap(); b.action()
-        } label: {
-            Text(loc: b.title)
-                .font(Fonts.ui(16.5, .heavy))
-                .foregroundStyle(b.enabled ? .white : Palette.inkSofter)
-                .frame(maxWidth: .infinity, minHeight: DesignScale.s(56))
-                .background(b.enabled ? AnyShapeStyle(Palette.amber) : AnyShapeStyle(Palette.ink.opacity(0.06)),
-                            in: RoundedRectangle(cornerRadius: DesignScale.s(Radius.panel), style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: DesignScale.s(Radius.panel), style: .continuous)
-                    .strokeBorder(Palette.ink, lineWidth: b.enabled ? 2 : 0))
-                .tactile(b.enabled ? 4 : 0, cornerRadius: DesignScale.s(Radius.panel))
-        }
-        .buttonStyle(PressableStyle())
-        .disabled(!b.enabled)
-        .animation(Motion.snappy, value: b.enabled)
+        PrimaryButton(title: LocalizedStringKey(b.title), enabled: b.enabled, action: b.action)
     }
 
     private struct FooterButton {

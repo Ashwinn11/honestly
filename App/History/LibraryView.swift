@@ -247,9 +247,9 @@ struct LibraryView: View {
         HStack(spacing: 8) {
             Button { toggle(nil) } label: {
                 Text("All").font(Fonts.ui(13, .heavy))
-                    .foregroundStyle(filter == nil ? Palette.paper : Palette.ink)
+                    .foregroundStyle(filter == nil ? .white : Palette.ink)
                     .padding(.horizontal, 16).padding(.vertical, 10)
-                    .background(filter == nil ? Palette.ink : Palette.cream, in: Capsule())
+                    .background(filter == nil ? Palette.amber : Palette.cream, in: Capsule())
                     .overlay(Capsule().strokeBorder(Palette.ink, lineWidth: 2))
             }
             .buttonStyle(PressableStyle())

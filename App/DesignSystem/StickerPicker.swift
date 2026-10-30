@@ -9,8 +9,8 @@ struct StickerPicker: View {
     var onPick: (UIImage) -> Void
     @Environment(\.dismiss) private var dismiss
     @Environment(PremiumManager.self) private var premium
-    @Environment(AppFlow.self) private var flow
     @State private var categoryIndex = 0
+    @State private var showPaywall = false
 
     private static let categories: [StickerCategory] = [
         .init(label: "Moods", icon: "face.smiling",
@@ -49,7 +49,7 @@ struct StickerPicker: View {
                     ForEach(Self.categories[categoryIndex].codes, id: \.self) { code in
                         Button {
                             if categoryLocked {
-                                flow.showPaywall()
+                                showPaywall = true
                                 return
                             }
                             guard let image = UIImage(named: "om\(code)") else { return }
@@ -79,47 +79,16 @@ struct StickerPicker: View {
                     .padding(.bottom, 20)
             }
         }
-        .background(Palette.cream)
+        .sheetBackground()
+        .paywallCover(isPresented: $showPaywall)
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.hidden)
     }
 
+    /// Browsing a locked category is free; each of its stickers carries the lock.
     private var categoryRow: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                ForEach(Array(Self.categories.enumerated()), id: \.offset) { index, category in
-                    let active = index == categoryIndex
-                    Button {
-                        // Switching to a locked category is free — it's just browsing/previewing;
-                        // only actually picking a sticker from it is the gated action.
-                        Haptics.select()
-                        categoryIndex = index
-                    } label: {
-                        HStack(spacing: 6) {
-                            Image(systemName: category.icon)
-                                .font(.system(size: 12, weight: .bold))
-                            Text(loc: category.label)
-                                .font(Fonts.ui(12.5, active ? .heavy : .semibold))
-                        }
-                        .foregroundStyle(active ? .white : Palette.inkSoft)
-                        .padding(.horizontal, 13)
-                        .padding(.vertical, 8)
-                        .background(active ? Palette.amber : Palette.paper, in: Capsule())
-                        .overlay(Capsule().strokeBorder(active ? Palette.ink : Palette.outlineSoft,
-                                                  lineWidth: active ? 1.8 : 1.2))
-                        .overlay(alignment: .topTrailing) {
-                            if index >= PremiumFeature.freeStickerPacks && !premium.allows(.allStickers) {
-                                PremiumLockBadge(size: 13).offset(x: 4, y: -4)
-                            }
-                        }
-                    }
-                    .buttonStyle(PressableStyle(scale: 0.94))
-                }
-            }
-            .padding(.horizontal, 20)
-        }
-        .scrollClipDisabled()
-        .animation(Motion.snappy, value: categoryIndex)
+        ChipTabs(items: Array(Self.categories.indices), selection: $categoryIndex,
+                 title: { Self.categories[$0].label }, icon: { Self.categories[$0].icon })
     }
 
     /// The first pack ("Moods") is free; the rest need Premium.

@@ -68,10 +68,7 @@ struct PremiumUnlockCard: View {
                     Text(loc: subtitle).font(Fonts.ui(13, .semibold)).foregroundStyle(Palette.inkSofter)
                         .multilineTextAlignment(.center).lineSpacing(2)
                 }
-                Text(loc: "Unlock Premium").font(Fonts.ui(13.5, .heavy)).foregroundStyle(.white)
-                    .padding(.horizontal, 18).padding(.vertical, 10)
-                    .background(Palette.amber, in: Capsule())
-                    .overlay(Capsule().strokeBorder(Palette.ink, lineWidth: 2))
+                AmberPill(title: "Unlock Premium")
             }
             .padding(24)
             .frame(maxWidth: .infinity)

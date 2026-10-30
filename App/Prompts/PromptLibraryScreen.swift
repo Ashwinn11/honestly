@@ -3,9 +3,9 @@ import SwiftUI
 struct PromptLibraryScreen: View {
     @Environment(PromptLibrary.self) private var prompts
     @Environment(PremiumManager.self) private var premium
-    @Environment(AppFlow.self) private var flow
     @Environment(\.dismiss) private var dismiss
     @State private var draft = ""
+    @State private var showPaywall = false
     @State private var pendingDelete: String?
 
     var body: some View {
@@ -20,7 +20,7 @@ struct PromptLibraryScreen: View {
                         LibraryWriteRow(placeholder: "Write your own prompt…", addLabel: "Add prompt",
                                         draft: $draft, onAdd: add)
                     } else {
-                        PremiumLockedRow(title: "Write your own with Premium") { flow.showPaywall() }
+                        PremiumLockedRow(title: "Write your own with Premium") { showPaywall = true }
                     }
 
                     ForEach(prompts.custom, id: \.self) { row($0, builtIn: false) }
@@ -38,6 +38,7 @@ struct PromptLibraryScreen: View {
         .padding(.top, 20)
         .capWidth(Metrics.maxContentWidth)
         .background(PaperBackground())
+        .paywallCover(isPresented: $showPaywall)
         .confirmationDialog("Delete prompt?", isPresented: Binding(
             get: { pendingDelete != nil }, set: { if !$0 { pendingDelete = nil } }
         ), titleVisibility: .visible, presenting: pendingDelete) { line in
@@ -59,7 +60,7 @@ struct PromptLibraryScreen: View {
 
     /// Choosing from the list is free; writing your own prompt is Premium.
     private func add() {
-        guard premium.allows(.ownPrompts) else { flow.showPaywall(); return }
+        guard premium.allows(.ownPrompts) else { showPaywall = true; return }
         guard prompts.add(draft) else { Haptics.rigid(); return }
         draft = ""
         Haptics.select()

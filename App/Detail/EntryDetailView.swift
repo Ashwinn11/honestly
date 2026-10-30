@@ -12,6 +12,7 @@ struct EntryDetailView: View {
     @Environment(\.horizontalSizeClass) private var sizeClass
     @State private var selectedKey: String
     @State private var editingEntry: JournalEntry?
+    @State private var showPaywall = false
     /// The book's grid of all pages (or its calendar). Not a page: it has the only header.
     @State private var showGrid: Bool
     @State private var gridMode: GridMode = .pages
@@ -74,7 +75,7 @@ struct EntryDetailView: View {
             if !canRead {
                 PremiumUnlockCard(title: "Unlock your full history",
                                   subtitle: "Every morning you've written, always here to revisit.",
-                                  action: { flow.showPaywall() })
+                                  action: { showPaywall = true })
                     .padding(.top, 80)
             } else if hasPages {
                 reader
@@ -100,6 +101,8 @@ struct EntryDetailView: View {
         .fullScreenCover(item: $editingEntry) { entry in
             EntryEditorView(entry: entry)
         }
+        // Opened from the writing page this reader is itself a cover, so it shows its own paywall.
+        .paywallCover(isPresented: $showPaywall)
         .confirmationDialog(Text(verbatim: pageTitle), isPresented: $showPageActions, titleVisibility: .visible) {
             Button {
                 let key = selectedKey
@@ -159,7 +162,7 @@ struct EntryDetailView: View {
         // Capture the selected page before presenting; do not re-fetch it in the cover body.
         guard let entry = store.entry(for: key) else { return }
         // Reading this month is free; editing a page stays Premium.
-        flow.requiring(.editPages, premium: premium) { editingEntry = entry }
+        if premium.allows(.editPages) { editingEntry = entry } else { showPaywall = true }
     }
 
     // MARK: The grid — all the month's pages, or its calendar. Not a page, so it has a header.

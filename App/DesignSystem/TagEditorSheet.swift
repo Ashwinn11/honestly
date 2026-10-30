@@ -58,11 +58,12 @@ struct TagEditorSheet: View {
                         }
                     }
                 }
+                .padding(.bottom, 20)               // inside the scroll, so nothing ends short of the edge
             }
             .scrollDismissesKeyboard(.interactively)
         }
-        .padding(20)
-        .background(Palette.paper)
+        .padding(EdgeInsets(top: 20, leading: 20, bottom: 0, trailing: 20))
+        .sheetBackground()
         .presentationDetents([.medium, .large])
         .presentationContentInteraction(.scrolls)
         .presentationDragIndicator(.visible)

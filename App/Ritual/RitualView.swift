@@ -5,7 +5,6 @@ import StoreKit
 struct RitualView: View {
     var onClose: () -> Void
     @Environment(JournalStore.self) private var store
-    @Environment(PremiumManager.self) private var premium
     @Environment(AppFlow.self) private var flow
     @Environment(PromptLibrary.self) private var prompts
 
@@ -85,7 +84,10 @@ struct RitualView: View {
                                 onFormattingClosed: {
                                     showFormattingSheet = false
                                     DispatchQueue.main.async { journalFocused = true }
-                                }
+                                },
+                                // The writing page presents the app's paywall over itself.
+                                onLocked: { flow.showPaywall() },
+                                pageInk: theme.ink
                             )
                             .transition(.move(edge: .bottom).combined(with: .opacity))
                         } else {
@@ -382,14 +384,13 @@ private struct MoodPickerSheet: View {
             }
             .padding(.horizontal, 12)
             .padding(.top, 14)
-            .padding(.bottom, 26)
         }
         // Fill the whole sheet, not just the VStack's measured content height — otherwise the
         // background only paints up to the content and the system sheet's own (light gray)
         // background shows through underneath as a second layer, in the reserved bottom
         // safe-area/home-indicator strip a tight `.height()` detent still leaves.
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .background(Palette.cream.ignoresSafeArea())
+        .sheetBackground()
         .presentationDetents([.height(230)])
         .presentationDragIndicator(.hidden)
     }

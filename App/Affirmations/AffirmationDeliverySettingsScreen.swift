@@ -19,29 +19,19 @@ struct AffirmationDeliverySettingsScreen: View {
                 .padding(.bottom, 18)
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
-                    card {
+                    PanelCard {
                         toggleRow("Notification reminders", detail: "Journal and affirmation reminders, at the times you pick")
                     }
                     if enabled {
                         // The journal reminder is one time, every day, only while the page is blank —
                         // a single row, as onboarding shows it.
-                        card {
-                            HStack(spacing: 12) {
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(loc: "Journal reminder")
-                                        .font(Fonts.ui(15, .bold)).foregroundStyle(Palette.ink)
-                                    Text(loc: "Only on mornings your page is still blank.")
-                                        .font(Fonts.ui(12, .medium)).foregroundStyle(Palette.inkSofter)
-                                        .fixedSize(horizontal: false, vertical: true)
-                                }
-                                Spacer(minLength: 4)
-                                DatePicker("", selection: journalTimeBinding, displayedComponents: .hourAndMinute)
-                                    .labelsHidden().tint(Palette.amber)
-                            }
+                        PanelCard {
+                            TimeRow(title: "Journal reminder", detail: "Only on mornings your page is still blank.",
+                                    minutes: $journalMinutes)
                         }
                         VStack(alignment: .leading, spacing: 12) {
                             sectionTitle("Affirmation reminders")
-                            card {
+                            PanelCard {
                                 VStack(alignment: .leading, spacing: 12) {
                                     Text(loc: "Times")
                                         .font(Fonts.ui(13, .bold)).foregroundStyle(Palette.inkSofter)
@@ -125,12 +115,6 @@ struct AffirmationDeliverySettingsScreen: View {
         }
     }
 
-    private func card<Content: View>(@ViewBuilder content: () -> Content) -> some View {
-        content()
-                .padding(16)
-                .outlinedSurface(radius: Radius.panel)
-    }
-
     private func sectionTitle(_ title: String) -> some View {
         Text(loc: title).font(Fonts.ui(15, .bold)).foregroundStyle(Palette.ink)
     }
@@ -154,15 +138,6 @@ struct AffirmationDeliverySettingsScreen: View {
             let parts = Calendar.current.dateComponents([.hour, .minute], from: date)
             guard reminderTimes.indices.contains(index) else { return }
             reminderTimes[index] = (parts.hour ?? 9) * 60 + (parts.minute ?? 0)
-        })
-    }
-
-    private var journalTimeBinding: Binding<Date> {
-        Binding(get: {
-            Calendar.current.date(bySettingHour: journalMinutes / 60, minute: journalMinutes % 60, second: 0, of: .now) ?? .now
-        }, set: { date in
-            let parts = Calendar.current.dateComponents([.hour, .minute], from: date)
-            journalMinutes = (parts.hour ?? 8) * 60 + (parts.minute ?? 0)
         })
     }
 
@@ -210,9 +185,9 @@ struct AffirmationWidgetCustomizationSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(loc: "Affirmation widgets").font(Fonts.ui(15, .bold)).foregroundStyle(Palette.ink)
+            LibrarySectionTitle(title: "Affirmation widgets")
             if premium.allows(.widget) {
-                card {
+                PanelCard {
                     VStack(spacing: 12) {
                         Button { showingWidgetTheme = true } label: {
                             HStack(spacing: 12) {
@@ -280,10 +255,6 @@ struct AffirmationWidgetCustomizationSection: View {
         .sheet(isPresented: $showingWidgetFont, onDismiss: reloadWidgetStyle) {
             WidgetFontPickerSheet(selection: $widgetFontName)
         }
-    }
-
-    private func card<Content: View>(@ViewBuilder content: () -> Content) -> some View {
-        content().padding(16).outlinedSurface(radius: Radius.panel)
     }
 
     private var widgetThemeSelection: Binding<PageTheme> {
@@ -354,23 +325,9 @@ private struct WidgetColorPickerSheet: View {
                     InlineJournalColorPicker(color: UIColor(Color(hex: hex)), onChange: { hex = Self.hex($0) })
                     LazyVGrid(columns: columns, spacing: 8) {
                         ForEach(EditorToolbar.textColors, id: \.self) { color in
-                            Button { hex = color } label: {
-                                Circle().fill(Color(hex: color))
-                                    .frame(width: 32, height: 32)
-                                    .overlay(Circle().strokeBorder(Palette.ink,
-                                        lineWidth: hex.caseInsensitiveCompare(color) == .orderedSame ? 2.5 : 0.6))
-                                    .overlay {
-                                        if hex.caseInsensitiveCompare(color) == .orderedSame {
-                                            Image(systemName: "checkmark")
-                                                .font(.system(size: 11, weight: .black))
-                                                .foregroundStyle(.white)
-                                        }
-                                    }
-                                    .frame(maxWidth: .infinity, minHeight: 44)
-                                    .contentShape(Rectangle())
-                            }
-                            .buttonStyle(PressableStyle())
-                            .accessibilityLabel(Text(loc: title) + Text(" #" + color))
+                            ColorSwatch(color: Color(hex: color),
+                                        selected: hex.caseInsensitiveCompare(color) == .orderedSame) { hex = color }
+                                .accessibilityLabel(Text(loc: title) + Text(" #" + color))
                         }
                     }
                 }
@@ -379,7 +336,7 @@ private struct WidgetColorPickerSheet: View {
         }
         .padding(.horizontal, 20)
         .padding(.top, 20)
-        .background(PaperBackground())
+        .sheetBackground()
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
     }
@@ -403,23 +360,10 @@ private struct WidgetFontPickerSheet: View {
             ScrollView {
                 LazyVGrid(columns: columns, spacing: 10) {
                     ForEach(FontChoice.allCases) { choice in
-                        let active = selection == choice.rawValue
-                        Button {
+                        FontChip(choice: choice, selected: selection == choice.rawValue, fillsWidth: true) {
                             selection = choice.rawValue
                             dismiss()
-                        } label: {
-                            Text(choice.rawValue)
-                                .font(Font(choice.uiFont(size: 16)))
-                                .foregroundStyle(active ? .white : Palette.ink)
-                                .frame(maxWidth: .infinity, minHeight: 48)
-                                .background(active ? Palette.amber : Palette.cream,
-                                            in: RoundedRectangle(cornerRadius: Radius.chip, style: .continuous))
-                                .overlay(RoundedRectangle(cornerRadius: Radius.chip, style: .continuous)
-                                    .strokeBorder(active ? Palette.ink : Palette.outlineSoft,
-                                                  lineWidth: active ? 2 : 1.2))
                         }
-                        .buttonStyle(PressableStyle(scale: 0.97))
-                        .accessibilityAddTraits(active ? .isSelected : [])
                     }
                 }
             }
@@ -428,7 +372,7 @@ private struct WidgetFontPickerSheet: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
         .padding(.horizontal, 20)
         .padding(.top, 20)
-        .background(PaperBackground())
+        .sheetBackground()
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
     }

@@ -54,7 +54,7 @@ struct BigWinsLockScreenWidget: Widget {
                 .environment(\.layoutDirection, Locale.Language(identifier: SharedState.language).characterDirection == .rightToLeft ? .rightToLeft : .leftToRight)
         }
         .configurationDisplayName("Today's affirmation")
-        .description("See today's affirmation on your Lock Screen.")
+        .description("Keep today's affirmation in view with a small widget.")
         .supportedFamilies([.accessoryRectangular])
     }
 }

@@ -94,12 +94,15 @@ enum CoverDesign: String, CaseIterable, Identifiable, Codable {
         }
     }
 
-    /// The design a month starts on. Stepping 7 through 23 designs, consecutive months never
-    /// match and every design comes round before any repeats.
+    /// The covers anyone can use, in the order months take them: illustrated, pattern,
+    /// illustrated, pattern, classic. The rest come with Premium.
+    static let free: [CoverDesign] = [.bouquet, .littleFlorals, .daisies, .gingham, .leather]
+    var isFree: Bool { Self.free.contains(self) }
+
+    /// The design a month starts on: the free covers in turn, so neighbouring months never match
+    /// and each comes round two or three times a year. Anyone can change it in the cover editor.
     static func forMonth(year: Int, month: Int) -> CoverDesign {
-        let all = allCases
-        let index = ((year * 12 + month - 1) * 7) % all.count
-        return all[(index + all.count) % all.count]
+        free[(year * 12 + month - 1) % free.count]
     }
 }
 

@@ -122,7 +122,7 @@ extension UITextView {
     }
 }
 
-// MARK: - Picker sheet — theme cards in a grid, grouped Light / Dark / Bold, tap to apply
+// MARK: - Picker sheet — a tab per group (Paper, Airy, Scattered, Prints, Dark), theme cards in a grid, tap to apply
 
 struct ThemePickerSheet: View {
     /// What the themes are for: journal pages (page-shaped cards) or the affirmation widget
@@ -135,8 +135,9 @@ struct ThemePickerSheet: View {
     var surface: Surface = .page
     @Environment(\.dismiss) private var dismiss
     @Environment(PremiumManager.self) private var premium
-    @Environment(AppFlow.self) private var flow
     @State private var initialSelection: PageTheme?
+    @State private var group: PageTheme.Group = .paper
+    @State private var showPaywall = false
     /// What the widget cards show: today's affirmation, the one the widget has on it now.
     @State private var sampleQuote: String = {
         let today = Affirmations.dailyLine(premium: SharedState.premiumActive)
@@ -161,60 +162,54 @@ struct ThemePickerSheet: View {
             })
             .padding(EdgeInsets(top: 18, leading: 20, bottom: 6, trailing: 20))
 
+            // One group at a time, as the cover editor shows its designs.
+            ChipTabs(items: PageTheme.Group.allCases, selection: $group, title: \.rawValue, icon: \.icon)
+                .padding(.top, 10)
+
             ScrollView {
-                VStack(alignment: .leading, spacing: 22) {
-                    ForEach(PageTheme.Group.allCases, id: \.self) { group in
-                        VStack(alignment: .leading, spacing: 12) {
-                            Eyebrow(text: group.rawValue, color: Palette.inkSoft, tracking: 1.4)
-                            LazyVGrid(columns: columns, spacing: 14) {
-                                ForEach(PageTheme.allCases.filter { $0.group == group }) { theme in
-                                    themeCard(theme)
-                                }
-                            }
-                        }
+                LazyVGrid(columns: columns, spacing: 14) {
+                    ForEach(PageTheme.allCases.filter { $0.group == group }) { theme in
+                        themeCard(theme)
                     }
                 }
-                .padding(20)
+                .padding(EdgeInsets(top: 16, leading: 20, bottom: 20, trailing: 20))
             }
         }
-        .background(Palette.cream)
-        .onAppear { initialSelection = selection }
+        .sheetBackground()
+        .paywallCover(isPresented: $showPaywall)
+        .onAppear {
+            initialSelection = selection
+            group = selection.group            // open on the tab of the theme already in use
+        }
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.hidden)
     }
 
     private func themeCard(_ theme: PageTheme) -> some View {
         let selected = theme == selection
-        // Browsing the grid is free; picking a theme you don't already have is the premium
-        // action — the theme you're already on never shows a lock, since re-selecting it is a
-        // no-op either way.
-        let locked = !premium.allows(.pageThemes) && !selected
+        // Browsing the grid is free, and so are five of the themes, one per group. Picking any
+        // other is the Premium action — the theme you're already on never shows a lock, since
+        // re-selecting it is a no-op either way.
+        let locked = !premium.allows(.pageThemes) && !theme.isFree && !selected
         return Button {
             if locked {
-                flow.showPaywall()
+                showPaywall = true
                 return
             }
             Haptics.select()
             selection = theme
         } label: {
-            VStack(spacing: 7) {
+            VStack(spacing: 6) {
                 preview(theme)
                     .clipShape(RoundedRectangle(cornerRadius: Radius.control, style: .continuous))
-                    .overlay(RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
-                        .strokeBorder(selected ? Palette.amber : Palette.outlineSoft, lineWidth: selected ? 2.5 : 1.5))
+                    .selectedRing(selected)
                     .overlay(alignment: .topTrailing) {
-                        if selected {
-                            Image(systemName: "checkmark.circle.fill")
-                                .font(.system(size: 17, weight: .bold))
-                                .foregroundStyle(.white, Palette.amber)
-                                .padding(6)
-                        } else if locked {
-                            PremiumLockBadge(size: 17).padding(6)
-                        }
+                        if locked { PremiumLockBadge(size: 17).padding(6) }
                     }
                 Text(loc: theme.label)
                     .font(Fonts.ui(12, selected ? .heavy : .semibold))
                     .foregroundStyle(selected ? Palette.ink : Palette.inkSoft)
+                    .lineLimit(1).minimumScaleFactor(0.7)
             }
             // The preview's drawing ignores touches and sits on a clear shape, so without this
             // only the name and the outline took a tap.

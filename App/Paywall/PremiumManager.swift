@@ -177,7 +177,8 @@ enum PremiumFeature {
     case ownAffirmations      // writing your own affirmations
     case fullAffirmations     // the whole affirmation library, not the free rotation
     case widget
-    case pageThemes           // switching to a theme you're not already on
+    case pageThemes           // themes beyond the free five, one per group
+    case coverDesigns         // book covers beyond the free five, and photo covers
     case allStickers          // sticker packs beyond the first
     case morePhotos           // more photos/doodles on a page than the free allowance
 
@@ -191,7 +192,7 @@ extension PremiumManager {
     func allows(_ feature: PremiumFeature) -> Bool {
         switch feature {
         case .appBlocking, .fullHistory, .editPages, .iCloudBackup, .ownPrompts, .ownAffirmations,
-             .fullAffirmations, .widget, .pageThemes, .allStickers, .morePhotos:
+             .fullAffirmations, .widget, .pageThemes, .coverDesigns, .allStickers, .morePhotos:
             return isPremium
         }
     }

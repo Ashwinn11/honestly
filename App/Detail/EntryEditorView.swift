@@ -3,7 +3,6 @@ import SwiftUI
 struct EntryEditorView: View {
     let entry: JournalEntry
     @Environment(JournalStore.self) private var store
-    @Environment(AppFlow.self) private var flow
     @Environment(\.dismiss) private var dismiss
 
     @State private var richText = NSAttributedString()
@@ -18,9 +17,10 @@ struct EntryEditorView: View {
     @State private var showStickerSheet = false
     @State private var showThemeSheet = false
     @State private var showFormattingSheet = false
+    @State private var showPaywall = false
 
     private var editorSheetPresented: Bool {
-        showFormattingSheet || showTagsSheet || showImagePicker || showDoodleSheet || showStickerSheet || showThemeSheet || flow.paywallPresented
+        showFormattingSheet || showTagsSheet || showImagePicker || showDoodleSheet || showStickerSheet || showThemeSheet || showPaywall
     }
 
     init(entry: JournalEntry) {
@@ -100,7 +100,10 @@ struct EntryEditorView: View {
                             // Wait for the sheet state to propagate so the UITextView is allowed
                             // to become first responder again before restoring SwiftUI focus.
                             DispatchQueue.main.async { journalFocused = true }
-                        }
+                        },
+                        // This editor is a cover, so it shows the paywall over itself.
+                        onLocked: { showPaywall = true },
+                        pageInk: theme.ink
                     )
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                 } else {
@@ -119,6 +122,7 @@ struct EntryEditorView: View {
         .onChange(of: editorSheetPresented) { _, presented in
             if presented { journalFocused = false }
         }
+        .paywallCover(isPresented: $showPaywall)
         .sheet(isPresented: $showTagsSheet, onDismiss: { journalFocused = true }) {
             TagEditorSheet(tags: $tags)
         }

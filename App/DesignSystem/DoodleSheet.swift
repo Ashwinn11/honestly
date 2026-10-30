@@ -35,7 +35,7 @@ struct DoodleSheet: View {
                 .padding(.horizontal, 16)
             toolRow
         }
-        .background(PaperBackground())
+        .sheetBackground()
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
         .onAppear(perform: applyTool)
@@ -104,7 +104,6 @@ struct DoodleSheet: View {
         }
         .scrollClipDisabled()
         .padding(.top, 12)
-        .padding(.bottom, 14)
         .animation(Motion.snappy, value: tool)
         .animation(Motion.snappy, value: colorIndex)
         .animation(Motion.snappy, value: widthIndex)

@@ -82,7 +82,7 @@ struct PaywallView: View {
             benefitRow(Text(loc: "Your apps wait until you’ve written"))
             backupBenefit
             benefitRow(Text(loc: "Your own prompts and affirmations"))
-            benefitRow(Text(loc: "Affirmations on your Home Screen"))
+            benefitRow(Text(loc: "Affirmations on your widgets"))
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 4)
@@ -302,5 +302,16 @@ struct PaywallView: View {
     }
     private var footerDot: some View {
         Circle().fill(Palette.inkSofter.opacity(0.45)).frame(width: 3, height: 3)
+    }
+}
+
+extension View {
+    /// The paywall, presented from this screen. A sheet or cover can't show the app-wide one: the
+    /// screen that presented it is busy presenting it, so SwiftUI holds the paywall back until it
+    /// closes. Anything shown modally that has a locked control presents its own.
+    func paywallCover(isPresented: Binding<Bool>) -> some View {
+        fullScreenCover(isPresented: isPresented) {
+            PaywallView(onClose: { isPresented.wrappedValue = false })
+        }
     }
 }

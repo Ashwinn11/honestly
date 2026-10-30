@@ -20,6 +20,8 @@ enum L10n {
     private static let shieldKeys: [String: String] = [
         "shield.title": "The world can wait.",
         "shield.subtitle": "Write your morning page in Honestly, and your apps wake up.",
-        "shield.primary": "Write today's page",
+        // The shield's button leaves about 108 points for its label, and iOS left-aligns a label
+        // that wraps — so it's short enough to stay on one line in every language.
+        "shield.primary": "Write now",
     ]
 }

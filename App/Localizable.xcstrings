@@ -3123,83 +3123,6 @@
         }
       }
     },
-    "Affirmations on your Home Screen" : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "تأكيدات على شاشتك الرئيسية"
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Affirmationen auf deinem Home-Bildschirm"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Afirmaciones en tu pantalla de inicio"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Des affirmations sur ton écran d’accueil"
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Affermazioni nella schermata Home"
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ホーム画面にアファメーションを"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "홈 화면에 확언을"
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Affirmaties op je beginscherm"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Afirmações na sua tela de início"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Аффирмации на экране «Домой»"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "主屏幕上的肯定语"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "主畫面上的肯定語"
-          }
-        }
-      }
-    },
     "Affirmations you read will appear here." : {
       "extractionState" : "manual",
       "localizations" : {
@@ -141463,160 +141386,6 @@
         }
       }
     },
-    "See today's affirmation on your Lock Screen." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "شاهد تأكيد اليوم على شاشة القفل."
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sieh die heutige Affirmation auf deinem Sperrbildschirm."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ve la afirmación de hoy en tu pantalla de bloqueo."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vois l'affirmation du jour sur ton écran verrouillé."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vedi l'affermazione di oggi sulla schermata di blocco."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "今日のアファメーションをロック画面で確認できます。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "오늘의 확언을 잠금 화면에서 확인하세요."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bekijk de affirmatie van vandaag op je vergrendelscherm."
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vê a afirmação de hoje no teu ecrã de bloqueio."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Смотри сегодняшнюю аффирмацию на экране блокировки."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在锁屏上查看今日肯定语。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "在鎖定畫面上查看今日肯定語。"
-          }
-        }
-      }
-    },
-    "See today's affirmation right on your Home Screen." : {
-      "extractionState" : "manual",
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "شاهد تأكيد اليوم مباشرة على الشاشة الرئيسية."
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sieh die heutige Affirmation direkt auf deinem Home-Bildschirm."
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Ve la afirmación de hoy directamente en tu pantalla de inicio."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vois l'affirmation du jour directement sur ton écran d'accueil."
-          }
-        },
-        "it" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vedi l'affermazione di oggi direttamente sulla schermata Home."
-          }
-        },
-        "ja" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "今日のアファメーションをホーム画面ですぐに確認できます。"
-          }
-        },
-        "ko" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "오늘의 확언을 홈 화면에서 바로 확인하세요."
-          }
-        },
-        "nl" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bekijk de affirmatie van vandaag rechtstreeks op je beginscherm."
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Vê a afirmação de hoje diretamente no teu ecrã principal."
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Смотри сегодняшнюю аффирмацию прямо на главном экране."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "直接在主屏幕上查看今日肯定语。"
-          }
-        },
-        "zh-Hant" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "直接在主畫面上查看今日肯定語。"
-          }
-        }
-      }
-    },
     "Self-worth" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -155034,6 +154803,314 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "在一天開始前，讓思緒有個落腳的地方。"
+          }
+        }
+      }
+    },
+    "Affirmations on your widgets" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تأكيدات على أدواتك"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Affirmationen auf deinen Widgets"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afirmaciones en tus widgets"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Des affirmations sur tes widgets"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Affermazioni nei tuoi widget"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ウィジェットにアファメーションを"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "위젯에 확언을"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Affirmaties op je widgets"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Afirmações nos seus widgets"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Аффирмации в виджетах"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "小组件上的肯定语"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "小工具上的肯定語"
+          }
+        }
+      }
+    },
+    "Keep today's affirmation in view with a widget." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "أبقِ تأكيد اليوم أمام عينيك مع أداة."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Behalte die Affirmation des Tages mit einem Widget im Blick."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ten la afirmación de hoy a la vista con un widget."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Garde l’affirmation du jour sous les yeux avec un widget."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tieni l’affermazione di oggi sempre in vista con un widget."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ウィジェットで、今日のアファメーションをいつも目に入るところに。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "위젯으로 오늘의 확언을 늘 눈앞에 두세요."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Houd de affirmatie van vandaag in zicht met een widget."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mantenha a afirmação de hoje à vista com um widget."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Держи аффирмацию дня перед глазами с помощью виджета."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "用小组件，让今日肯定语一直在眼前。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "用小工具，讓今日肯定語一直在眼前。"
+          }
+        }
+      }
+    },
+    "Keep today's affirmation in view with a small widget." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "أبقِ تأكيد اليوم أمام عينيك مع أداة صغيرة."
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Behalte die Affirmation des Tages mit einem kleinen Widget im Blick."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ten la afirmación de hoy a la vista con un widget pequeño."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Garde l’affirmation du jour sous les yeux avec un petit widget."
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tieni l’affermazione di oggi sempre in vista con un piccolo widget."
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "小さなウィジェットで、今日のアファメーションをいつも目に入るところに。"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "작은 위젯으로 오늘의 확언을 늘 눈앞에 두세요."
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Houd de affirmatie van vandaag in zicht met een kleine widget."
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mantenha a afirmação de hoje à vista com um widget pequeno."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Держи аффирмацию дня перед глазами с помощью маленького виджета."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "用小巧的小组件，让今日肯定语一直在眼前。"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "用小巧的小工具，讓今日肯定語一直在眼前。"
+          }
+        }
+      }
+    },
+    "Write now" : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "اكتب الآن"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schreiben"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escribir ya"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Écrire"
+          }
+        },
+        "it" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Scrivi ora"
+          }
+        },
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "今すぐ書く"
+          }
+        },
+        "ko" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "지금 쓰기"
+          }
+        },
+        "nl" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Schrijven"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escrever"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Написать"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "现在就写"
+          }
+        },
+        "zh-Hant" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "現在就寫"
           }
         }
       }

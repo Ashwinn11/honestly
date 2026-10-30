@@ -39,7 +39,7 @@ struct OnbMorningQuestionView: View {
                       hint: "Pick any that sound like you.")
             VStack(spacing: 9) {
                 ForEach(MorningAnswer.allCases) { answer in
-                    OnbChoiceRow(title: answer.title, selected: selection.contains(answer)) {
+                    ChoiceRow(title: answer.title, selected: selection.contains(answer)) {
                         Haptics.select()
                         selection.toggle(answer)
                     }
@@ -58,7 +58,7 @@ struct OnbJournalQuestionView: View {
                       hint: "Pick any.")
             VStack(spacing: 9) {
                 ForEach(JournalAnswer.allCases) { answer in
-                    OnbChoiceRow(title: answer.title, selected: selection.contains(answer)) {
+                    ChoiceRow(title: answer.title, selected: selection.contains(answer)) {
                         Haptics.select()
                         selection.toggle(answer)
                     }
@@ -120,37 +120,6 @@ struct OnbPersonalizedPlanView: View {
 }
 
 
-struct OnbChoiceRow: View {
-    let title: String
-    let selected: Bool
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            HStack(spacing: 12) {
-                Text(loc: title)
-                    .font(Fonts.ui(14, .semibold))
-                    .foregroundStyle(Palette.ink)
-                    .multilineTextAlignment(.leading)
-                    .fixedSize(horizontal: false, vertical: true)
-                Spacer(minLength: 4)
-                Image(systemName: selected ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 19, weight: .medium))
-                    .foregroundStyle(selected ? Palette.ink : Palette.outlineSoft)
-            }
-            .padding(.horizontal, 14)
-            .frame(maxWidth: .infinity, minHeight: 50)
-            .background(selected ? Palette.amber : Palette.cream,
-                        in: RoundedRectangle(cornerRadius: Radius.control, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
-                .strokeBorder(selected ? Palette.ink : Palette.outlineSoft, lineWidth: selected ? 1.8 : 1.2))
-            .contentShape(RoundedRectangle(cornerRadius: Radius.control, style: .continuous))
-        }
-        .buttonStyle(PressableStyle(scale: 0.98))
-        .accessibilityAddTraits(selected ? .isSelected : [])
-    }
-}
-
 private extension Array where Element: Equatable {
     /// Adds the answer, or takes it back out — keeping the order they were picked in.
     mutating func toggle(_ element: Element) {
@@ -210,14 +179,13 @@ struct OnbReminderView: View {
         VStack(spacing: 20) {
             OnbHeader(eyebrow: "Tomorrow morning", title: "When should your page be ready?")
             VStack(spacing: 0) {
-                timeRow("Journal reminder", detail: "Only on mornings your page is still blank.",
+                TimeRow(title: "Journal reminder", detail: "Only on mornings your page is still blank.",
                         minutes: $journalMinutes)
                 Rectangle().fill(Palette.outlineSoft).frame(height: 1)
                     .padding(.vertical, 12)
-                timeRow("Affirmation reminder", detail: nil, minutes: $affirmationMinutes)
+                TimeRow(title: "Affirmation reminder", minutes: $affirmationMinutes)
             }
-            .padding(16)
-            .outlinedSurface(radius: Radius.panel)
+            .panelCard()
             VStack(spacing: 12) {
                 if visibleCount > 0 {
                     NotifCard(title: "Journal reminder", time: Self.clock(journalMinutes)) {
@@ -238,33 +206,6 @@ struct OnbReminderView: View {
             guard animationsActive else { return }
             await revealNotifications()
         }
-    }
-
-    private func timeRow(_ title: String, detail: String?, minutes: Binding<Int>) -> some View {
-        HStack(spacing: 12) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(loc: title).font(Fonts.ui(15, .bold)).foregroundStyle(Palette.ink)
-                if let detail {
-                    Text(loc: detail).font(Fonts.ui(12, .medium)).foregroundStyle(Palette.inkSofter)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-            }
-            Spacer(minLength: 4)
-            DatePicker("", selection: Self.time(minutes), displayedComponents: .hourAndMinute)
-                .labelsHidden()
-                .tint(Palette.amber)
-        }
-    }
-
-    /// Minutes after midnight, as the picker's date.
-    private static func time(_ minutes: Binding<Int>) -> Binding<Date> {
-        Binding(get: {
-            Calendar.current.date(bySettingHour: minutes.wrappedValue / 60, minute: minutes.wrappedValue % 60,
-                                  second: 0, of: .now) ?? .now
-        }, set: { date in
-            let parts = Calendar.current.dateComponents([.hour, .minute], from: date)
-            minutes.wrappedValue = (parts.hour ?? 0) * 60 + (parts.minute ?? 0)
-        })
     }
 
     private var arrival: AnyTransition {

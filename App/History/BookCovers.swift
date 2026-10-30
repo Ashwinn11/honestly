@@ -29,7 +29,6 @@ struct CoverLook {
     /// The colour the book frames the page in — a photo cover can't frame a page, so it falls
     /// back to a leather brown.
     var frameColor: Color { photo == nil ? color : Palette.leather }
-    var frameInk: Color { photo == nil ? ink : Palette.leatherInk }
 }
 
 /// Remembers each month's chosen cover. Covers are a presentation choice, not journal content,
@@ -181,7 +180,9 @@ extension MonthBook {
 struct CoverEditorSheet: View {
     let book: MonthBook
     @Environment(CoverStore.self) private var covers
+    @Environment(PremiumManager.self) private var premium
     @Environment(\.dismiss) private var dismiss
+    @State private var showPaywall = false
 
     private enum Choice: Equatable {
         case design(CoverDesign)
@@ -205,6 +206,14 @@ struct CoverEditorSheet: View {
             case .patterns: "Patterns"
             case .classic: "Classic"
             case .photo: "Photo"
+            }
+        }
+        var icon: String {
+            switch self {
+            case .illustrated: "paintbrush.pointed"
+            case .patterns: "square.grid.3x3"
+            case .classic: "book.closed"
+            case .photo: "photo"
             }
         }
         var group: CoverDesign.Group? {
@@ -271,7 +280,8 @@ struct CoverEditorSheet: View {
                 .padding(EdgeInsets(top: 4, leading: 20, bottom: 30, trailing: 20))
             }
         }
-        .background(Palette.cream.ignoresSafeArea())
+        .sheetBackground()
+        .paywallCover(isPresented: $showPaywall)
         .presentationDetents([.large])
         .presentationDragIndicator(.hidden)
         .task { load() }
@@ -297,36 +307,27 @@ struct CoverEditorSheet: View {
         .padding(.bottom, 12)
     }
 
-    // Illustrated | Patterns | Classic | Photo — rectangular, the active side coral.
+    // Illustrated, Patterns, Classic, Photo — the shared chip row.
     private var tabs: some View {
-        HStack(spacing: 0) {
-            ForEach(Array(Tab.allCases.enumerated()), id: \.offset) { index, item in
-                if index > 0 { Rectangle().fill(Palette.ink).frame(width: 2) }
-                Button {
-                    Haptics.select()
-                    withAnimation(Motion.snappy) { tab = item }
-                } label: {
-                    Text(loc: item.title)
-                        .font(Fonts.ui(12.5, .heavy)).foregroundStyle(Palette.ink)
-                        .lineLimit(1).minimumScaleFactor(0.7)
-                        .frame(maxWidth: .infinity, minHeight: 40)
-                        .background(tab == item ? Palette.amber : Palette.cream)
-                }
-                .buttonStyle(.plain)
-                .accessibilityAddTraits(tab == item ? .isSelected : [])
-            }
-        }
-        .clipShape(RoundedRectangle(cornerRadius: Radius.chip, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: Radius.chip, style: .continuous).strokeBorder(Palette.ink, lineWidth: 2))
+        ChipTabs(items: Tab.allCases, selection: $tab, title: \.title, icon: \.icon)
+            .padding(.horizontal, -20)          // the row runs edge to edge; its chips keep the margin
     }
+
+    /// Photo covers, and every design but the free five, come with Premium.
+    private var coversUnlocked: Bool { premium.allows(.coverDesigns) }
 
     private func designTile(_ design: CoverDesign) -> some View {
         let selected = choice == .design(design)
-        return Button { pick(.design(design)) } label: {
+        // Browsing is free; the cover already on the book never shows a lock.
+        let locked = !coversUnlocked && !design.isFree && !selected
+        return Button { if locked { showPaywall = true } else { pick(.design(design)) } } label: {
             VStack(spacing: 6) {
                 CoverArt(design: design, month: book.firstOfMonth)
                     .clipShape(RoundedRectangle(cornerRadius: Radius.control, style: .continuous))
                     .selectedRing(selected)
+                    .overlay(alignment: .topTrailing) {
+                        if locked { PremiumLockBadge(size: 17).padding(6) }
+                    }
                 Text(loc: design.name)
                     .font(Fonts.ui(12, selected ? .heavy : .semibold))
                     .foregroundStyle(selected ? Palette.ink : Palette.inkSoft)
@@ -338,33 +339,48 @@ struct CoverEditorSheet: View {
         .accessibilityAddTraits(selected ? .isSelected : [])
     }
 
-    private var cameraRollRow: some View {
-        PhotosPicker(selection: $pickerItem, matching: .images) {
-            HStack(spacing: 12) {
-                IconTile(size: 38) {
-                    Image(systemName: "photo.on.rectangle")
-                        .font(.system(size: DesignScale.s(15), weight: .bold)).foregroundStyle(Palette.ink)
-                }
-                Text("Camera roll").font(Fonts.ui(15, .bold)).foregroundStyle(Palette.ink)
-                Spacer(minLength: 0)
+    @ViewBuilder private var cameraRollRow: some View {
+        if coversUnlocked {
+            PhotosPicker(selection: $pickerItem, matching: .images) { cameraRollLabel }
+                .buttonStyle(PressableStyle(scale: 0.98))
+        } else {
+            Button { showPaywall = true } label: { cameraRollLabel }
+                .buttonStyle(PressableStyle(scale: 0.98))
+        }
+    }
+
+    private var cameraRollLabel: some View {
+        HStack(spacing: 12) {
+            IconTile(size: 38) {
+                Image(systemName: "photo.on.rectangle")
+                    .font(.system(size: DesignScale.s(15), weight: .bold)).foregroundStyle(Palette.ink)
+            }
+            Text("Camera roll").font(Fonts.ui(15, .bold)).foregroundStyle(Palette.ink)
+            Spacer(minLength: 0)
+            if coversUnlocked {
                 Image(systemName: "chevron.forward")
                     .font(.system(size: 12, weight: .bold)).foregroundStyle(Palette.inkSofter)
+            } else {
+                PremiumLockBadge(size: 17)
             }
-            .padding(12)
-            .outlinedSurface()
-            .contentShape(Rectangle())
         }
-        .buttonStyle(PressableStyle(scale: 0.98))
+        .padding(12)
+        .outlinedSurface()
+        .contentShape(Rectangle())
     }
 
     private func photoTile(_ image: UIImage) -> some View {
         let selected = choice == .photo(image)
-        return Button { pick(.photo(image)) } label: {
+        let locked = !coversUnlocked && !selected
+        return Button { if locked { showPaywall = true } else { pick(.photo(image)) } } label: {
             Color.clear
                 .aspectRatio(120 / 170, contentMode: .fit)
                 .overlay { Image(uiImage: image).resizable().scaledToFill() }
                 .clipShape(RoundedRectangle(cornerRadius: Radius.control, style: .continuous))
                 .selectedRing(selected)
+                .overlay(alignment: .topTrailing) {
+                    if locked { PremiumLockBadge(size: 17).padding(6) }
+                }
         }
         .buttonStyle(PressableStyle(scale: 0.96))
     }
@@ -404,25 +420,5 @@ struct CoverEditorSheet: View {
         }
         Haptics.success()
         dismiss()
-    }
-}
-
-private extension View {
-    /// A chosen tile: coral ring inside an ink outline, with a tick in the corner.
-    func selectedRing(_ selected: Bool) -> some View {
-        let shape = RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
-        return self
-            .overlay(shape.strokeBorder(selected ? Palette.ink : Palette.outlineSoft, lineWidth: selected ? 5 : 1.5))
-            .overlay(shape.inset(by: 2).strokeBorder(selected ? Palette.amber : .clear, lineWidth: 2.5))
-            .overlay(alignment: .topTrailing) {
-                if selected {
-                    Image(systemName: "checkmark")
-                        .font(.system(size: 10, weight: .heavy)).foregroundStyle(Palette.ink)
-                        .frame(width: 22, height: 22)
-                        .background(Palette.amber, in: RoundedRectangle(cornerRadius: Radius.badge, style: .continuous))
-                        .overlay(RoundedRectangle(cornerRadius: Radius.badge, style: .continuous).strokeBorder(Palette.ink, lineWidth: 1.5))
-                        .padding(7)
-                }
-            }
     }
 }

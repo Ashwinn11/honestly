@@ -68,30 +68,7 @@ struct AffirmationTopicPicker: View {
     }
 
     private func topicCell(_ title: String, selected: Bool, action: @escaping () -> Void) -> some View {
-        let displayTitle = Affirmations.topicDisplayTitle(title)
-        return Button(action: action) {
-            HStack(spacing: 8) {
-                Text(loc: displayTitle)
-                    .font(Fonts.ui(14, .semibold))
-                    .foregroundStyle(Palette.ink)
-                    .multilineTextAlignment(.leading)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.85)
-                Spacer(minLength: 4)
-                Image(systemName: selected ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 18, weight: .medium))
-                    .foregroundStyle(selected ? Palette.ink : Palette.outlineSoft)
-            }
-            .padding(.horizontal, 12)
-            .frame(maxWidth: .infinity, minHeight: 48)
-            .background(selected ? Palette.amber : Palette.cream,
-                        in: RoundedRectangle(cornerRadius: Radius.control, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
-                .strokeBorder(selected ? Palette.ink : Palette.outlineSoft, lineWidth: selected ? 1.8 : 1.2))
-            .contentShape(RoundedRectangle(cornerRadius: Radius.control, style: .continuous))
-        }
-        .buttonStyle(PressableStyle(scale: 0.98))
-        .accessibilityAddTraits(selected ? .isSelected : [])
+        ChoiceRow(title: Affirmations.topicDisplayTitle(title), selected: selected, lineLimit: 2, action: action)
     }
 }
 

@@ -17,8 +17,7 @@ struct PrimaryButton: View {
             Text(title)
                 .font(Fonts.ui(16.5, .heavy))
                 .foregroundStyle(enabled ? textColor : Palette.inkSofter)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, DesignScale.s(16))
+                .frame(maxWidth: .infinity, minHeight: DesignScale.s(56))   // the height of a tile beside it
         }
         .buttonStyle(TactileButtonStyle(
             fill: enabled ? AnyShapeStyle(color) : AnyShapeStyle(Palette.ink.opacity(0.06)),
@@ -77,6 +76,225 @@ struct CreamButton: View {
     }
 }
 
+// MARK: - Choice row
+
+/// A row to pick: its title, and a tick circle that fills when it's chosen, the row turning amber
+/// with an ink outline. Onboarding's answers and the affirmation topics.
+struct ChoiceRow: View {
+    let title: String                   // String Catalog key
+    let selected: Bool
+    /// Grid cells cap their lines and shrink to fit; full-width rows wrap freely.
+    var lineLimit: Int? = nil
+    let action: () -> Void
+
+    var body: some View {
+        let shape = RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
+        Button(action: action) {
+            HStack(spacing: 10) {
+                Text(loc: title)
+                    .font(Fonts.ui(14, .semibold))
+                    .foregroundStyle(Palette.ink)
+                    .multilineTextAlignment(.leading)
+                    .lineLimit(lineLimit)
+                    .minimumScaleFactor(lineLimit == nil ? 1 : 0.85)
+                    .fixedSize(horizontal: false, vertical: lineLimit == nil)
+                Spacer(minLength: 4)
+                Image(systemName: selected ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 19, weight: .medium))
+                    .foregroundStyle(selected ? Palette.ink : Palette.outlineSoft)
+            }
+            .padding(.horizontal, 14)
+            .frame(maxWidth: .infinity, minHeight: 50)
+            .background(selected ? Palette.amber : Palette.cream, in: shape)
+            .overlay(shape.strokeBorder(selected ? Palette.ink : Palette.outlineSoft, lineWidth: selected ? 1.8 : 1.2))
+            .contentShape(shape)
+        }
+        .buttonStyle(PressableStyle(scale: 0.98))
+        .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+}
+
+// MARK: - Amber pill
+
+/// The small amber call to action inside a row or card — "Upgrade", "Unlock Premium".
+struct AmberPill: View {
+    let title: String                   // String Catalog key
+
+    var body: some View {
+        Text(loc: title)
+            .font(Fonts.ui(13.5, .heavy)).foregroundStyle(.white)
+            .padding(.horizontal, 16).padding(.vertical, 8)
+            .background(Palette.amber, in: Capsule())
+            .overlay(Capsule().strokeBorder(Palette.ink, lineWidth: 2))
+    }
+}
+
+// MARK: - Colour swatch
+
+/// One colour to pick, as a circle; the chosen one gets a heavier ink ring and a tick — ink on a
+/// light colour, white on a dark one, so it always shows.
+struct ColorSwatch: View {
+    let color: Color
+    let selected: Bool
+    let action: () -> Void
+
+    private var tick: Color {
+        var r: CGFloat = 0, g: CGFloat = 0, b: CGFloat = 0
+        UIColor(color).getRed(&r, green: &g, blue: &b, alpha: nil)
+        return 0.299 * r + 0.587 * g + 0.114 * b > 0.6 ? Palette.ink : .white
+    }
+
+    var body: some View {
+        Button(action: action) {
+            Circle().fill(color)
+                .frame(width: 32, height: 32)
+                .overlay(Circle().strokeBorder(Palette.ink, lineWidth: selected ? 2.5 : 0.5))
+                .overlay {
+                    if selected {
+                        Image(systemName: "checkmark").font(.system(size: 12, weight: .black)).foregroundStyle(tick)
+                    }
+                }
+                .frame(maxWidth: .infinity, minHeight: 44)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(PressableStyle())
+        .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+}
+
+// MARK: - Font chip
+
+/// One font to pick, its name set in that font; the chosen one amber with a tick. A chip in a
+/// row, or a cell filling its grid column.
+struct FontChip: View {
+    let choice: FontChoice
+    let selected: Bool
+    var fillsWidth = false
+    let action: () -> Void
+
+    var body: some View {
+        let shape = RoundedRectangle(cornerRadius: Radius.tile, style: .continuous)
+        Button(action: action) {
+            HStack(spacing: 5) {
+                if selected { Image(systemName: "checkmark").font(.system(size: 11, weight: .bold)) }
+                Text(choice.rawValue).font(Font(choice.uiFont(size: 14)))
+            }
+            .foregroundStyle(selected ? .white : Palette.ink)
+            .padding(.horizontal, 12)
+            .frame(maxWidth: fillsWidth ? .infinity : nil)
+            .frame(height: fillsWidth ? 44 : 34)
+            .background(selected ? AnyShapeStyle(Palette.amber) : AnyShapeStyle(Palette.paper), in: shape)
+            .overlay(shape.strokeBorder(selected ? Palette.ink : Palette.outlineSoft, lineWidth: selected ? 2 : 1.2))
+            .contentShape(shape)
+        }
+        .buttonStyle(PressableStyle(scale: 0.92))
+        .accessibilityAddTraits(selected ? .isSelected : [])
+    }
+}
+
+// MARK: - Time row
+
+/// A reminder's time: its name (and what it does) on the left, the system time picker on the right.
+struct TimeRow: View {
+    let title: String                   // String Catalog key
+    var detail: String? = nil           // String Catalog key
+    @Binding var minutes: Int           // after midnight
+
+    var body: some View {
+        HStack(spacing: 12) {
+            VStack(alignment: .leading, spacing: 2) {
+                Text(loc: title).font(Fonts.ui(15, .bold)).foregroundStyle(Palette.ink)
+                if let detail {
+                    Text(loc: detail).font(Fonts.ui(12, .medium)).foregroundStyle(Palette.inkSofter)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            Spacer(minLength: 4)
+            DatePicker("", selection: time, displayedComponents: .hourAndMinute)
+                .labelsHidden()
+                .tint(Palette.amber)
+        }
+    }
+
+    private var time: Binding<Date> {
+        Binding(get: {
+            Calendar.current.date(bySettingHour: minutes / 60, minute: minutes % 60, second: 0, of: .now) ?? .now
+        }, set: { date in
+            let parts = Calendar.current.dateComponents([.hour, .minute], from: date)
+            minutes = (parts.hour ?? 0) * 60 + (parts.minute ?? 0)
+        })
+    }
+}
+
+// MARK: - Chip tabs
+
+/// A free-floating row of chips, one per section, the chosen one amber; it scrolls sideways when
+/// it runs past the screen, so it never squeezes on a small phone. How the sticker, text
+/// formatting, page theme and cover sheets switch between their sections.
+struct ChipTabs<Item: Hashable>: View {
+    let items: [Item]
+    @Binding var selection: Item
+    let title: (Item) -> String             // String Catalog key
+    let icon: (Item) -> String              // SF Symbol
+    /// The sheet's side margin: the chips start in line with its content but scroll to the edge.
+    var inset: CGFloat = 20
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                ForEach(Array(items.enumerated()), id: \.offset) { _, item in
+                    let active = item == selection
+                    Button {
+                        Haptics.select()
+                        selection = item
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: icon(item))
+                                .font(.system(size: 12, weight: .bold))
+                            Text(loc: title(item))
+                                .font(Fonts.ui(12.5, active ? .heavy : .semibold))
+                        }
+                        .foregroundStyle(active ? .white : Palette.inkSoft)
+                        .padding(.horizontal, 13)
+                        .padding(.vertical, 8)
+                        .background(active ? Palette.amber : Palette.paper, in: Capsule())
+                        .overlay(Capsule().strokeBorder(active ? Palette.ink : Palette.outlineSoft,
+                                                  lineWidth: active ? 1.8 : 1.2))
+                    }
+                    .buttonStyle(PressableStyle(scale: 0.94))
+                    .accessibilityAddTraits(active ? .isSelected : [])
+                }
+            }
+            .padding(.horizontal, inset)
+        }
+        .scrollClipDisabled()
+        .animation(Motion.snappy, value: selection)
+    }
+}
+
+// MARK: - Chosen tile
+
+/// How a picked tile shows it's picked — cover designs and page themes alike.
+extension View {
+    /// A chosen tile: coral ring inside an ink outline, with a tick in the corner.
+    func selectedRing(_ selected: Bool) -> some View {
+        let shape = RoundedRectangle(cornerRadius: Radius.control, style: .continuous)
+        return self
+            .overlay(shape.strokeBorder(selected ? Palette.ink : Palette.outlineSoft, lineWidth: selected ? 5 : 1.5))
+            .overlay(shape.inset(by: 2).strokeBorder(selected ? Palette.amber : .clear, lineWidth: 2.5))
+            .overlay(alignment: .topTrailing) {
+                if selected {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 10, weight: .heavy)).foregroundStyle(Palette.ink)
+                        .frame(width: 22, height: 22)
+                        .background(Palette.amber, in: RoundedRectangle(cornerRadius: Radius.badge, style: .continuous))
+                        .overlay(RoundedRectangle(cornerRadius: Radius.badge, style: .continuous).strokeBorder(Palette.ink, lineWidth: 1.5))
+                        .padding(7)
+                }
+            }
+    }
+}
+
 // MARK: - Press feedback
 
 struct PressableStyle: ButtonStyle {
@@ -105,6 +323,23 @@ struct SoftCard: ViewModifier {
                                   lineWidth: emphasized ? 2 : 1.5))
             .shadow(color: Palette.warmShadow.opacity(0.09), radius: DesignScale.s(13), x: 0, y: DesignScale.s(10))
     }
+}
+
+extension View {
+    /// A settings panel: the content padded inside a soft-outlined surface.
+    func panelCard() -> some View { padding(16).outlinedSurface(radius: Radius.panel) }
+}
+
+extension View {
+    /// Every sheet's ground: cream, reaching under the safe areas so the system's own sheet colour
+    /// never shows around it.
+    func sheetBackground() -> some View { background(Palette.cream.ignoresSafeArea()) }
+}
+
+/// `panelCard()` as a container, for a panel built inline.
+struct PanelCard<Content: View>: View {
+    @ViewBuilder var content: Content
+    var body: some View { content.panelCard() }
 }
 
 /// A flat surface on a screen or sheet — rows, inputs, small panels: cream with a soft outline,

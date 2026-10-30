@@ -22,9 +22,13 @@ struct EditorToolbar: View {
     var onDismissKeyboard: () -> Void
     var onFormattingOpened: () -> Void
     var onFormattingClosed: () -> Void
+    /// A locked tool was tapped. The screen hosting the toolbar shows the paywall — it may itself
+    /// be a cover, where the app-wide paywall can't appear.
+    var onLocked: () -> Void
+    /// The page theme's text colour — what text with no colour of its own shows in.
+    var pageInk: Color
 
     @Environment(PremiumManager.self) private var premium
-    @Environment(AppFlow.self) private var flow
 
     @State private var showTextSheet = false
 
@@ -93,7 +97,7 @@ struct EditorToolbar: View {
                 currentAlignment: currentAlignment,
                 currentColor: currentTextColor,
                 currentHighlight: currentHighlight,
-                textColors: Self.textColors
+                pageInk: UIColor(pageInk)
             )
             .presentationDetents([.medium, .large])
             .presentationContentInteraction(.scrolls)
@@ -216,7 +220,7 @@ struct EditorToolbar: View {
 
     private func mediaButton(icon: String, isLocked: Bool, action: @escaping () -> Void) -> some View {
         Button {
-            if isLocked { flow.showPaywall() } else { action() }
+            if isLocked { onLocked() } else { action() }
         } label: {
             toolbarIcon(icon)
                 .overlay(alignment: .topTrailing) { if isLocked { PremiumLockBadge(size: 14).offset(x: 4, y: -4) } }
@@ -272,11 +276,22 @@ struct TextFormattingSheet: View {
     var currentAlignment: NSTextAlignment
     var currentColor: UIColor?
     var currentHighlight: UIColor?
-    var textColors: [String]
+    /// The page theme's text colour. Text is stored in the default ink and drawn in the theme's,
+    /// so text with no colour of its own shows in this — white on a dark page.
+    var pageInk: UIColor
 
     @Environment(\.dismiss) private var dismiss
 
-    private enum Panel: String, CaseIterable { case font = "Font", color = "Color", highlight = "Highlight" }
+    private enum Panel: String, CaseIterable {
+        case font = "Font", color = "Color", highlight = "Highlight"
+        var icon: String {
+            switch self {
+            case .font: "textformat"
+            case .color: "paintpalette"
+            case .highlight: "highlighter"
+            }
+        }
+    }
     @State private var panel: Panel = .font
 
     // Detect active font choice and size from the UIFont at caret
@@ -294,28 +309,8 @@ struct TextFormattingSheet: View {
             ScreenHeader(Text("Text Formatting"), trailing: {
                 IconTileButton.close { dismiss() }
             })
-            HStack(spacing: 4) {
-                ForEach(Panel.allCases, id: \.self) { item in
-                    Button { panel = item } label: {
-                        Text(loc: item.rawValue)
-                            .font(Fonts.ui(13, .bold))
-                            .foregroundStyle(panel == item ? .white : Palette.ink)
-                            .frame(maxWidth: .infinity, minHeight: 44)
-                            .background(panel == item ? Palette.amber : .clear,
-                                        in: RoundedRectangle(cornerRadius: Radius.tile))
-                            .overlay {
-                                if panel == item {
-                                    RoundedRectangle(cornerRadius: Radius.tile)
-                                        .strokeBorder(Palette.ink, lineWidth: 2)
-                                }
-                            }
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityAddTraits(panel == item ? .isSelected : [])
-                }
-            }
-            .padding(4)
-            .background(Palette.cream, in: RoundedRectangle(cornerRadius: Radius.control))
+            ChipTabs(items: Panel.allCases, selection: $panel, title: \.rawValue, icon: \.icon, inset: 16)
+                .padding(.horizontal, -16)          // the row runs edge to edge; its chips keep the margin
 
             ScrollView {
                 VStack(alignment: .leading, spacing: 14) {
@@ -325,28 +320,9 @@ struct TextFormattingSheet: View {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 8) {
                             ForEach(FontChoice.allCases) { choice in
-                                let active = activeFontChoice == choice
-                                Button {
+                                FontChip(choice: choice, selected: activeFontChoice == choice) {
                                     applyCharacter { RichTextFormatting.setFont(choice, in: $0, range: $1) }
-                                } label: {
-                                    HStack(spacing: 5) {
-                                        if active { Image(systemName: "checkmark").font(.system(size: 11, weight: .bold)) }
-                                        Text(choice.rawValue).font(Font(choice.uiFont(size: 14)))
-                                    }
-                                    .foregroundStyle(active ? .white : Palette.ink)
-                                    .padding(.horizontal, 12)
-                                    .frame(height: 34)
-                                    .background(
-                                        active ? AnyShapeStyle(Palette.amber) : AnyShapeStyle(Palette.paper),
-                                        in: RoundedRectangle(cornerRadius: Radius.tile, style: .continuous)
-                                    )
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: Radius.tile, style: .continuous)
-                                            .strokeBorder(active ? Palette.ink : Palette.outlineSoft,
-                                                    lineWidth: active ? 2 : 1.2)
-                                    )
                                 }
-                                .buttonStyle(PressableStyle(scale: 0.92))
                             }
                         }
                         .padding(.horizontal, 2)
@@ -433,25 +409,50 @@ struct TextFormattingSheet: View {
                         colorPanel
                     }
                 }
-                .padding(.vertical, 2)
+                .padding(.top, 2)
+                .padding(.bottom, 20)               // inside the scroll, so nothing ends short of the edge
             }
         }
-        .padding(16)
-        .background(PaperBackground())
+        .padding(EdgeInsets(top: 16, leading: 16, bottom: 0, trailing: 16))
+        .sheetBackground()
     }
 
     private var editingHighlight: Bool { panel == .highlight }
-    private var selectedColor: UIColor? { editingHighlight ? currentHighlight : currentColor }
-    private var quickColors: [String] {
-        editingHighlight
-            ? ["FFE89A", "F8C9D9", "CDE8CB", "C8E1FA", "DDCFF1", "FFD8B5"]
-            : [0, 4, 11, 13, 16, 20].compactMap { textColors.indices.contains($0) ? textColors[$0] : nil }
+    private var selectedColor: UIColor? { editingHighlight ? currentHighlight : shownTextColor }
+
+    /// The colour the text at the caret actually shows in: its own, or — when it still has the
+    /// default ink every page stores — the page theme's.
+    private var shownTextColor: UIColor {
+        guard let currentColor, !Self.sameColor(currentColor, Palette.inkUI) else { return pageInk }
+        return currentColor
     }
+
+    private static func sameColor(_ a: UIColor, _ b: UIColor) -> Bool {
+        var ar: CGFloat = 0, ag: CGFloat = 0, ab: CGFloat = 0, aa: CGFloat = 0
+        var br: CGFloat = 0, bg: CGFloat = 0, bb: CGFloat = 0, ba: CGFloat = 0
+        a.getRed(&ar, green: &ag, blue: &ab, alpha: &aa)
+        b.getRed(&br, green: &bg, blue: &bb, alpha: &ba)
+        return abs(ar - br) < 0.01 && abs(ag - bg) < 0.01 && abs(ab - bb) < 0.01 && abs(aa - ba) < 0.01
+    }
+
+    /// Three rows each. Text: neutrals (white and cream for dark pages), warm, cool — six across.
+    /// Highlight: "no highlight" and twenty highlighter colours — seven across.
+    private static let quickTextColors = [
+        "33261A", "5D4E3E", "8A7A67", "17151A", "FFFFFF", "F3E9D2",
+        "9E2B25", "D3574A", "E38DAA", "F5851F", "E2A72E", "BC5E17",
+        "2F6B3C", "5B9A6B", "1F4E79", "4A7BC4", "5B3E8E", "8A63B8",
+    ]
+    private static let quickHighlightColors = [
+        "FFE89A", "FFD8B5", "F8C9D9", "DDCFF1", "C8E1FA", "CDE8CB",
+        "FFF3B0", "FFC9A3", "FFB3C1", "E9C7F2", "B9E4F5", "BFE8D9", "E8F2B8",
+        "F2D16B", "F4A988", "E58FA8", "B8A3E6", "8EC3EA", "9ED9B5", "D9CFC1",
+    ]
+    private var quickColors: [String] { editingHighlight ? Self.quickHighlightColors : Self.quickTextColors }
 
     private var colorPanel: some View {
         VStack(alignment: .leading, spacing: 8) {
             InlineJournalColorPicker(
-                color: selectedColor ?? (editingHighlight ? UIColor(Palette.highlighter) : Palette.inkUI),
+                color: selectedColor ?? UIColor(Palette.highlighter),
                 onChange: { applyColor($0) }
             )
             .id(panel)
@@ -472,23 +473,9 @@ struct TextFormattingSheet: View {
                 }
                 ForEach(quickColors, id: \.self) { hex in
                     let color = UIColor(Color(hex: hex))
-                    let active = selectedColor?.isEqual(color) == true
-                    Button { applyColor(color) } label: {
-                        Circle().fill(Color(hex: hex))
-                            .frame(width: 32, height: 32)
-                            .overlay(Circle().strokeBorder(Palette.ink, lineWidth: active ? 2.5 : 0.5))
-                            .overlay {
-                                if active {
-                                    Image(systemName: "checkmark").font(.system(size: 12, weight: .black))
-                                        .foregroundStyle(editingHighlight ? Palette.ink : .white)
-                                }
-                            }
-                            .frame(maxWidth: .infinity, minHeight: 44)
-                            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(PressableStyle())
-                    .accessibilityLabel(Text(loc: panel.rawValue) + Text(" #" + hex))
-                    .accessibilityAddTraits(active ? .isSelected : [])
+                    ColorSwatch(color: Color(hex: hex),
+                                selected: selectedColor.map { Self.sameColor($0, color) } == true) { applyColor(color) }
+                        .accessibilityLabel(Text(loc: panel.rawValue) + Text(" #" + hex))
                 }
             }
 
@@ -520,11 +507,7 @@ struct TextFormattingSheet: View {
     @ViewBuilder
     private func sheetSection<Content: View>(label: String, @ViewBuilder content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(loc: label)
-                .textCase(.uppercase)
-                .font(Fonts.ui(10.5, .heavy))
-                .foregroundStyle(Palette.inkSofter)
-                .tracking(1.2)
+            Eyebrow(text: label, tracking: 1.2, size: 10.5)
             content()
         }
     }

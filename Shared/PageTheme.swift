@@ -34,9 +34,23 @@ enum PageTheme: String, CaseIterable, Identifiable {
         return PageTheme(rawValue: id) ?? retired[id] ?? .paper
     }
 
+    /// The themes anyone can write on, one from each group; the rest come with Premium.
+    static let free: Set<PageTheme> = [.paper, .sunshine, .laurel, .meadow, .nightSky]
+    var isFree: Bool { Self.free.contains(self) }
+
     /// How the picker groups the themes.
     enum Group: String, CaseIterable {
         case paper = "Paper", airy = "Airy", scattered = "Scattered", prints = "Prints", dark = "Dark"
+
+        var icon: String {
+            switch self {
+            case .paper: "doc"
+            case .airy: "cloud"
+            case .scattered: "sparkles"
+            case .prints: "square.grid.2x2"
+            case .dark: "moon.stars"
+            }
+        }
     }
 
     var group: Group {

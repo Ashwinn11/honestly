@@ -94,22 +94,6 @@ final class JournalStore {
         return c
     }
 
-    // MARK: Week strip (last 7 days, oldest → today)
-    struct DayCell: Identifiable {
-        let id: String
-        let entry: JournalEntry?
-    }
-
-    var weekStrip: [DayCell] {
-        let cal = Calendar.current
-        let today = cal.startOfDay(for: Date())
-        return (0..<7).reversed().map { off in
-            let d = cal.date(byAdding: .day, value: -off, to: today) ?? today
-            let key = SharedState.dayKey(for: d)
-            return DayCell(id: key, entry: entry(for: key))
-        }
-    }
-
     // MARK: Calendar
     func entries(inYear year: Int, month: Int) -> [JournalEntry] {
         let cal = Calendar.current
